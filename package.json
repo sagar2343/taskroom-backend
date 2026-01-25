@@ -1,0 +1,20 @@
+{
+  "name": "fieldworks-backend",
+  "version": "1.0.0",
+  "description": "FieldWorks Backend with Authentication",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.21.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
