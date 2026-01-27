@@ -14,6 +14,7 @@ router.get('/profile', async (req, res) => {
   try {
     res.json({
       success: true,
+      message: "Ok",
       data: {
         user: req.user
       }
@@ -32,18 +33,30 @@ router.get('/profile', async (req, res) => {
 // @access  Private
 router.put('/profile', async (req, res) => {
   try {
-    const { username, mobile } = req.body;
+    // const { username, mobile } = req.body;
+    const { 
+      username, 
+      mobile, 
+      fullName,
+      email,
+      department,
+      designation,
+    } = req.body;
     const userId = req.userId;
 
     // Build update object with only provided fields
     const updateData = {};
     if (username) updateData.username = username;
     if (mobile) updateData.mobile = mobile;
+    if (fullName) updateData.fullName = fullName;
+    if (email) updateData.email = email;
+    if (department) updateData.department = department;
+    if (designation) updateData.designation = designation;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide at least one field to update (username or mobile)'
+        message: 'Please provide at least one field to update'
       });
     }
 
@@ -71,6 +84,20 @@ router.put('/profile', async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'Mobile number already registered'
+        });
+      }
+    }
+
+    // Check if email already exists (if updating email) 
+    if (email) {
+      const existingEmail = await User.findOne({ 
+        email, 
+        _id: { $ne: userId } 
+      });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already registered'
         });
       }
     }
@@ -292,6 +319,11 @@ router.get('/', async (req, res) => {
           id: user._id,
           username: user.username,
           mobile: user.mobile,
+          fullName: user.fullName,
+          email: user.email,
+          employeeId: user.employeeId,
+          department: user.department,
+          designation: designation,
           createdAt: user.createdAt
         })),
         pagination: {

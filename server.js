@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const organizationRoutes = require('./routes/organization');
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,10 @@ app.use('/api/auth', authRoutes);
 
 // User routes (protected)
 app.use('/api/user', userRoutes);
+
+// Organization routes (public) 
+app.use('/api/organization', organizationRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

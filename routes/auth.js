@@ -5,21 +5,62 @@ const User = require('../models/User');
 const router = express.Router();
 
 // @route   POST /api/auth/register
-// @desc    Register new user
-// @access  Public
+// @desc    Register new user (within an organization)
+// @access  Public (requires organization code)
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, mobile } = req.body;
+    const { 
+      username, 
+      password, 
+      mobile, 
+      role, 
+      fullName,
+      email,
+      employeeId,
+      managerId,
+      department,
+      designation,
+      organizationCode // Required for registration
+    } = req.body;
 
     // Validation
-    if (!username || !password || !mobile) {
+    if (!username || !password || !mobile || !role) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide username, password, and mobile number'
+        message: 'Please provide username, password, mobile, and role'
       });
     }
 
-    // Check if user already exists
+    // Find organization by code
+    const organization = await require('../models/Organization').findOne({
+      code: organizationCode.toUpperCase(),
+      isActive: true
+    });
+
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid organization code'
+      });
+    }
+
+    // Check if organization can add more employees
+    if (role == 'employee' && !organization.canAddEmployee()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Organization has reached maximum employee limit'
+      });
+    }
+
+    // Validate role
+    if (!['manager', 'employee'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role'
+      });
+    }
+
+    // Check if user already exists in this organization
     const existingUser = await User.findOne({
       $or: [{ username }, { mobile }]
     });
@@ -28,29 +69,79 @@ router.post('/register', async (req, res) => {
       if (existingUser.username === username) {
         return res.status(400).json({
           success: false,
-          message: 'Username already exists'
+          message: 'Username already exists in this organization'
         });
       }
       if (existingUser.mobile === mobile) {
         return res.status(400).json({
           success: false,
-          message: 'Mobile number already registered'
+          message: 'Mobile number already registered in this organization'
         });
       }
     }
 
-    // Create new user
-    const user = new User({
+    // Check if employeeId/managerId already exists in organization
+    if (role === 'employee' && employeeId) {
+      const existingEmpId = await User.findOne({ 
+        organization: organization._id,
+        employeeId 
+      });
+      if (existingEmpId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee ID already exists'
+        });
+      }
+    }
+
+    if (role === 'manager' && managerId) {
+      const existingMgrId = await User.findOne({ 
+        organization: organization._id,
+        managerId 
+      });
+      if (existingMgrId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Manager ID already exists'
+        });
+      }
+    }
+
+    // Create user object
+    const userData = {
+      organization: organization._id,
       username,
       password,
-      mobile
-    });
+      mobile,
+      role,
+      fullName,
+      email,
+      department,
+      designation
+    };
 
+    // Add role-specific IDs
+    if (role === 'employee' && employeeId) {
+      userData.employeeId = employeeId;
+    }
+    if (role == 'manager' && managerId) {
+      userData.managerId = managerId;
+    }
+
+    // Create new user
+    const user = new User(userData);
     await user.save();
+
+    // Update organization stats
+    await organization.updateStats();
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { 
+        userId: user._id,
+        role: user.role,
+        organizationId: organization._id
+       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -63,6 +154,18 @@ router.post('/register', async (req, res) => {
           id: user._id,
           username: user.username,
           mobile: user.mobile,
+          role: user.role,
+          fullName: user.fullName,
+          email: user.email,
+          employeeId: user.employeeId,
+          managerId: user.managerId,
+          department: user.department,
+          designation: user.designation,
+          organization: {
+            id: organization._id,
+            name: organization.name,
+            code: organization.code
+          },
           createdAt: user.createdAt
         },
         token
@@ -92,7 +195,7 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, organizationCode } = req.body;
 
     // Validation
     if (!username || !password) {
@@ -102,12 +205,45 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Organization code is optional for login (will find user's org)
+    let query = { username };
+
+    if (organizationCode) {
+      const organization = await require('../models/Organization').findOne({
+        code: organizationCode.toUpperCase() 
+      });
+      if (!organization) {
+        return res.status(404).json({
+          success: false,
+          message: 'Invalid organization code'
+        });
+      }
+      query.organization = organization._id;
+    }
+
     // Find user
-    const user = await User.findOne({ username });
+    const user = await User.findOne(query).populate('organization');
+    // const user = await User.findOne({ username });
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'User Not found'
+      });
+    }
+
+    // Check if organization is active
+    if (!user.organization.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Organization is currently inactive. Please contact administrator.'
+      });
+    }
+
+    // Check if organization is suspended
+    if (user.organization.isSuspended) {
+      return res.status(403).json({
+        success: false,
+        message: `Organization suspended: ${user.organization.suspensionReason || 'Contact support'}`
       });
     }
 
@@ -119,6 +255,10 @@ router.post('/login', async (req, res) => {
         message: 'Invalid credentials'
       });
     }
+
+    // Update online status and last seen
+    user.isOnline = true;
+    await user.save();
 
     // Generate JWT token
     const token = jwt.sign(
@@ -135,6 +275,23 @@ router.post('/login', async (req, res) => {
           id: user._id,
           username: user.username,
           mobile: user.mobile,
+          role: user.role,
+          fullName: user.fullName,
+          email: user.email,
+          employeeId: user.employeeId,
+          managerId: user.managerId,
+          department: user.department,
+          designation: user.designation,
+          profilePicture: user.profilePicture,
+          isOnline: user.isOnline,
+          organization: {
+            id: user.organization._id,
+            name: user.organization.name,
+            code: user.organization.code,
+            logo: user.organization.logo
+          },
+          stats: user.stats,
+          settings: user.settings,
           createdAt: user.createdAt
         },
         token
@@ -146,6 +303,43 @@ router.post('/login', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during login'
+    });
+  }
+});
+
+// @route   POST /api/auth/logout
+// @desc    Logout user
+// @access  Private
+router.post('/logout', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (user) {
+      user.isOnline = false;
+      user.lastSeen = new Date();
+      await user.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.json({
+      success: true,
+      message: 'Logged out'
     });
   }
 });
