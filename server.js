@@ -5,6 +5,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const organizationRoutes = require('./routes/organization');
+const roomRoutes = require('./routes/room');
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,9 @@ app.use('/api/user', userRoutes);
 
 // Organization routes (public) 
 app.use('/api/organization', organizationRoutes);
+
+// Room routes (protected)
+app.use('/api/rooms', roomRoutes);
 
 
 const PORT = process.env.PORT || 3000;

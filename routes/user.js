@@ -12,11 +12,14 @@ router.use(authMiddleware);
 // @access  Private
 router.get('/profile', async (req, res) => {
   try {
+    // Find user
+    const user = await User.findById(req.user._id).populate('organization');
+    
     res.json({
       success: true,
       message: "Ok",
       data: {
-        user: req.user
+        user: user
       }
     });
   } catch (error) {
@@ -109,11 +112,13 @@ router.put('/profile', async (req, res) => {
       { new: true, runValidators: true }
     ).select('-password');
 
+    const user = await User.findById(userId).populate('organization');
+
     res.json({
       success: true,
       message: 'Profile updated successfully',
       data: {
-        user: updatedUser
+        user: user
       }
     });
 

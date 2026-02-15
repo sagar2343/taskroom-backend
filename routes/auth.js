@@ -146,28 +146,13 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    const populatedUser = await User.findById(user._id).populate('organization');
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        user: {
-          id: user._id,
-          username: user.username,
-          mobile: user.mobile,
-          role: user.role,
-          fullName: user.fullName,
-          email: user.email,
-          employeeId: user.employeeId,
-          managerId: user.managerId,
-          department: user.department,
-          designation: user.designation,
-          organization: {
-            id: organization._id,
-            name: organization.name,
-            code: organization.code
-          },
-          createdAt: user.createdAt
-        },
+        user: populatedUser,
         token
       }
     });
@@ -271,29 +256,7 @@ router.post('/login', async (req, res) => {
       success: true,
       message: 'Login successful',
       data: {
-        user: {
-          id: user._id,
-          username: user.username,
-          mobile: user.mobile,
-          role: user.role,
-          fullName: user.fullName,
-          email: user.email,
-          employeeId: user.employeeId,
-          managerId: user.managerId,
-          department: user.department,
-          designation: user.designation,
-          profilePicture: user.profilePicture,
-          isOnline: user.isOnline,
-          organization: {
-            id: user.organization._id,
-            name: user.organization.name,
-            code: user.organization.code,
-            logo: user.organization.logo
-          },
-          stats: user.stats,
-          settings: user.settings,
-          createdAt: user.createdAt
-        },
+        user: user,
         token
       }
     });

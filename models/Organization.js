@@ -153,25 +153,25 @@ organizationSchema.statics.generateOrgCode = async function() {
 // Update statistics
 organizationSchema.methods.updateStats = async function() {
   const User = mongoose.model('User');
-  // const Room = mongoose.model('Room');
+  const Room = mongoose.model('Room');
   // const Task = mongoose.model('Task');
   
   const employees = await User.countDocuments({ 
     organization: this._id, 
     role: 'employee',
-    isActive: true 
+    // isActive: true 
   });
   
   const managers = await User.countDocuments({ 
     organization: this._id, 
     role: { $in: ['manager', 'supervisor', 'admin', 'super_admin'] },
-    isActive: true
+    // isActive: true
   });
   
-  // const rooms = await Room.countDocuments({ 
-  //   organization: this._id,
-  //   isArchived: false
-  // });
+  const rooms = await Room.countDocuments({ 
+    organization: this._id,
+    isArchived: false
+  });
   
   // const tasks = await Task.countDocuments({ organization: this._id });
   // const completedTasks = await Task.countDocuments({ 
@@ -182,7 +182,7 @@ organizationSchema.methods.updateStats = async function() {
   this.stats = {
     totalEmployees: employees,
     totalManagers: managers,
-    totalRooms: 0,
+    totalRooms: rooms,
     totalTasks: 0,
     totalTasksCompleted: 0
   };

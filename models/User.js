@@ -72,6 +72,14 @@ const userSchema = new mongoose.Schema({
     // unique: true,
     trim: true
   },
+  department: {
+    type: String,
+    trim: true
+  },
+  designation: {
+    type: String,
+    trim: true
+  },
 
   // Manager Specific Fields
   managerId: {

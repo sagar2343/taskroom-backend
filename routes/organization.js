@@ -7,6 +7,69 @@ const User = require('../models/User');
 
 const router = express.Router();
 
+// @route   POST /api/organization/check
+// @desc    Check if organization exists by code
+// @access  Public
+router.post('/check', async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Organization code is required'
+      });
+    }
+
+    const organization = await Organization.findOne({
+      code: code.toUpperCase()
+    }).select('name code logo isActive isSuspended');
+
+    if (!organization) {
+      return res.json({
+        success: true,
+        exists: false,
+        move: false,
+        message: 'Organization not found'
+      });
+    }
+
+    // Optional checks (you can keep or remove)
+    if (!organization.isActive) {
+      return res.json({
+        success: true,
+        exists: true,
+        move: false,
+        message: 'Organization exists but is inactive'
+      });
+    }
+
+    if (organization.isSuspended) {
+      return res.json({
+        success: true,
+        exists: true,
+        move: false,
+        message: 'Organization is suspended'
+      });
+    }
+
+    res.json({
+      success: true,
+      exists: true,
+      move: true,
+      message: 'ok',
+      organization
+    });
+
+  } catch(error) {
+    console.error('Check organization error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 //  @route   POST /api/organization/create
 //  @desc    Create organization (Platform Owner only)
 //  @access  Public (for now)
