@@ -253,6 +253,7 @@ router.get('/detail/:id', async (req, res) => {
 router.get('/members', authMiddleware, isManager, async (req, res) => {
   try {
     const organizationId = req.user.organization;
+    const currentUserId = req.userId;
 
     // Query params
     const page = parseInt(req.query.page) || 1;
@@ -263,7 +264,8 @@ router.get('/members', authMiddleware, isManager, async (req, res) => {
 
     // Base query (VERY IMPORTANT)
     let query = {
-      organization: organizationId
+      organization: organizationId,
+      _id: { $ne: currentUserId }
     };
 
     // Optional role filter

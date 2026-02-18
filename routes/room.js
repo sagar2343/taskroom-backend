@@ -408,6 +408,14 @@ router.post('/join', authMiddleware, async (req, res) => {
       });
     }
 
+    
+    if (!room.settings.autoAcceptMembers && user.role === 'employee') {
+      return res.status(403).json({
+        success: false,
+        message: 'This room requires manager approval. Please contact the room manager to be added.'
+      });
+    }
+
     // Check if already a member
     const isMember = room.members.some(m => m.user.toString() === req.userId.toString());
     
@@ -545,8 +553,6 @@ router.delete('/member/remove', authMiddleware, async (req, res) => {
         message: 'roomId and userId are required'
       });
     }
-
-
 
     const currentUser = await User.findById(req.userId);
 
