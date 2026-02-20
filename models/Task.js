@@ -278,8 +278,165 @@ const taskSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-    
+    cancelledAt: {
+        type: Date,
+        default: null
+    },
+    cancelledBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    cancellationReason: {
+        type: String,
+        default: null
+    },
+
+    // Edit tracking
+    lastEditedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    lastEditedAt: {
+        type: Date,
+        default: null
+    },
+    editedWhileActive: {
+        type: Boolean,
+        default: false  // True if manager edited after employee started
+    }
 
 }, {
   timestamps: true
 });
+
+// ─── Indexes ──────────────────────────────────────────────────────────────────
+taskSchema.index({ organization: 1, assignedTo: 1, status: 1});
+taskSchema.index({ organization: 1, createdBy: 1, status: 1 });
+taskSchema.index({ organization: 1, room: 1 });
+taskSchema.index({ organization: 1, startDatetime: 1 });
+taskSchema.index({ assignedTo: 1, startDatetime: 1, status: 1 });
+
+
+// ─── Pre-save: sync computed fields ──────────────────────────────────────────
+taskSchema.pre('save', function(text) {
+    if (this.steps) {
+        this.totalSteps = this.steps.length;
+        this.completedSteps = this.steps.filter(s => s.status === 'completed').length;
+
+        // Keep currentStepIndex pointing to first non-completed step
+        const firstPendingIdx = this.steps.findIndex(
+            s => !['completed', 'skipped'].includes(s.status)
+        );
+        this.currentStepIndex = firstPendingIdx === -1 ? this.steps.length - 1 : firstPendingIdx;
+    }
+    next();
+});
+
+
+// ─── Instance Methods ─────────────────────────────────────────────────────────
+
+// Check if all steps are done
+taskSchema.methods.allStepsCompleted = function() {
+  return this.steps.every(s => ['completed', 'skipped'].includes(s.status));
+};
+
+// Get active step
+taskSchema.methods.getActiveStep = function() {
+  return this.steps.find(s => s.status === 'in_progress' || s.status === 'travelling' || s.status === 'reached') || null;
+};
+
+
+// Get step by stepId
+taskSchema.methods.getStep = function(stepId) {
+  return this.steps.find(s => s.stepId === stepId) || null;
+};
+
+// Validate step submission (check all required validations are met)
+taskSchema.methods.validateStepSubmission = function(stepId, submissionData) {
+  const step = this.getStep(stepId);
+  if (!step) return { valid: false, message: 'Step not found' };
+
+  const { validations } = step;
+  const { photoUrl, signatureData, currentLocation } = submissionData;
+
+  if (validations.requirePhoto && !photoUrl) {
+    return { valid: false, message: 'Photo is required to complete this step' };
+  }
+
+  if (validations.requireSignature && !signatureData) {
+    return { valid: false, message: `Signature from ${validations.signatureFrom || 'required party'} is required` };
+  }
+
+  if (validations.requireLocationCheck) {
+    if (!currentLocation || !currentLocation.coordinates) {
+      return { valid: false, message: 'Location data is required to complete this step' };
+    }
+
+    // Check if field work step requires reaching destination first
+    if (step.isFieldWorkStep && step.status !== 'reached' && step.status !== 'in_progress') {
+      return { valid: false, message: 'You must reach the destination before completing this step' };
+    }
+
+    // If destination set, validate radius
+    if (step.isFieldWorkStep && step.destinationLocation && step.destinationLocation.coordinates) {
+      const distance = getDistanceMeters(
+        currentLocation.coordinates,
+        step.destinationLocation.coordinates
+      );
+      if (distance > step.locationRadiusMeters) {
+        return {
+          valid: false,
+          message: `You are ${Math.round(distance)}m away from the destination. You must be within ${step.locationRadiusMeters}m.`,
+          distance: Math.round(distance)
+        };
+      }
+    }
+  }
+
+  return { valid: true };
+};
+
+
+// ─── Static Methods ──────────────────────────────────────────────────────────
+
+// Get dashboard summary for a manager
+taskSchema.statics.getManagerSummary = async function(managerId, organizationId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [statusCounts, todayTasks] = await Promise.all([
+    this.aggregate([
+      { $match: { createdBy: managerId, organization: organizationId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]),
+    this.countDocuments({
+      createdBy: managerId,
+      organization: organizationId,
+      startDatetime: { $gte: today, $lt: tomorrow }
+    })
+  ]);
+
+  const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0, today: todayTasks };
+  statusCounts.forEach(s => { summary[s._id] = s.count; });
+  return summary;
+};
+
+// ─── Haversine helper ─────────────────────────────────────────────────────────
+function getDistanceMeters([lng1, lat1], [lng2, lat2]) {
+  const R = 6371000; // metres
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+module.exports = mongoose.model('Task', taskSchema);
+module.exports.getDistanceMeters = getDistanceMeters;
