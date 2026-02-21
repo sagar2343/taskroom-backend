@@ -32,7 +32,7 @@ const validationConfigSchema = new mongoose.Schema({
 const stepSchema = new mongoose.Schema({
     stepId: {
         type: String,
-        require: true,
+        required: true,
         default: () => new mongoose.Types.ObjectId().toString()
     },
     order: {
@@ -305,6 +305,16 @@ const taskSchema = new mongoose.Schema({
     editedWhileActive: {
         type: Boolean,
         default: false  // True if manager edited after employee started
+    },
+
+    // Used for group task (Multiple employee)
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null   // null = solo task, set = part of a group
+    },
+    isGroupTask: {
+        type: Boolean,
+        default: false
     }
 
 }, {
@@ -317,10 +327,11 @@ taskSchema.index({ organization: 1, createdBy: 1, status: 1 });
 taskSchema.index({ organization: 1, room: 1 });
 taskSchema.index({ organization: 1, startDatetime: 1 });
 taskSchema.index({ assignedTo: 1, startDatetime: 1, status: 1 });
+taskSchema.index({ groupId: 1 });
 
 
 // ─── Pre-save: sync computed fields ──────────────────────────────────────────
-taskSchema.pre('save', function(text) {
+taskSchema.pre('save', function(next) {
     if (this.steps) {
         this.totalSteps = this.steps.length;
         this.completedSteps = this.steps.filter(s => s.status === 'completed').length;

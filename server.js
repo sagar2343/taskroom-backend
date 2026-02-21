@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const organizationRoutes = require('./routes/organization');
 const roomRoutes = require('./routes/room');
+const taskRoutes = require('./routes/task');
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,9 @@ app.use('/api/organization', organizationRoutes);
 
 // Room routes (protected)
 app.use('/api/rooms', roomRoutes);
+
+// Task routes 
+app.use('/api/tasks', taskRoutes);
 
 
 const PORT = process.env.PORT || 3000;
