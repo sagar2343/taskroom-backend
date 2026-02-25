@@ -28,6 +28,7 @@ const getTodayRange = () => {
   end.setDate(end.getDate() + 1);
   return { start, end };
 };
+  
 
 // Check if manager owns the task and it belongs to their org
 const findTaskForManager = async (taskId, managerId, organizationId) => {
