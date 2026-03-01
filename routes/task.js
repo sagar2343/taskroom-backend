@@ -17,10 +17,8 @@ router.use(authMiddleware);
 //  SHARED HELPERS
 // ═══════════════════════════════════════════════════════════════════════
 
-// Validate a MongoDB ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// Build a today date range (midnight → midnight)
 const getTodayRange = () => {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -28,9 +26,7 @@ const getTodayRange = () => {
   end.setDate(end.getDate() + 1);
   return { start, end };
 };
-  
 
-// Check if manager owns the task and it belongs to their org
 const findTaskForManager = async (taskId, managerId, organizationId) => {
   return Task.findOne({
     _id: taskId,
@@ -39,7 +35,6 @@ const findTaskForManager = async (taskId, managerId, organizationId) => {
   });
 };
 
-// Check if employee is assigned this task and it belongs to their org
 const findTaskForEmployee = async (taskId, employeeId, organizationId) => {
   return Task.findOne({
     _id: taskId,
@@ -53,22 +48,13 @@ const findTaskForEmployee = async (taskId, employeeId, organizationId) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 // ─── POST /api/tasks ── Create Task ───────────────────────────────────
-// Manager creates a task with steps and assigns to an employee in a room
 router.post('/', isManager, async (req, res) => {
   try {
     const {
-      roomId,
-      assignedTo,
-      title,
-      note,
-      priority,
-      startDatetime,
-      endDatetime,
-      isFieldWork,
-      steps   // Array of step objects
+      roomId, assignedTo, title, note, priority,
+      startDatetime, endDatetime, isFieldWork, steps
     } = req.body;
 
-    // ── Basic validation ──
     if (!roomId || !assignedTo || !title || !startDatetime || !endDatetime || !steps) {
       return res.status(400).json({
         success: false,
@@ -99,7 +85,6 @@ router.post('/', isManager, async (req, res) => {
       return res.status(400).json({ success: false, message: 'At least one step is required' });
     }
 
-    // ── Check room belongs to manager's org ──
     const room = await Room.findOne({
       _id: roomId,
       organization: req.user.organization,
@@ -109,7 +94,6 @@ router.post('/', isManager, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Room not found' });
     }
 
-    // ── Check the manager created / owns the room ──
     if (room.createdBy.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
@@ -117,11 +101,9 @@ router.post('/', isManager, async (req, res) => {
       });
     }
 
-    // ── Check assigned employee is a member of this room ──
     const nonMembers = assignedTo.filter(empId =>
       !room.members.some(m => m.user.toString() === empId && m.status === 'active')
     );
-
     if (nonMembers.length > 0) {
       return res.status(400).json({
         success: false,
@@ -129,7 +111,6 @@ router.post('/', isManager, async (req, res) => {
       });
     }
 
-    // ── Validate & build steps ──
     const builtSteps = [];
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
@@ -158,7 +139,6 @@ router.post('/', isManager, async (req, res) => {
         });
       }
 
-      // Field work step requires destination
       const isFieldStep = s.isFieldWorkStep !== undefined ? s.isFieldWorkStep : isFieldWork;
       if (isFieldStep && (!s.destinationLocation || !s.destinationLocation.coordinates)) {
         return res.status(400).json({
@@ -167,7 +147,6 @@ router.post('/', isManager, async (req, res) => {
         });
       }
 
-      // Location radius validation
       if (s.validations?.requireLocationCheck && s.locationRadiusMeters) {
         if (s.locationRadiusMeters < 10 || s.locationRadiusMeters > 5000) {
           return res.status(400).json({
@@ -177,7 +156,6 @@ router.post('/', isManager, async (req, res) => {
         }
       }
 
-      // Signature validation
       if (s.validations?.requireSignature && !s.validations?.signatureFrom) {
         return res.status(400).json({
           success: false,
@@ -209,16 +187,14 @@ router.post('/', isManager, async (req, res) => {
       });
     }
 
-
     const isGroup = assignedTo.length > 1;
     const groupId = isGroup ? new mongoose.Types.ObjectId() : null;
 
-    // ── Create task ──
     const taskDocs = assignedTo.map(empId => ({
       organization: req.user.organization,
       room: roomId,
       createdBy: req.userId,
-      assignedTo: empId,          // ← single ID per task ✅
+      assignedTo: empId,
       title,
       note: note || null,
       priority: priority || 'medium',
@@ -232,7 +208,6 @@ router.post('/', isManager, async (req, res) => {
 
     const createdTasks = await Task.insertMany(taskDocs);
 
-    // Update room task stats
     await Room.findByIdAndUpdate(roomId, {
       $inc: {
         'stats.totalTasks': createdTasks.length,
@@ -240,7 +215,6 @@ router.post('/', isManager, async (req, res) => {
       }
     });
 
-    // Populate for response
     const populatedTasks = await Task.find({
       _id: { $in: createdTasks.map(t => t._id) }
     })
@@ -255,8 +229,8 @@ router.post('/', isManager, async (req, res) => {
         : 'Task created successfully',
       data: {
         tasks: populatedTasks,
-        task: populatedTasks[0],   // keep 'task' for solo — Bruno script saves taskId from here
-        groupId: groupId,
+        task: populatedTasks[0],
+        groupId,
         isGroupTask: isGroup,
         totalAssigned: assignedTo.length
       }
@@ -273,6 +247,8 @@ router.post('/', isManager, async (req, res) => {
 });
 
 // ─── GET /api/tasks ── Manager: list their tasks ──────────────────────
+// Supports: ?status=pending|in_progress|completed|overdue|cancelled|missed
+//           &priority=high|medium|low &roomId=... &assignedTo=... &date=YYYY-MM-DD
 router.get('/', isManager, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -286,7 +262,15 @@ router.get('/', isManager, async (req, res) => {
       createdBy: req.userId
     };
 
-    if (status) query.status = status;
+    // ── Status filter — 'missed' is a computed filter, not a DB status value ──
+    if (status === 'missed') {
+      // Missed = deadline passed but task was never completed or cancelled
+      query.endDatetime = { $lt: new Date() };
+      query.status = { $in: ['pending', 'in_progress'] };
+    } else if (status) {
+      query.status = status;
+    }
+
     if (assignedTo && isValidObjectId(assignedTo)) query.assignedTo = assignedTo;
     if (roomId && isValidObjectId(roomId)) query.room = roomId;
     if (priority) query.priority = priority;
@@ -334,15 +318,20 @@ router.get('/dashboard', isManager, async (req, res) => {
   try {
     const orgId = req.user.organization;
     const managerId = req.userId;
-
     const { start, end } = getTodayRange();
 
-    // Aggregation: status breakdown + today's tasks + employee activity
-    const [statusBreakdown, todayTasks, employeeActivity] = await Promise.all([
+    const [statusBreakdown, missedCount, todayTasks, employeeActivity] = await Promise.all([
       Task.aggregate([
         { $match: { organization: orgId, createdBy: managerId } },
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
+      // Count missed tasks for dashboard summary
+      Task.countDocuments({
+        organization: orgId,
+        createdBy: managerId,
+        endDatetime: { $lt: new Date() },
+        status: { $in: ['pending', 'in_progress'] }
+      }),
       Task.find({
         organization: orgId,
         createdBy: managerId,
@@ -392,17 +381,14 @@ router.get('/dashboard', isManager, async (req, res) => {
       ])
     ]);
 
-    const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0 };
+    const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0, missed: 0 };
     statusBreakdown.forEach(s => { summary[s._id] = s.count; });
+    summary.missed = missedCount; // Add missed count to summary
 
     res.json({
       success: true,
       message: 'ok',
-      data: {
-        summary,
-        todayTasks,
-        employeeActivity
-      }
+      data: { summary, todayTasks, employeeActivity }
     });
 
   } catch (error) {
@@ -418,7 +404,6 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid task ID' });
     }
 
-    // Both manager and employee can access — but scoped to their role
     let query = { _id: req.params.id, organization: req.user.organization };
     if (req.user.role === 'manager') {
       query.createdBy = req.userId;
@@ -443,7 +428,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ─── PUT /api/tasks/:id ── Manager: Edit task (even if active) ────────
+// ─── PUT /api/tasks/:id ── Manager: Edit task ─────────────────────────
 router.put('/:id', isManager, async (req, res) => {
   try {
     if (!isValidObjectId(req.params.id)) {
@@ -500,7 +485,7 @@ router.put('/:id', isManager, async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps ── Manager: Add step to existing task ──
+// ─── POST /api/tasks/:id/steps ── Manager: Add step ───────────────────
 router.post('/:id/steps', isManager, async (req, res) => {
   try {
     if (!isValidObjectId(req.params.id)) {
@@ -577,12 +562,9 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
-
-    // Don't allow editing completed steps — only pending/future steps can be fully edited
     const isStepActive = ['in_progress', 'travelling', 'reached'].includes(step.status);
-    const isStepDone = step.status === 'completed';
 
-    if (isStepDone) {
+    if (step.status === 'completed') {
       return res.status(400).json({ success: false, message: 'Cannot edit a completed step' });
     }
 
@@ -594,7 +576,6 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
     if (startDatetime) step.startDatetime = new Date(startDatetime);
     if (endDatetime) step.endDatetime = new Date(endDatetime);
 
-    // Field work changes only allowed on non-active steps
     if (!isStepActive) {
       if (isFieldWorkStep !== undefined) step.isFieldWorkStep = isFieldWorkStep;
       if (destinationLocation && destinationLocation.coordinates) {
@@ -605,9 +586,7 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
         };
       }
       if (locationRadiusMeters) step.locationRadiusMeters = locationRadiusMeters;
-      if (validations) {
-        step.validations = { ...step.validations, ...validations };
-      }
+      if (validations) step.validations = { ...step.validations, ...validations };
     }
 
     step.lastEditedAt = new Date();
@@ -655,10 +634,7 @@ router.delete('/:id/steps/:stepId', isManager, async (req, res) => {
     }
 
     task.steps.splice(stepIdx, 1);
-
-    // Re-order remaining steps
     task.steps.forEach((s, i) => { s.order = i + 1; });
-
     task.lastEditedBy = req.userId;
     task.lastEditedAt = new Date();
 
@@ -689,7 +665,6 @@ router.patch('/:id/cancel', isManager, async (req, res) => {
 
     await task.save();
 
-    // Update room task stats
     await Room.findByIdAndUpdate(task.room, {
       $inc: { 'stats.activeTasks': -1 }
     });
@@ -716,14 +691,12 @@ router.get('/:id/live-location', isManager, async (req, res) => {
       });
     }
 
-    // Get latest location ping for this employee
     const latestTrace = await LocationTrace.findOne({
       task: task._id,
       stepId: activeStep.stepId,
       employee: task.assignedTo
     }).sort({ recordedAt: -1 });
 
-    // Also get current user location from User model
     const employee = await User.findById(task.assignedTo)
       .select('fullName username profilePicture currentLocation isOnline');
 
@@ -759,7 +732,6 @@ router.get('/:id/location-trace', isManager, async (req, res) => {
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
     const stepId = req.query.stepId;
-
     let traceQuery = { task: task._id, employee: task.assignedTo };
     if (stepId) traceQuery.stepId = stepId;
 
@@ -770,11 +742,7 @@ router.get('/:id/location-trace', isManager, async (req, res) => {
     res.json({
       success: true,
       message: 'ok',
-      data: {
-        traces,
-        total: traces.length,
-        stepId: stepId || 'all'
-      }
+      data: { traces, total: traces.length, stepId: stepId || 'all' }
     });
 
   } catch (error) {
@@ -787,51 +755,57 @@ router.get('/:id/location-trace', isManager, async (req, res) => {
 //  EMPLOYEE ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── GET /api/tasks/my ── Employee: Get their tasks ───────────────────
+// ─── GET /api/tasks/my/tasks ── Employee: Get their tasks ─────────────
+// Filter options:
+//   today     → today's tasks + all pending (including overdue) + in_progress
+//   upcoming  → future pending tasks only
+//   active    → currently in_progress only
+//   completed → completed tasks only
+//   missed    → deadline passed but never completed (pending or in_progress)
 router.get('/my/tasks', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
 
-    const { filter = 'today', status } = req.query;
+    const { filter = 'today' } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const { start, end } = getTodayRange();
+
     let query = {
       organization: req.user.organization,
       assignedTo: req.userId
     };
 
     if (filter === 'today') {
-      // query.startDatetime = { $gte: start, $lt: end };
+      // Tasks scheduled today + any still in_progress + all overdue-pending
       query.$or = [
-        // Tasks scheduled for today
-        { startDatetime: { $gte: start, $lt: end } },
-        // Tasks already started but not finished (carry-over)
-        { status: 'in_progress' },
-        // Overdue tasks still pending
-        { status: 'pending', endDatetime: { $gte: start } }
+        { startDatetime: { $gte: start, $lt: end } },          // scheduled today
+        { status: 'in_progress' },                              // active from any day
+        { status: 'pending', startDatetime: { $lt: end } }     // all pending (past + today)
       ];
     } else if (filter === 'upcoming') {
-      query.startDatetime = { $gte: end };
-      query.status = { $in: ['pending'] };
-    } else if (filter === 'upcoming') {
-      query.startDatetime = { $gt: new Date() };  // strictly future from NOW
+      // Future tasks not yet started
+      query.startDatetime = { $gt: new Date() };
       query.status = 'pending';
     } else if (filter === 'active') {
+      // Currently being worked on
       query.status = 'in_progress';
-    }
-
-    // Additional status filter
-    if (status && !['completed', 'upcoming', 'active'].includes(filter)) {
-      query.status = status;
+    } else if (filter === 'completed') {
+      // Finished tasks
+      query.status = 'completed';
+    } else if (filter === 'missed') {
+      // Deadline passed but employee never finished
+      query.endDatetime = { $lt: new Date() };
+      query.status = { $in: ['pending', 'in_progress'] };
     }
 
     const [tasks, total] = await Promise.all([
       Task.find(query)
+        .populate('assignedTo', 'username fullName profilePicture isOnline')
         .populate('createdBy', 'username fullName profilePicture')
         .populate('room', 'name roomCode')
         .sort({ startDatetime: 1 })
@@ -877,7 +851,6 @@ router.post('/:id/start', async (req, res) => {
       });
     }
 
-    // 15-minute buffer — can start task early
     const now = new Date();
     const buffer = new Date(task.startDatetime.getTime() - 15 * 60 * 1000);
     if (now < buffer) {
@@ -887,7 +860,6 @@ router.post('/:id/start', async (req, res) => {
       });
     }
 
-    // ── Auto punch-in if not already done today ──
     const { start } = getTodayRange();
     let attendance = await Attendance.findOne({
       employee: req.userId,
@@ -895,7 +867,7 @@ router.post('/:id/start', async (req, res) => {
     });
 
     if (!attendance) {
-      const { coordinates } = req.body; // Optional GPS coords from app
+      const { coordinates } = req.body;
       attendance = new Attendance({
         organization: req.user.organization,
         employee: req.userId,
@@ -908,7 +880,6 @@ router.post('/:id/start', async (req, res) => {
       await attendance.save();
     }
 
-    // ── Start task and first step ──
     task.status = 'in_progress';
     task.employeeStartTime = now;
     task.steps[0].status = 'in_progress';
@@ -951,7 +922,6 @@ router.post('/:id/steps/:stepId/start', async (req, res) => {
 
     const step = task.steps[stepIdx];
 
-    // Ensure previous steps are done
     if (stepIdx > 0) {
       const prevStep = task.steps[stepIdx - 1];
       if (!['completed', 'skipped'].includes(prevStep.status)) {
@@ -963,22 +933,15 @@ router.post('/:id/steps/:stepId/start', async (req, res) => {
     }
 
     if (step.status !== 'pending') {
-      return res.status(400).json({
-        success: false,
-        message: `Step is already ${step.status}`
-      });
+      return res.status(400).json({ success: false, message: `Step is already ${step.status}` });
     }
 
-    step.status = step.isFieldWorkStep ? 'in_progress' : 'in_progress';
+    step.status = 'in_progress';
     step.employeeStartTime = new Date();
 
     await task.save();
 
-    res.json({
-      success: true,
-      message: 'Step started',
-      data: { step }
-    });
+    res.json({ success: true, message: 'Step started', data: { step } });
 
   } catch (error) {
     console.error('Start step error:', error);
@@ -986,7 +949,7 @@ router.post('/:id/steps/:stepId/start', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps/:stepId/reached ── Employee: Field reach ─
+// ─── POST /api/tasks/:id/steps/:stepId/reached ── Employee: Field reach
 router.post('/:id/steps/:stepId/reached', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
@@ -1008,19 +971,17 @@ router.post('/:id/steps/:stepId/reached', async (req, res) => {
     if (step.status !== 'in_progress') {
       return res.status(400).json({
         success: false,
-        message: 'Step must be started (in_progress / travelling) before marking reached'
+        message: 'Step must be started (in_progress) before marking reached'
       });
     }
 
-    const { coordinates } = req.body;   // [longitude, latitude] from GPS
+    const { coordinates } = req.body;
     if (!coordinates || coordinates.length !== 2) {
       return res.status(400).json({ success: false, message: 'Current GPS coordinates are required' });
     }
 
-    // ── Radius check ──
     if (step.destinationLocation && step.destinationLocation.coordinates) {
       const distance = getDistanceMeters(coordinates, step.destinationLocation.coordinates);
-
       if (distance > step.locationRadiusMeters) {
         return res.status(400).json({
           success: false,
@@ -1038,7 +999,6 @@ router.post('/:id/steps/:stepId/reached', async (req, res) => {
     step.employeeReachTime = new Date();
     step.submittedLocation = { type: 'Point', coordinates };
 
-    // Update employee current location in User model
     await User.findByIdAndUpdate(req.userId, {
       'currentLocation.coordinates': coordinates,
       'currentLocation.lastUpdated': new Date()
@@ -1080,7 +1040,6 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
       });
     }
 
-    // For field work: must have reached destination first
     if (step.isFieldWorkStep && step.status !== 'reached') {
       return res.status(400).json({
         success: false,
@@ -1091,7 +1050,6 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
     const { photoUrl, signatureData, signatureSignedBy, signatureRole,
             currentLocation, employeeNotes } = req.body;
 
-    // ── Run validation checks ──
     const validationResult = task.validateStepSubmission(step.stepId, {
       photoUrl, signatureData, currentLocation
     });
@@ -1104,7 +1062,6 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
       });
     }
 
-    // ── Save submission data ──
     const now = new Date();
     step.status = 'completed';
     step.employeeCompleteTime = now;
@@ -1125,18 +1082,9 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
     }
     if (employeeNotes) step.employeeNotes = employeeNotes;
 
-    // ── Unlock next step if exists ──
-    const nextStep = task.steps[stepIdx + 1];
-    if (nextStep && nextStep.status === 'pending') {
-      nextStep.status = 'pending'; // Stays pending but is now unlocked (no longer blocked)
-    }
-
-    // ── Check if all steps done → complete task ──
     if (task.allStepsCompleted()) {
       task.status = 'completed';
       task.completedAt = now;
-
-      // Update room task stats
       await Room.findByIdAndUpdate(task.room, {
         $inc: { 'stats.activeTasks': -1, 'stats.completedTasks': 1 }
       });
@@ -1165,7 +1113,7 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
-//  LOCATION TRACKING ROUTES (Employee → pings GPS)
+//  LOCATION TRACKING ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
 // ─── POST /api/tasks/location/ping ── Employee sends GPS ping ─────────
@@ -1184,7 +1132,6 @@ router.post('/location/ping', async (req, res) => {
       });
     }
 
-    // Verify task belongs to employee and step requires tracing
     const task = await Task.findOne({
       _id: taskId,
       organization: req.user.organization,
@@ -1204,7 +1151,6 @@ router.post('/location/ping', async (req, res) => {
       });
     }
 
-    // ── Save trace ──
     const trace = new LocationTrace({
       organization: req.user.organization,
       task: taskId,
@@ -1217,7 +1163,6 @@ router.post('/location/ping', async (req, res) => {
 
     await trace.save();
 
-    // Also update User.currentLocation
     await User.findByIdAndUpdate(req.userId, {
       'currentLocation.coordinates': coordinates,
       'currentLocation.lastUpdated': new Date()
@@ -1239,7 +1184,7 @@ router.post('/location/ping', async (req, res) => {
 //  ATTENDANCE ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── POST /api/tasks/attendance/punch-in ── Manual punch-in ──────────
+// ─── POST /api/tasks/attendance/punch-in ──────────────────────────────
 router.post('/attendance/punch-in', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
@@ -1286,7 +1231,7 @@ router.post('/attendance/punch-in', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/attendance/punch-out ── Punch out ───────────────
+// ─── POST /api/tasks/attendance/punch-out ─────────────────────────────
 router.post('/attendance/punch-out', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
@@ -1330,7 +1275,7 @@ router.post('/attendance/punch-out', async (req, res) => {
   }
 });
 
-// ─── GET /api/tasks/attendance/today ── Today's attendance status ─────
+// ─── GET /api/tasks/attendance/today ──────────────────────────────────
 router.get('/attendance/today', async (req, res) => {
   try {
     const { start } = getTodayRange();
@@ -1355,7 +1300,7 @@ router.get('/attendance/today', async (req, res) => {
   }
 });
 
-// ─── GET /api/tasks/attendance/history ── Attendance history ──────────
+// ─── GET /api/tasks/attendance/history ────────────────────────────────
 router.get('/attendance/history', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -1364,14 +1309,12 @@ router.get('/attendance/history', async (req, res) => {
 
     let query = { organization: req.user.organization };
 
-    // Manager sees team; employee sees own
     if (req.user.role === 'employee') {
       query.employee = req.userId;
     } else if (req.query.employeeId && isValidObjectId(req.query.employeeId)) {
       query.employee = req.query.employeeId;
     }
 
-    // Month filter
     if (req.query.month) {
       const [year, month] = req.query.month.split('-').map(Number);
       const monthStart = new Date(year, month - 1, 1);
