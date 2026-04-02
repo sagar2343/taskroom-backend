@@ -1225,7 +1225,7 @@ router.post('/location/ping', async (req, res) => {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
-
+ 
     const { taskId, stepId, coordinates, accuracyMeters, batteryLevel } = req.body;
 
     if (!taskId || !stepId || !coordinates || coordinates.length !== 2) {
@@ -1247,12 +1247,24 @@ router.post('/location/ping', async (req, res) => {
     }
 
     const step = task.getStep(stepId);
-    if (!step || !step.validations.requireLocationTrace) {
+    if (!step) {
+      return res.status(404).json({ success: false, message: 'Step not found' });
+    }
+
+    const isTracked = task.isFieldWork || step.validations.requireLocationTrace;
+    if (!isTracked) {
       return res.status(400).json({
         success: false,
-        message: 'This step does not require location tracking'
+        message: 'Location tracking is not enabled for this task'
       });
     }
+
+    // if (!step || !step.validations.requireLocationTrace) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'This step does not require location tracking'
+    //   });
+    // }
 
     const trace = new LocationTrace({
       organization: req.user.organization,
