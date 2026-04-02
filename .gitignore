@@ -4,6 +4,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Dart Files
+# Dart Files
+*.dart
+Dart/
+
 # Environment variables
 .env
 .env.local

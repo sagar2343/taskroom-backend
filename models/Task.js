@@ -9,7 +9,7 @@ const validationConfigSchema = new mongoose.Schema({
     },
     signatureFrom: {
         type: String,
-        enum: ['supervisor', 'manager'],
+        enum: ['customer', 'supervisor', 'manager'],
         default: null
     },
     requirePhoto: {

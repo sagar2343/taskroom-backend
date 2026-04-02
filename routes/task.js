@@ -10,7 +10,6 @@ const { getDistanceMeters } = require('../models/Task');
 
 const router = express.Router();
 
-// All task routes require authentication
 router.use(authMiddleware);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -47,7 +46,7 @@ const findTaskForEmployee = async (taskId, employeeId, organizationId) => {
 //  MANAGER ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── POST /api/tasks ── Create Task ───────────────────────────────────
+// ─── POST /api/tasks ── Manager: Create Task ──────────────────────────
 router.post('/', isManager, async (req, res) => {
   try {
     const {
@@ -139,15 +138,24 @@ router.post('/', isManager, async (req, res) => {
         });
       }
 
-      const isFieldStep = s.isFieldWorkStep !== undefined ? s.isFieldWorkStep : isFieldWork;
-      if (isFieldStep && (!s.destinationLocation || !s.destinationLocation.coordinates)) {
+      const requireLocationCheck = s.validations?.requireLocationCheck || false;
+      const hasDestination = !!(
+        s.destinationLocation &&
+        Array.isArray(s.destinationLocation.coordinates) &&
+        s.destinationLocation.coordinates.length === 2
+      );
+
+      if (requireLocationCheck && !hasDestination) {
         return res.status(400).json({
           success: false,
-          message: `Step ${i + 1}: Destination location is required for field work steps`
+          message: `Step ${i + 1}: A destination pin is required when Destination Check is enabled`
         });
       }
 
-      if (s.validations?.requireLocationCheck && s.locationRadiusMeters) {
+      const isFieldStep = requireLocationCheck && hasDestination;
+
+      // Radius validation
+      if (requireLocationCheck && s.locationRadiusMeters) {
         if (s.locationRadiusMeters < 10 || s.locationRadiusMeters > 5000) {
           return res.status(400).json({
             success: false,
@@ -156,6 +164,7 @@ router.post('/', isManager, async (req, res) => {
         }
       }
 
+      // Signature validation
       if (s.validations?.requireSignature && !s.validations?.signatureFrom) {
         return res.status(400).json({
           success: false,
@@ -170,19 +179,21 @@ router.post('/', isManager, async (req, res) => {
         description: s.description || null,
         startDatetime: stepStart,
         endDatetime: stepEnd,
+
         isFieldWorkStep: isFieldStep,
-        destinationLocation: isFieldStep && s.destinationLocation ? {
+        destinationLocation: isFieldStep ? {
           type: 'Point',
           coordinates: s.destinationLocation.coordinates,
           address: s.destinationLocation.address || null
         } : undefined,
-        locationRadiusMeters: s.locationRadiusMeters || 50,
+        locationRadiusMeters: s.locationRadiusMeters || 100,
+
         validations: {
           requireSignature: s.validations?.requireSignature || false,
           signatureFrom: s.validations?.signatureFrom || null,
           requirePhoto: s.validations?.requirePhoto || false,
-          requireLocationCheck: s.validations?.requireLocationCheck || false,
-          requireLocationTrace: s.validations?.requireLocationTrace || (isFieldStep || false)
+          requireLocationCheck: requireLocationCheck,
+          requireLocationTrace: !!(s.validations?.requireLocationTrace || isFieldWork)
         }
       });
     }
@@ -246,9 +257,9 @@ router.post('/', isManager, async (req, res) => {
   }
 });
 
-// ─── GET /api/tasks ── Manager: list their tasks ──────────────────────
-// Supports: ?status=pending|in_progress|completed|overdue|cancelled|missed
-//           &priority=high|medium|low &roomId=... &assignedTo=... &date=YYYY-MM-DD
+// ─── GET /api/tasks ── Manager: List their tasks ──────────────────────
+// Query params: ?status=pending|in_progress|completed|overdue|cancelled|missed
+//               &priority=high|medium|low &roomId=... &assignedTo=... &date=YYYY-MM-DD
 router.get('/', isManager, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -262,9 +273,7 @@ router.get('/', isManager, async (req, res) => {
       createdBy: req.userId
     };
 
-    // ── Status filter — 'missed' is a computed filter, not a DB status value ──
     if (status === 'missed') {
-      // Missed = deadline passed but task was never completed or cancelled
       query.endDatetime = { $lt: new Date() };
       query.status = { $in: ['pending', 'in_progress'] };
     } else if (status) {
@@ -287,7 +296,7 @@ router.get('/', isManager, async (req, res) => {
       Task.find(query)
         .populate('assignedTo', 'username fullName profilePicture isOnline')
         .populate('room', 'name roomCode')
-        .sort({ startDatetime: 1 })
+        .sort({ startDatetime: -1 })
         .skip(skip)
         .limit(limit),
       Task.countDocuments(query)
@@ -313,7 +322,7 @@ router.get('/', isManager, async (req, res) => {
   }
 });
 
-// ─── GET /api/tasks/dashboard ── Manager dashboard summary ───────────
+// ─── GET /api/tasks/dashboard ── Manager: Dashboard summary ──────────
 router.get('/dashboard', isManager, async (req, res) => {
   try {
     const orgId = req.user.organization;
@@ -325,7 +334,6 @@ router.get('/dashboard', isManager, async (req, res) => {
         { $match: { organization: orgId, createdBy: managerId } },
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
-      // Count missed tasks for dashboard summary
       Task.countDocuments({
         organization: orgId,
         createdBy: managerId,
@@ -383,7 +391,7 @@ router.get('/dashboard', isManager, async (req, res) => {
 
     const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0, missed: 0 };
     statusBreakdown.forEach(s => { summary[s._id] = s.count; });
-    summary.missed = missedCount; // Add missed count to summary
+    summary.missed = missedCount;
 
     res.json({
       success: true,
@@ -397,14 +405,19 @@ router.get('/dashboard', isManager, async (req, res) => {
   }
 });
 
-// ─── GET /api/tasks/:id ── Get task detail ────────────────────────────
-router.get('/:id', async (req, res) => {
+// ─── POST /api/tasks/detail ── Get task detail (taskId in body) ───────
+router.post('/detail', async (req, res) => {
   try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ success: false, message: 'Invalid task ID' });
+    const { taskId } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
     }
 
-    let query = { _id: req.params.id, organization: req.user.organization };
+    let query = { _id: taskId, organization: req.user.organization };
     if (req.user.role === 'manager') {
       query.createdBy = req.userId;
     } else {
@@ -428,14 +441,19 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ─── PUT /api/tasks/:id ── Manager: Edit task ─────────────────────────
-router.put('/:id', isManager, async (req, res) => {
+// ─── PUT /api/tasks/edit ── Manager: Edit task (taskId in body) ───────
+router.put('/edit', isManager, async (req, res) => {
   try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ success: false, message: 'Invalid task ID' });
+    const { taskId, title, note, priority, startDatetime, endDatetime, assignedTo } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
     }
 
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
@@ -447,7 +465,6 @@ router.put('/:id', isManager, async (req, res) => {
       });
     }
 
-    const { title, note, priority, startDatetime, endDatetime, assignedTo } = req.body;
     const wasActive = task.status === 'in_progress';
 
     if (title) task.title = title;
@@ -485,22 +502,163 @@ router.put('/:id', isManager, async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps ── Manager: Add step ───────────────────
-router.post('/:id/steps', isManager, async (req, res) => {
+// ─── PATCH /api/tasks/cancel ── Manager: Cancel task (taskId in body) ─
+router.patch('/cancel', isManager, async (req, res) => {
   try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ success: false, message: 'Invalid task ID' });
+    const { taskId, reason } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
     }
 
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    if (['completed', 'cancelled'].includes(task.status)) {
+      return res.status(400).json({ success: false, message: 'Task is already completed or cancelled' });
+    }
+
+    task.status = 'cancelled';
+    task.cancelledAt = new Date();
+    task.cancelledBy = req.userId;
+    task.cancellationReason = reason || null;
+
+    await task.save();
+
+    await Room.findByIdAndUpdate(task.room, {
+      $inc: { 'stats.activeTasks': -1 }
+    });
+
+    res.json({ success: true, message: 'Task cancelled successfully' });
+
+  } catch (error) {
+    console.error('Cancel task error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── POST /api/tasks/live-location ── Manager: Live location ──────────
+//  Body: { taskId }
+router.post('/live-location', isManager, async (req, res) => {
+  try {
+    const { taskId } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    const activeStep = task.getActiveStep();
+    if (!activeStep || !activeStep.isFieldWorkStep) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active field work step found for this task'
+      });
+    }
+
+    const latestTrace = await LocationTrace.findOne({
+      task: task._id,
+      stepId: activeStep.stepId,
+      employee: task.assignedTo
+    }).sort({ recordedAt: -1 });
+
+    const employee = await User.findById(task.assignedTo)
+      .select('fullName username profilePicture currentLocation isOnline');
+
+    res.json({
+      success: true,
+      message: 'ok',
+      data: {
+        stepId: activeStep.stepId,
+        stepTitle: activeStep.title,
+        stepStatus: activeStep.status,
+        destination: activeStep.destinationLocation,
+        radiusMeters: activeStep.locationRadiusMeters,
+        employee,
+        latestLocation: latestTrace ? {
+          coordinates: latestTrace.location.coordinates,
+          accuracyMeters: latestTrace.accuracyMeters,
+          recordedAt: latestTrace.recordedAt,
+          batteryLevel: latestTrace.batteryLevel
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Live location error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── POST /api/tasks/location-trace ── Manager: Full route ────────────
+//  Body: { taskId, stepId? }
+router.post('/location-trace', isManager, async (req, res) => {
+  try {
+    const { taskId, stepId } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    let traceQuery = { task: task._id, employee: task.assignedTo };
+    if (stepId) traceQuery.stepId = stepId;
+
+    const traces = await LocationTrace.find(traceQuery)
+      .sort({ recordedAt: 1 })
+      .select('location accuracyMeters recordedAt batteryLevel stepId');
+
+    res.json({
+      success: true,
+      message: 'ok',
+      data: { traces, total: traces.length, stepId: stepId || 'all' }
+    });
+
+  } catch (error) {
+    console.error('Location trace error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STEP ROUTES  (taskId + stepId always in body)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── POST /api/tasks/steps/add ── Manager: Add step ───────────────────
+//  Body: { taskId, title, description?, startDatetime, endDatetime, ... }
+router.post('/steps/add', isManager, async (req, res) => {
+  try {
+    const {
+      taskId, title, description, startDatetime, endDatetime,
+      isFieldWorkStep, destinationLocation, locationRadiusMeters, validations
+    } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
     if (['completed', 'cancelled'].includes(task.status)) {
       return res.status(400).json({ success: false, message: 'Cannot add steps to a completed or cancelled task' });
     }
-
-    const { title, description, startDatetime, endDatetime, isFieldWorkStep,
-            destinationLocation, locationRadiusMeters, validations } = req.body;
 
     if (!title || !startDatetime || !endDatetime) {
       return res.status(400).json({ success: false, message: 'title, startDatetime, and endDatetime are required' });
@@ -552,13 +710,26 @@ router.post('/:id/steps', isManager, async (req, res) => {
   }
 });
 
-// ─── PUT /api/tasks/:id/steps/:stepId ── Manager: Edit a step ─────────
-router.put('/:id/steps/:stepId', isManager, async (req, res) => {
+// ─── PUT /api/tasks/steps/edit ── Manager: Edit a step ────────────────
+//  Body: { taskId, stepId, title?, description?, ... }
+router.put('/steps/edit', isManager, async (req, res) => {
   try {
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
+    const {
+      taskId, stepId, title, description, startDatetime, endDatetime,
+      isFieldWorkStep, destinationLocation, locationRadiusMeters, validations
+    } = req.body;
+
+    if (!taskId || !stepId) {
+      return res.status(400).json({ success: false, message: 'taskId and stepId are required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    const stepIdx = task.steps.findIndex(s => s.stepId === req.params.stepId);
+    const stepIdx = task.steps.findIndex(s => s.stepId === stepId);
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
@@ -567,9 +738,6 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
     if (step.status === 'completed') {
       return res.status(400).json({ success: false, message: 'Cannot edit a completed step' });
     }
-
-    const { title, description, startDatetime, endDatetime,
-            isFieldWorkStep, destinationLocation, locationRadiusMeters, validations } = req.body;
 
     if (title) step.title = title;
     if (description !== undefined) step.description = description;
@@ -591,7 +759,6 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
 
     step.lastEditedAt = new Date();
     if (isStepActive) step.editedWhileActive = true;
-
     task.lastEditedBy = req.userId;
     task.lastEditedAt = new Date();
 
@@ -611,13 +778,23 @@ router.put('/:id/steps/:stepId', isManager, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/tasks/:id/steps/:stepId ── Manager: Remove a step ────
-router.delete('/:id/steps/:stepId', isManager, async (req, res) => {
+// ─── DELETE /api/tasks/steps/remove ── Manager: Remove a step ─────────
+//  Body: { taskId, stepId }
+router.delete('/steps/remove', isManager, async (req, res) => {
   try {
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
+    const { taskId, stepId } = req.body;
+
+    if (!taskId || !stepId) {
+      return res.status(400).json({ success: false, message: 'taskId and stepId are required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    const stepIdx = task.steps.findIndex(s => s.stepId === req.params.stepId);
+    const stepIdx = task.steps.findIndex(s => s.stepId === stepId);
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
@@ -648,120 +825,12 @@ router.delete('/:id/steps/:stepId', isManager, async (req, res) => {
   }
 });
 
-// ─── PATCH /api/tasks/:id/cancel ── Manager: Cancel task ─────────────
-router.patch('/:id/cancel', isManager, async (req, res) => {
-  try {
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
-    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
-
-    if (['completed', 'cancelled'].includes(task.status)) {
-      return res.status(400).json({ success: false, message: 'Task is already completed or cancelled' });
-    }
-
-    task.status = 'cancelled';
-    task.cancelledAt = new Date();
-    task.cancelledBy = req.userId;
-    task.cancellationReason = req.body.reason || null;
-
-    await task.save();
-
-    await Room.findByIdAndUpdate(task.room, {
-      $inc: { 'stats.activeTasks': -1 }
-    });
-
-    res.json({ success: true, message: 'Task cancelled successfully' });
-
-  } catch (error) {
-    console.error('Cancel task error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// ─── GET /api/tasks/:id/live-location ── Manager: Live location ───────
-router.get('/:id/live-location', isManager, async (req, res) => {
-  try {
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
-    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
-
-    const activeStep = task.getActiveStep();
-    if (!activeStep || !activeStep.isFieldWorkStep) {
-      return res.status(404).json({
-        success: false,
-        message: 'No active field work step found for this task'
-      });
-    }
-
-    const latestTrace = await LocationTrace.findOne({
-      task: task._id,
-      stepId: activeStep.stepId,
-      employee: task.assignedTo
-    }).sort({ recordedAt: -1 });
-
-    const employee = await User.findById(task.assignedTo)
-      .select('fullName username profilePicture currentLocation isOnline');
-
-    res.json({
-      success: true,
-      message: 'ok',
-      data: {
-        stepId: activeStep.stepId,
-        stepTitle: activeStep.title,
-        stepStatus: activeStep.status,
-        destination: activeStep.destinationLocation,
-        radiusMeters: activeStep.locationRadiusMeters,
-        employee,
-        latestLocation: latestTrace ? {
-          coordinates: latestTrace.location.coordinates,
-          accuracyMeters: latestTrace.accuracyMeters,
-          recordedAt: latestTrace.recordedAt,
-          batteryLevel: latestTrace.batteryLevel
-        } : null
-      }
-    });
-
-  } catch (error) {
-    console.error('Live location error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// ─── GET /api/tasks/:id/location-trace ── Manager: Full route ─────────
-router.get('/:id/location-trace', isManager, async (req, res) => {
-  try {
-    const task = await findTaskForManager(req.params.id, req.userId, req.user.organization);
-    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
-
-    const stepId = req.query.stepId;
-    let traceQuery = { task: task._id, employee: task.assignedTo };
-    if (stepId) traceQuery.stepId = stepId;
-
-    const traces = await LocationTrace.find(traceQuery)
-      .sort({ recordedAt: 1 })
-      .select('location accuracyMeters recordedAt batteryLevel stepId');
-
-    res.json({
-      success: true,
-      message: 'ok',
-      data: { traces, total: traces.length, stepId: stepId || 'all' }
-    });
-
-  } catch (error) {
-    console.error('Location trace error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
 // ═══════════════════════════════════════════════════════════════════════
 //  EMPLOYEE ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
 // ─── GET /api/tasks/my/tasks ── Employee: Get their tasks ─────────────
-// Filter options:
-//   today     → today's tasks + all pending (including overdue) + in_progress
-//   upcoming  → future pending tasks only
-//   active    → currently in_progress only
-//   completed → completed tasks only
-//   missed    → deadline passed but never completed (pending or in_progress)
+// Query params: ?filter=today|upcoming|active|completed|missed
 router.get('/my/tasks', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
@@ -781,24 +850,19 @@ router.get('/my/tasks', async (req, res) => {
     };
 
     if (filter === 'today') {
-      // Tasks scheduled today + any still in_progress + all overdue-pending
       query.$or = [
-        { startDatetime: { $gte: start, $lt: end } },          // scheduled today
-        { status: 'in_progress' },                              // active from any day
-        { status: 'pending', startDatetime: { $lt: end } }     // all pending (past + today)
+        { startDatetime: { $gte: start, $lt: end } },
+        { status: 'in_progress' },
+        { status: 'pending', startDatetime: { $lt: end } }
       ];
     } else if (filter === 'upcoming') {
-      // Future tasks not yet started
       query.startDatetime = { $gt: new Date() };
       query.status = 'pending';
     } else if (filter === 'active') {
-      // Currently being worked on
       query.status = 'in_progress';
     } else if (filter === 'completed') {
-      // Finished tasks
       query.status = 'completed';
     } else if (filter === 'missed') {
-      // Deadline passed but employee never finished
       query.endDatetime = { $lt: new Date() };
       query.status = { $in: ['pending', 'in_progress'] };
     }
@@ -834,14 +898,24 @@ router.get('/my/tasks', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/start ── Employee: Start task ────────────────
-router.post('/:id/start', async (req, res) => {
+// ─── POST /api/tasks/start ── Employee: Start task ────────────────────
+//  Body: { taskId, coordinates? }
+router.post('/start', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
 
-    const task = await findTaskForEmployee(req.params.id, req.userId, req.user.organization);
+    const { taskId, coordinates } = req.body;
+
+    if (!taskId) {
+      return res.status(400).json({ success: false, message: 'taskId is required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForEmployee(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
     if (task.status !== 'pending') {
@@ -867,7 +941,6 @@ router.post('/:id/start', async (req, res) => {
     });
 
     if (!attendance) {
-      const { coordinates } = req.body;
       attendance = new Attendance({
         organization: req.user.organization,
         employee: req.userId,
@@ -903,21 +976,31 @@ router.post('/:id/start', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps/:stepId/start ── Employee: Start step ──
-router.post('/:id/steps/:stepId/start', async (req, res) => {
+// ─── POST /api/tasks/steps/start ── Employee: Start a step ────────────
+//  Body: { taskId, stepId }
+router.post('/steps/start', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
 
-    const task = await findTaskForEmployee(req.params.id, req.userId, req.user.organization);
+    const { taskId, stepId } = req.body;
+
+    if (!taskId || !stepId) {
+      return res.status(400).json({ success: false, message: 'taskId and stepId are required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForEmployee(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
     if (task.status !== 'in_progress') {
       return res.status(400).json({ success: false, message: 'Task must be started before starting a step' });
     }
 
-    const stepIdx = task.steps.findIndex(s => s.stepId === req.params.stepId);
+    const stepIdx = task.steps.findIndex(s => s.stepId === stepId);
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
@@ -949,17 +1032,27 @@ router.post('/:id/steps/:stepId/start', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps/:stepId/reached ── Employee: Field reach
-router.post('/:id/steps/:stepId/reached', async (req, res) => {
+// ─── POST /api/tasks/steps/reached ── Employee: Mark reached ──────────
+//  Body: { taskId, stepId, coordinates }
+router.post('/steps/reached', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
 
-    const task = await findTaskForEmployee(req.params.id, req.userId, req.user.organization);
+    const { taskId, stepId, coordinates } = req.body;
+
+    if (!taskId || !stepId) {
+      return res.status(400).json({ success: false, message: 'taskId and stepId are required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForEmployee(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    const stepIdx = task.steps.findIndex(s => s.stepId === req.params.stepId);
+    const stepIdx = task.steps.findIndex(s => s.stepId === stepId);
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
@@ -975,7 +1068,6 @@ router.post('/:id/steps/:stepId/reached', async (req, res) => {
       });
     }
 
-    const { coordinates } = req.body;
     if (!coordinates || coordinates.length !== 2) {
       return res.status(400).json({ success: false, message: 'Current GPS coordinates are required' });
     }
@@ -1018,17 +1110,30 @@ router.post('/:id/steps/:stepId/reached', async (req, res) => {
   }
 });
 
-// ─── POST /api/tasks/:id/steps/:stepId/complete ── Employee: Submit step
-router.post('/:id/steps/:stepId/complete', async (req, res) => {
+// ─── POST /api/tasks/steps/complete ── Employee: Complete step ─────────
+//  Body: { taskId, stepId, photoUrl?, signatureData?, ... }
+router.post('/steps/complete', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
       return res.status(403).json({ success: false, message: 'Employee access only' });
     }
 
-    const task = await findTaskForEmployee(req.params.id, req.userId, req.user.organization);
+    const {
+      taskId, stepId, photoUrl, signatureData, signatureSignedBy,
+      signatureRole, currentLocation, employeeNotes
+    } = req.body;
+
+    if (!taskId || !stepId) {
+      return res.status(400).json({ success: false, message: 'taskId and stepId are required' });
+    }
+    if (!isValidObjectId(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId' });
+    }
+
+    const task = await findTaskForEmployee(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    const stepIdx = task.steps.findIndex(s => s.stepId === req.params.stepId);
+    const stepIdx = task.steps.findIndex(s => s.stepId === stepId);
     if (stepIdx === -1) return res.status(404).json({ success: false, message: 'Step not found' });
 
     const step = task.steps[stepIdx];
@@ -1046,9 +1151,6 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
         message: 'You must reach the destination before completing a field work step'
       });
     }
-
-    const { photoUrl, signatureData, signatureSignedBy, signatureRole,
-            currentLocation, employeeNotes } = req.body;
 
     const validationResult = task.validateStepSubmission(step.stepId, {
       photoUrl, signatureData, currentLocation
@@ -1116,7 +1218,8 @@ router.post('/:id/steps/:stepId/complete', async (req, res) => {
 //  LOCATION TRACKING ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── POST /api/tasks/location/ping ── Employee sends GPS ping ─────────
+// ─── POST /api/tasks/location/ping ── Employee: GPS ping ──────────────
+//  Body: { taskId, stepId, coordinates, accuracyMeters?, batteryLevel? }
 router.post('/location/ping', async (req, res) => {
   try {
     if (req.user.role !== 'employee') {
