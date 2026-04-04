@@ -872,7 +872,7 @@ router.get('/my/tasks', async (req, res) => {
         .populate('assignedTo', 'username fullName profilePicture isOnline')
         .populate('createdBy', 'username fullName profilePicture')
         .populate('room', 'name roomCode')
-        .sort({ startDatetime: 1 })
+        .sort({ startDatetime: -1 })
         .skip(skip)
         .limit(limit),
       Task.countDocuments(query)
