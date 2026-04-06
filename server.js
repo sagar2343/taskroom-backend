@@ -18,11 +18,10 @@ const server = http.createServer(app);          // wrap express in http.Server
 
 // ── Socket.IO setup ────────────────────────────────────────────────────────
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
-  transports:   ['websocket', 'polling'],
-  // ── FIX 3: tighter heartbeat so dead connections are detected in ≤40 s ──
-  pingTimeout:  20000,   // ← was 30000; server waits 20 s for pong
-  pingInterval: 10000,   // ← unchanged; server pings every 10 s
+  cors: {
+    origin: '*',                                // tighten in production
+    methods: ['GET', 'POST']
+  }
 });
 
 // Make io accessible to REST route handlers if ever needed
