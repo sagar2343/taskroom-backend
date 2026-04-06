@@ -322,6 +322,52 @@ router.get('/', isManager, async (req, res) => {
   }
 });
 
+// GET /api/tasks/active-status
+// Called by the employee app on splash / home screen.
+// Lightweight — no populate, no heavy queries.
+router.get('/active-status', async (req, res) => {
+  try {
+    if (req.user.role !== 'employee') {
+      return res.status(403).json({ success: false, message: 'Employee access only' });
+    }
+ 
+    // Find the ONE in_progress task for this employee
+    const task = await Task.findOne({
+      organization: req.user.organization,
+      assignedTo:   req.userId,
+      status:       'in_progress'
+    }).select('_id room isFieldWork steps');
+ 
+    if (!task) {
+      return res.json({
+        success: true,
+        data: { hasActiveTask: false, taskId: null, stepId: null, requiresTracking: false, roomId: null }
+      });
+    }
+ 
+    // Find the active step (in_progress / travelling / reached)
+    const activeStep = task.steps.find(s =>
+      ['in_progress', 'travelling', 'reached'].includes(s.status)
+    );
+ 
+    return res.json({
+      success: true,
+      data: {
+        hasActiveTask:    true,
+        taskId:           task._id.toString(),
+        stepId:           activeStep?.stepId ?? null,
+        requiresTracking: task.isFieldWork === true,
+        roomId:           task.room.toString(),
+      }
+    });
+ 
+  } catch (err) {
+    console.error('active-status error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 // ─── GET /api/tasks/dashboard ── Manager: Dashboard summary ──────────
 router.get('/dashboard', isManager, async (req, res) => {
   try {

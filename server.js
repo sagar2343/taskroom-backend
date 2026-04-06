@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
@@ -8,39 +10,50 @@ const organizationRoutes = require('./routes/organization');
 const roomRoutes = require('./routes/room');
 const taskRoutes = require('./routes/task');
 
-const app = express();
-app.use(express.json());
+// ── Socket handler ─────────────────────────────────────────────────────────
+const { registerSocketHandlers } = require('./socket/locationSocket');
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ Mongo error:", err.message));
+const app    = express();
+const server = http.createServer(app);          // wrap express in http.Server
 
-// Routes
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: "Backend is running"
-  });
+// ── Socket.IO setup ────────────────────────────────────────────────────────
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  transports:   ['websocket', 'polling'],
+  // ── FIX 3: tighter heartbeat so dead connections are detected in ≤40 s ──
+  pingTimeout:  20000,   // ← was 30000; server waits 20 s for pong
+  pingInterval: 10000,   // ← unchanged; server pings every 10 s
 });
 
-// Auth routes (public)
-app.use('/api/auth', authRoutes);
+// Make io accessible to REST route handlers if ever needed
+app.set('io', io);
 
-// User routes (protected)
-app.use('/api/user', userRoutes);
+// ── Middleware ─────────────────────────────────────────────────────────────
+app.use(express.json());
 
-// Organization routes (public) 
+
+// ── MongoDB ────────────────────────────────────────────────────────────────
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ Mongo error:', err.message));
+
+
+
+// ── REST routes ────────────────────────────────────────────────
+app.get('/', (req, res) => res.json({ success: true, message: 'Backend is running' }));
+app.use('/api/auth',         authRoutes);
+app.use('/api/user',         userRoutes);
 app.use('/api/organization', organizationRoutes);
-
-// Room routes (protected)
-app.use('/api/rooms', roomRoutes);
-
-// Task routes 
-app.use('/api/tasks', taskRoutes);
+app.use('/api/rooms',        roomRoutes);
+app.use('/api/tasks',        taskRoutes);
 
 
+// ── Socket.IO handlers ─────────────────────────────────────────────────────
+registerSocketHandlers(io);
+
+// ── Start ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
