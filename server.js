@@ -10,7 +10,6 @@ const organizationRoutes = require('./routes/organization');
 const roomRoutes = require('./routes/room');
 const taskRoutes = require('./routes/task');
 
-const websiteRoutes = require('./public/index');
 const path = require('path');
 
 
