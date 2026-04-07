@@ -10,6 +10,10 @@ const organizationRoutes = require('./routes/organization');
 const roomRoutes = require('./routes/room');
 const taskRoutes = require('./routes/task');
 
+const websiteRoutes = require('./public/index');
+const path = require('path');
+
+
 // ── Socket handler ─────────────────────────────────────────────────────────
 const { registerSocketHandlers } = require('./socket/locationSocket');
 
@@ -37,10 +41,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ Mongo error:', err.message));
 
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 // ── REST routes ────────────────────────────────────────────────
-app.get('/', (req, res) => res.json({ success: true, message: 'Backend is running' }));
+// app.get('/', (req, res) => res.json({ success: true, message: 'Backend is running' }));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.use('/api/auth',         authRoutes);
 app.use('/api/user',         userRoutes);
 app.use('/api/organization', organizationRoutes);
