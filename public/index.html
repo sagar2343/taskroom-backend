@@ -5,86 +5,123 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Task Room — Field Work Management Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────────────────── */
 :root{
   --primary:#137fec;--primary-light:#4a9ff5;--primary-glow:rgba(19,127,236,.18);
-  --bg:#0B1117;--surface:#161D26;--surface2:#1e2733;
-  --border:#242D38;--border2:#2d3a47;
-  --text:#fff;--text2:#94a3b8;--text3:#64748b;
-  --green:#10b981;--amber:#f59e0b;--red:#ef4444;--info:#3b82f6;
-  --r:14px;--r2:10px;--shadow:0 8px 32px rgba(0,0,0,.45);
+  --primary-subtle:rgba(19,127,236,.08);
+  --bg:#080d12;--surface:#0f1822;--surface2:#162030;--surface3:#1c2a3a;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#f0f6ff;--text2:#8ba3be;--text3:#4d6478;
+  --green:#10b981;--green-g:rgba(16,185,129,.12);
+  --amber:#f59e0b;--amber-g:rgba(245,158,11,.1);
+  --red:#ef4444;--red-g:rgba(239,68,68,.1);
+  --info:#3b82f6;--info-g:rgba(59,130,246,.1);
+  --purple:#8b5cf6;--purple-g:rgba(139,92,246,.1);
+  --r:14px;--r2:10px;--r3:20px;
+  --shadow:0 8px 32px rgba(0,0,0,.55);
+  --shadow-sm:0 2px 12px rgba(0,0,0,.35);
+  --transition:.18s cubic-bezier(.4,0,.2,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;}
 a{text-decoration:none;color:inherit}
 button{cursor:pointer;font-family:inherit;border:none;outline:none}
 input,textarea,select{font-family:inherit;outline:none}
-::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
 .w-full{width:100%}
-/* Nav */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(11,17,23,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;}
+code,tt,.mono{font-family:'JetBrains Mono',monospace}
+
+/* ─── KEYFRAMES ──────────────────────────────────────────────────────── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px var(--primary-glow)}50%{box-shadow:0 0 40px rgba(19,127,236,.3)}}
+
+/* ─── NAV ────────────────────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,13,18,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;}
 .nav-logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px var(--primary-glow);}
-.logo-icon svg{width:20px;height:20px}
-.logo-text{font-size:18px;font-weight:800;letter-spacing:-.4px}
-.nav-links{display:flex;align-items:center;gap:8px}
-.nav-link{color:var(--text2);font-size:14px;font-weight:500;padding:6px 14px;border-radius:8px;transition:all .2s;}
-.nav-link:hover{color:var(--text);background:var(--surface)}
-/* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;border-radius:10px;font-size:14px;font-weight:600;transition:all .2s;cursor:pointer;border:none;}
-.btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 14px var(--primary-glow)}
-.btn-primary:hover{background:var(--primary-light);transform:translateY(-1px)}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px var(--primary-glow);flex-shrink:0;}
+.logo-icon svg{width:18px;height:18px}
+.logo-text{font-size:17px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-link{color:var(--text2);font-size:14px;font-weight:500;padding:6px 14px;border-radius:8px;transition:all var(--transition);}
+.nav-link:hover{color:var(--text);background:var(--surface2)}
+
+/* ─── BUTTONS ────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 20px;border-radius:var(--r2);font-size:14px;font-weight:600;transition:all var(--transition);cursor:pointer;border:none;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;box-shadow:0 4px 16px var(--primary-glow);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(19,127,236,.35)}
+.btn-primary:active{transform:translateY(0)}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
-.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--surface)}
-.btn-sm{padding:6px 14px;font-size:13px}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--surface2)}
+.btn-danger{background:var(--red-g);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-danger:hover{background:rgba(239,68,68,.18)}
+.btn-success{background:var(--green-g);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.btn-success:hover{background:rgba(16,185,129,.18)}
+.btn-amber{background:var(--amber-g);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.btn-sm{padding:5px 13px;font-size:13px;border-radius:8px}
 .btn-lg{padding:14px 28px;font-size:15px;border-radius:12px}
 .btn-xl{padding:16px 36px;font-size:16px;font-weight:700;border-radius:14px}
-.btn-success{background:var(--green);color:#fff}
-.btn-danger{background:var(--red);color:#fff}
-/* Hero */
-.hero{padding:140px 24px 100px;text-align:center;position:relative;overflow:hidden;}
-.hero-glow{position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(19,127,236,.13) 0%,transparent 70%);pointer-events:none;}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.25);color:var(--primary-light);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;margin-bottom:28px;}
-.hero-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
-.hero h1{font-size:clamp(36px,6vw,72px);font-weight:900;line-height:1.08;letter-spacing:-2px;margin-bottom:24px;}
-.accent{background:linear-gradient(135deg,var(--primary),var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--text2);max-width:600px;margin:0 auto 44px;line-height:1.65;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-icon{padding:8px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);transition:all var(--transition);}
+.btn-icon:hover{background:var(--surface3);color:var(--text)}
+
+/* ─── HERO ───────────────────────────────────────────────────────────── */
+.hero{padding:130px 24px 90px;text-align:center;position:relative;overflow:hidden;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:48px 48px;opacity:.35;pointer-events:none;}
+.hero-glow{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:900px;height:700px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(19,127,236,.14) 0%,transparent 65%);pointer-events:none;}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(19,127,236,.09);border:1px solid rgba(19,127,236,.22);color:var(--primary-light);border-radius:99px;padding:6px 16px;font-size:12.5px;font-weight:600;margin-bottom:30px;letter-spacing:.2px;}
+.badge-pulse{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+.hero h1{font-size:clamp(38px,6.5vw,76px);font-weight:900;line-height:1.04;letter-spacing:-2.5px;margin-bottom:26px;position:relative;}
+.accent{background:linear-gradient(135deg,var(--primary-light),#60a5fa,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:clamp(15px,2vw,19px);color:var(--text2);max-width:560px;margin:0 auto 48px;line-height:1.7;font-weight:400;}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.hero-stats{display:flex;justify-content:center;gap:48px;flex-wrap:wrap;margin-top:72px;padding-top:40px;border-top:1px solid var(--border);}
+.hero-stats{display:flex;justify-content:center;gap:52px;flex-wrap:wrap;margin-top:80px;padding-top:44px;border-top:1px solid var(--border);}
 .stat-item{text-align:center}
-.stat-num{font-size:32px;font-weight:800;color:var(--primary-light);letter-spacing:-1px}
-.stat-lbl{font-size:13px;color:var(--text3);margin-top:2px}
-/* Sections */
-.section{padding:88px 24px;max-width:1180px;margin:0 auto}
-.section-bg{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.stat-num{font-size:34px;font-weight:900;color:var(--primary-light);letter-spacing:-1.5px}
+.stat-lbl{font-size:12.5px;color:var(--text3);margin-top:3px;font-weight:500}
+
+/* ─── SECTIONS ───────────────────────────────────────────────────────── */
+.section{padding:88px 24px;max-width:1200px;margin:0 auto}
 .section-header{text-align:center;margin-bottom:64px}
-.tag{display:inline-block;background:rgba(19,127,236,.1);color:var(--primary-light);border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px;}
-.section-header h2{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-1px;margin-bottom:14px}
-.section-header p{color:var(--text2);font-size:17px;max-width:520px;margin:0 auto}
-/* Feature grid */
+.tag{display:inline-block;background:var(--primary-subtle);color:var(--primary-light);border-radius:6px;padding:4px 12px;font-size:11.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;margin-bottom:16px;}
+.section-header h2{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1.2px;margin-bottom:14px}
+.section-header p{color:var(--text2);font-size:17px;max-width:520px;margin:0 auto;line-height:1.65}
+
+/* ─── FEATURE CARDS ──────────────────────────────────────────────────── */
 .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;}
-.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:border-color .2s,transform .2s;position:relative;overflow:hidden;}
-.feature-card:hover{border-color:var(--primary);transform:translateY(-3px)}
-.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--primary-light));opacity:0;transition:opacity .2s;}
-.feature-card:hover::before{opacity:1}
-.feat-icon{width:48px;height:48px;border-radius:12px;background:rgba(19,127,236,.12);border:1px solid rgba(19,127,236,.2);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:22px;}
-.feature-card h3{font-size:17px;font-weight:700;margin-bottom:8px}
-.feature-card p{color:var(--text2);font-size:14px;line-height:1.6}
-/* Steps */
-.steps{display:flex;justify-content:center;gap:0;flex-wrap:wrap;}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:all .22s;position:relative;overflow:hidden;}
+.feature-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(19,127,236,.04),transparent);opacity:0;transition:opacity .22s;}
+.feature-card:hover{border-color:rgba(19,127,236,.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4);}
+.feature-card:hover::after{opacity:1}
+.feat-icon{width:46px;height:46px;border-radius:12px;background:var(--primary-subtle);border:1px solid rgba(19,127,236,.18);display:flex;align-items:center;justify-content:center;margin-bottom:18px;font-size:22px;}
+.feature-card h3{font-size:16.5px;font-weight:700;margin-bottom:9px;letter-spacing:-.3px}
+.feature-card p{color:var(--text2);font-size:14px;line-height:1.65}
+.feature-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:12px;letter-spacing:.4px;}
+
+/* ─── STEPS ──────────────────────────────────────────────────────────── */
+.steps{display:flex;justify-content:center;gap:0;flex-wrap:wrap;position:relative;}
+.steps::before{content:'';position:absolute;top:26px;left:50%;transform:translateX(-50%);width:70%;height:1px;background:linear-gradient(90deg,transparent,var(--primary-light),transparent);opacity:.3;}
 .step{flex:1;min-width:200px;max-width:260px;text-align:center;padding:0 20px;}
-.step-num{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 0 0 8px rgba(19,127,236,.12);}
+.step-num{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 0 0 8px rgba(19,127,236,.1),0 4px 16px var(--primary-glow);}
 .step h3{font-size:16px;font-weight:700;margin-bottom:8px}
-.step p{color:var(--text2);font-size:13px}
-/* Pricing */
-.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:960px;margin:0 auto}
-.pricing-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;position:relative;}
-.pricing-card.featured{border-color:var(--primary);background:linear-gradient(160deg,var(--surface),rgba(19,127,236,.06));box-shadow:0 0 40px rgba(19,127,236,.12);}
-.p-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 14px;border-radius:99px;white-space:nowrap;}
-.p-name{font-size:14px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
-.p-price{font-size:44px;font-weight:900;letter-spacing:-2px;margin-bottom:4px}
+.step p{color:var(--text2);font-size:13.5px;line-height:1.6}
+
+/* ─── PRICING ────────────────────────────────────────────────────────── */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:980px;margin:0 auto}
+.pricing-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;position:relative;transition:all .22s;}
+.pricing-card.featured{border-color:rgba(19,127,236,.4);background:linear-gradient(160deg,var(--surface),rgba(19,127,236,.06));box-shadow:0 0 50px rgba(19,127,236,.1);}
+.p-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,var(--primary),var(--primary-light));color:#fff;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 14px;border-radius:99px;white-space:nowrap;}
+.p-name{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px}
+.p-price{font-size:46px;font-weight:900;letter-spacing:-2px;margin-bottom:4px}
 .p-price span{font-size:16px;font-weight:500;color:var(--text2)}
 .p-period{font-size:13px;color:var(--text3);margin-bottom:24px}
 .p-features{list-style:none;margin-bottom:28px}
@@ -93,146 +130,346 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(11,17,23,.9)
 .p-features li .ck{color:var(--green);font-size:15px;flex-shrink:0}
 .p-features li .xx{color:var(--text3);font-size:15px;flex-shrink:0}
 .p-features li.dim{color:var(--text3)}
-.cs-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.1);color:var(--amber);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:auto;flex-shrink:0;}
-/* CTA */
-.cta-sec{text-align:center;background:linear-gradient(160deg,rgba(19,127,236,.08),rgba(74,159,245,.04));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:88px 24px;}
-.cta-sec h2{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-1px;margin-bottom:16px}
-.cta-sec p{color:var(--text2);font-size:17px;max-width:480px;margin:0 auto 36px}
-/* Footer */
-footer{padding:48px 24px 32px;max-width:1180px;margin:0 auto;border-top:1px solid var(--border);}
+
+/* ─── CTA ────────────────────────────────────────────────────────────── */
+.cta-sec{text-align:center;padding:88px 24px;position:relative;overflow:hidden;}
+.cta-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(19,127,236,.07) 0%,transparent 70%);pointer-events:none;}
+.cta-sec h2{font-size:clamp(28px,4vw,46px);font-weight:900;letter-spacing:-1.5px;margin-bottom:16px}
+.cta-sec p{color:var(--text2);font-size:17px;max-width:480px;margin:0 auto 36px;line-height:1.65}
+
+/* ─── FOOTER ─────────────────────────────────────────────────────────── */
+footer{padding:48px 24px 32px;max-width:1200px;margin:0 auto;border-top:1px solid var(--border);}
 .footer-top{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;margin-bottom:36px}
-.footer-brand p{color:var(--text2);font-size:14px;max-width:240px;margin-top:10px}
-.footer-links h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:14px}
+.footer-brand p{color:var(--text2);font-size:14px;max-width:240px;margin-top:10px;line-height:1.6}
+.footer-links h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:14px}
 .footer-links ul{list-style:none}
-.footer-links ul li{margin-bottom:8px}
-.footer-links ul li a{font-size:14px;color:var(--text3);transition:color .2s}
+.footer-links ul li{margin-bottom:9px}
+.footer-links ul li a{font-size:14px;color:var(--text3);transition:color var(--transition)}
 .footer-links ul li a:hover{color:var(--text)}
 .footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
 .footer-bottom p{color:var(--text3);font-size:13px}
-/* Overlay/Modal */
-.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;visibility:hidden;transition:all .25s;}
+
+/* ─── OVERLAY / MODAL ────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;visibility:hidden;transition:all .25s;}
 .overlay.open{opacity:1;visibility:visible}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:32px;transform:translateY(20px);transition:transform .25s;position:relative;}
-.overlay.open .modal{transform:translateY(0)}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);width:100%;max-width:540px;max-height:92vh;overflow-y:auto;padding:32px;transform:translateY(24px) scale(.98);transition:transform .28s cubic-bezier(.34,1.56,.64,1);position:relative;}
+.modal-lg{max-width:760px}
+.modal-xl{max-width:960px}
+.overlay.open .modal{transform:translateY(0) scale(1)}
 .modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
-.modal-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
-.modal-close{width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;}
-.modal-close:hover{background:var(--border);color:var(--text)}
-/* Form */
+.modal-title{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.modal-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.modal-close{width:32px;height:32px;border-radius:8px;background:var(--surface3);border:1px solid var(--border);color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all var(--transition);}
+.modal-close:hover{background:var(--border2);color:var(--text)}
+
+/* ─── FORMS ──────────────────────────────────────────────────────────── */
 .fg{margin-bottom:18px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-label{display:block;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px}
-input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);transition:border-color .2s,box-shadow .2s;}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+label{display:block;font-size:11.5px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px}
+input[type=text],input[type=email],input[type=tel],input[type=password],input[type=datetime-local],input[type=number],textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:11px 14px;font-size:14px;color:var(--text);transition:border-color var(--transition),box-shadow var(--transition);}
 input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow);}
 input::placeholder,textarea::placeholder{color:var(--text3)}
-select option{background:var(--surface)}
+select option{background:var(--surface);color:var(--text)}
 .f-hint{font-size:12px;color:var(--text3);margin-top:5px}
 .f-err{font-size:12px;color:var(--red);margin-top:5px;display:none}
-.field-error input{border-color:var(--red)}
+.field-error input,.field-error select,.field-error textarea{border-color:var(--red)!important}
 .field-error .f-err{display:block}
-/* Alert */
-.alert{padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px;}
-.alert-success{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7}
-.alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
-.alert-info{background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.25);color:#93c5fd}
-/* Dashboard */
-#dashboard-view{display:none;min-height:100vh;padding-top:64px}
-.dash-layout{display:flex;min-height:calc(100vh - 64px)}
-.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;}
-.sb-org{padding:0 16px 20px;border-bottom:1px solid var(--border);margin-bottom:12px}
-.sb-org-name{font-size:14px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-code{display:inline-flex;align-items:center;gap:4px;background:rgba(19,127,236,.1);color:var(--primary-light);font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;cursor:pointer;}
+.form-check{display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 16px;border-radius:var(--r2);border:1px solid var(--border);transition:all var(--transition);}
+.form-check:hover{border-color:var(--border2);background:var(--surface2)}
+.form-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;}
+.form-check-info h6{font-size:13.5px;font-weight:600}
+.form-check-info p{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* ─── ALERTS ─────────────────────────────────────────────────────────── */
+.alert{padding:12px 16px;border-radius:var(--r2);font-size:13.5px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;animation:fadeUp .2s ease;}
+.alert-success{background:var(--green-g);border:1px solid rgba(16,185,129,.22);color:#6ee7b7}
+.alert-error{background:var(--red-g);border:1px solid rgba(239,68,68,.22);color:#fca5a5}
+.alert-info{background:var(--info-g);border:1px solid rgba(59,130,246,.22);color:#93c5fd}
+.alert-amber{background:var(--amber-g);border:1px solid rgba(245,158,11,.22);color:#fcd34d}
+
+/* ─── DASHBOARD LAYOUT ───────────────────────────────────────────────── */
+#dashboard-view{display:none;min-height:100vh;padding-top:60px}
+.dash-layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;transition:width .25s;}
+.sb-profile{padding:0 14px 18px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sb-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-prof-row{display:flex;align-items:center;gap:10px}
+.sb-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-top:2px;display:inline-block;letter-spacing:.3px;}
+.sb-role.manager{background:var(--primary-subtle);color:var(--primary-light)}
+.sb-role.employee{background:var(--green-g);color:var(--green)}
+.sb-org-name{font-size:11.5px;color:var(--text3);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-code{display:inline-flex;align-items:center;gap:5px;background:var(--primary-subtle);color:var(--primary-light);font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;letter-spacing:.5px;cursor:pointer;margin-top:5px;transition:background var(--transition);}
+.sb-code:hover{background:rgba(19,127,236,.15)}
 .sb-nav{padding:0 8px}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:2px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:2px;user-select:none;}
 .sb-item:hover{background:var(--surface2);color:var(--text)}
-.sb-item.active{background:rgba(19,127,236,.12);color:var(--primary-light);font-weight:600}
-.sb-item .ico{font-size:17px;width:20px;text-align:center}
-.sb-sec{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:14px 20px 6px;}
-.dash-main{flex:1;padding:32px;overflow-x:hidden;min-width:0}
+.sb-item.active{background:var(--primary-subtle);color:var(--primary-light);font-weight:600}
+.sb-item .ico{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sb-badge{margin-left:auto;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;min-width:20px;text-align:center;}
+.sb-badge.amber{background:var(--amber)}
+.sb-badge.red{background:var(--red)}
+.sb-sec{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.1px;text-transform:uppercase;padding:14px 20px 6px;}
+.sb-divider{height:1px;background:var(--border);margin:8px 14px;}
+.dash-main{flex:1;padding:28px 32px;overflow-x:hidden;min-width:0}
 .dash-page{display:none}
-.dash-page.active{display:block}
-/* Stat cards */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
-.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
-.sc-label{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-.sc-value{font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
-.sc-sub{font-size:12px;color:var(--text3)}
-.c-primary{color:var(--primary-light)}.c-green{color:var(--green)}.c-amber{color:var(--amber)}.c-red{color:var(--red)}
-/* Org card */
-.org-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-bottom:20px;}
-.org-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
-.org-avatar{width:64px;height:64px;border-radius:16px;flex-shrink:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;box-shadow:0 4px 16px var(--primary-glow);}
-.org-info h2{font-size:22px;font-weight:800;margin-bottom:4px}
-.org-info p{color:var(--text2);font-size:14px}
-.code-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.25);color:var(--primary-light);font-size:13px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
-.code-chip:hover{background:rgba(19,127,236,.18)}
-.org-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.dash-page.active{display:block;animation:fadeUp .2s ease}
+
+/* ─── PAGE HEADERS ───────────────────────────────────────────────────── */
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-hdr-left h1{font-size:22px;font-weight:800;margin-bottom:3px;letter-spacing:-.4px}
+.page-hdr-left p{color:var(--text2);font-size:13.5px}
+.page-hdr-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ─── STAT CARDS ─────────────────────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:border-color var(--transition);}
+.sc:hover{border-color:var(--border2)}
+.sc::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.06;transform:translate(20px,-20px)}
+.sc.c-blue::before{background:var(--primary)}
+.sc.c-green::before{background:var(--green)}
+.sc.c-amber::before{background:var(--amber)}
+.sc.c-red::before{background:var(--red)}
+.sc.c-purple::before{background:var(--purple)}
+.sc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;}
+.sc.c-blue .sc-icon{background:var(--primary-subtle)}
+.sc.c-green .sc-icon{background:var(--green-g)}
+.sc.c-amber .sc-icon{background:var(--amber-g)}
+.sc.c-red .sc-icon{background:var(--red-g)}
+.sc.c-purple .sc-icon{background:var(--purple-g)}
+.sc-label{font-size:11.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.sc-value{font-size:30px;font-weight:900;letter-spacing:-1px;margin-bottom:3px}
+.sc.c-blue .sc-value{color:var(--primary-light)}
+.sc.c-green .sc-value{color:var(--green)}
+.sc.c-amber .sc-value{color:var(--amber)}
+.sc.c-red .sc-value{color:var(--red)}
+.sc.c-purple .sc-value{color:var(--purple)}
+.sc-sub{font-size:11.5px;color:var(--text3)}
+
+/* ─── CARDS ──────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-title .ico{font-size:16px}
+
+/* ─── ORG ────────────────────────────────────────────────────────────── */
+.org-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:26px;margin-bottom:18px;}
+.org-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+.org-avatar{width:60px;height:60px;border-radius:14px;flex-shrink:0;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;box-shadow:0 4px 16px var(--primary-glow);}
+.org-info h2{font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px}
+.org-info p{color:var(--text2);font-size:13.5px}
+.code-chip{display:inline-flex;align-items:center;gap:6px;background:var(--primary-subtle);border:1px solid rgba(19,127,236,.22);color:var(--primary-light);font-size:13px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all var(--transition);letter-spacing:.5px;}
+.code-chip:hover{background:rgba(19,127,236,.15)}
+.org-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
 .org-di label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.org-di .val{font-size:15px;font-weight:500;color:var(--text)}
-.status-badge{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;gap:5px}
-.status-badge.active{background:rgba(16,185,129,.1);color:var(--green)}
-.status-badge.inactive{background:rgba(245,158,11,.1);color:var(--amber)}
-.status-badge.suspended{background:rgba(239,68,68,.1);color:var(--red)}
-/* Code display */
-.code-display{background:var(--bg);border:2px dashed var(--primary);border-radius:12px;padding:18px;text-align:center;margin:20px 0;cursor:pointer}
-.code-display .big-code{font-size:36px;font-weight:900;letter-spacing:6px;color:var(--primary-light);font-family:monospace;}
+.org-di .val{font-size:14.5px;font-weight:500;color:var(--text)}
+.code-display{background:var(--surface2);border:1.5px dashed rgba(19,127,236,.35);border-radius:14px;padding:20px;text-align:center;margin:20px 0;cursor:pointer;transition:border-color var(--transition);}
+.code-display:hover{border-color:rgba(19,127,236,.6)}
+.code-display .big-code{font-size:38px;font-weight:900;letter-spacing:6px;color:var(--primary-light);font-family:'JetBrains Mono',monospace;}
 .code-display p{font-size:12px;color:var(--text3);margin-top:6px}
-/* Table */
+
+/* ─── STATUS BADGES ──────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.2px;}
+.badge-active{background:var(--green-g);color:var(--green)}
+.badge-inactive{background:var(--amber-g);color:var(--amber)}
+.badge-suspended{background:var(--red-g);color:var(--red)}
+.badge-pending{background:rgba(100,116,120,.12);color:#94a3b8}
+.badge-in-progress{background:var(--primary-subtle);color:var(--primary-light)}
+.badge-completed{background:var(--green-g);color:var(--green)}
+.badge-cancelled{background:var(--red-g);color:var(--red)}
+.badge-overdue{background:rgba(239,68,68,.15);color:#f87171}
+.badge-missed{background:var(--amber-g);color:var(--amber)}
+.badge-high{background:var(--red-g);color:var(--red)}
+.badge-medium{background:var(--amber-g);color:var(--amber)}
+.badge-low{background:var(--green-g);color:var(--green)}
+.badge-manager{background:var(--primary-subtle);color:var(--primary-light)}
+.badge-employee{background:var(--green-g);color:var(--green)}
+
+/* ─── TABLE ──────────────────────────────────────────────────────────── */
 .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
-.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
-.tbl-hdr h3{font-size:16px;font-weight:700}
-.tbl-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:200px;}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.tbl-hdr h3{font-size:15px;font-weight:700}
+.tbl-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tbl-search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;min-width:190px;transition:border-color var(--transition);}
+.tbl-search:focus-within{border-color:var(--primary)}
 .tbl-search input{background:none;border:none;font-size:13px;color:var(--text);flex:1;min-width:0}
 table{width:100%;border-collapse:collapse}
-th{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:12px 16px;text-align:left;background:var(--surface2);}
-td{padding:13px 16px;font-size:14px;border-top:1px solid var(--border);vertical-align:middle;}
-tr:hover td{background:rgba(255,255,255,.02)}
-.m-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}
-.role-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;}
-.role-badge.manager{background:rgba(19,127,236,.12);color:var(--primary-light)}
-.role-badge.employee{background:rgba(16,185,129,.1);color:var(--green)}
-.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.dot.on{background:var(--green)}.dot.off{background:var(--text3)}
-.empty{padding:48px;text-align:center;color:var(--text3);font-size:14px}
-/* Spinner */
-.spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto;}
-.spin-sm{width:16px;height:16px}
-.loading{display:flex;align-items:center;justify-content:center;padding:40px}
-/* Toggle */
-.settings-sec{margin-bottom:28px}
-.settings-sec h4{font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+th{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:11px 16px;text-align:left;background:var(--surface2);white-space:nowrap;}
+td{padding:12px 16px;font-size:13.5px;border-top:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.015)}
+.tbl-empty{padding:48px;text-align:center;color:var(--text3);font-size:14px}
+.avatar{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+
+/* ─── PAGINATION ─────────────────────────────────────────────────────── */
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 20px;border-top:1px solid var(--border);}
+.pg-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:13px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;transition:all var(--transition);}
+.pg-btn:hover:not(:disabled){background:var(--surface3);color:var(--text);border-color:var(--border2)}
+.pg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ─── SPINNER ────────────────────────────────────────────────────────── */
+.spinner{width:24px;height:24px;border:2.5px solid var(--border2);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto;}
+.spinner-sm{width:16px;height:16px;border-width:2px}
+.loading{display:flex;align-items:center;justify-content:center;padding:44px;gap:12px}
+.loading-text{font-size:14px;color:var(--text3)}
+
+/* ─── SETTINGS ───────────────────────────────────────────────────────── */
+.settings-sec{margin-bottom:26px}
+.settings-sec h4{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
 .toggle-row:last-child{border:none}
 .toggle-row .tr-info h5{font-size:14px;font-weight:600}
 .toggle-row .tr-info p{font-size:12px;color:var(--text3);margin-top:2px}
-.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
-.t-slider{position:absolute;inset:0;cursor:pointer;background:var(--border2);border-radius:99px;transition:background .2s;}
-.t-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
-.toggle input:checked + .t-slider{background:var(--primary)}
-.toggle input:checked + .t-slider::before{transform:translateX(20px)}
-/* Pagination */
-.pagination{display:flex;align-items:center;gap:6px;padding:14px 16px;justify-content:flex-end}
-.pg-btn{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;}
-.pg-btn:hover{background:var(--border);color:var(--text)}
-.pg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.pg-btn:disabled{opacity:.4;cursor:not-allowed}
-/* Success modal */
-.success-icon{width:72px;height:72px;border-radius:50%;background:rgba(16,185,129,.12);border:2px solid rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;}
-/* Animations */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-/* Responsive */
-@media(max-width:768px){
-  .nav-links .nav-link{display:none}.form-row{grid-template-columns:1fr}
-  .hero{padding:110px 16px 72px}.sidebar{display:none}.dash-main{padding:20px 16px}
-  .hero-stats{gap:28px}.steps{flex-direction:column;align-items:center;gap:24px}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border-radius:12px;transition:all .2s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;left:3px;top:3px;transition:all .2s;}
+.toggle input:checked+.toggle-slider{background:var(--primary)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px)}
+
+/* ─── ROOM CARDS ─────────────────────────────────────────────────────── */
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.room-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden;}
+.room-card:hover{border-color:rgba(19,127,236,.3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.room-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.room-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 4px 12px var(--primary-glow);}
+.room-name{font-size:15px;font-weight:700;margin-bottom:4px;letter-spacing:-.2px}
+.room-code{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--primary-light);font-weight:600;letter-spacing:.5px}
+.room-desc{font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.room-stats{display:flex;gap:16px;border-top:1px solid var(--border);padding-top:14px;margin-top:auto}
+.room-stat{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.room-stat strong{color:var(--text);font-weight:700}
+.room-cat-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:var(--primary-subtle);color:var(--primary-light);text-transform:capitalize;}
+
+/* ─── TASK ITEMS ─────────────────────────────────────────────────────── */
+.task-row{cursor:pointer;transition:background var(--transition)}
+.task-row:hover td{background:rgba(19,127,236,.03)!important}
+.task-title-cell{font-weight:600;font-size:13.5px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.task-emp{display:flex;align-items:center;gap:8px}
+.online-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.online-dot.on{background:var(--green)}
+.online-dot.off{background:var(--text3)}
+.progress-bar{width:80px;height:5px;background:var(--surface3);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:var(--green);transition:width .4s}
+.progress-fill.amber{background:var(--amber)}
+.progress-fill.red{background:var(--red)}
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.filter-tab{padding:5px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--text2);transition:all var(--transition);}
+.filter-tab:hover{color:var(--text);border-color:var(--border2)}
+.filter-tab.active{background:var(--primary-subtle);border-color:rgba(19,127,236,.3);color:var(--primary-light)}
+
+/* ─── TASK DETAIL PANEL ──────────────────────────────────────────────── */
+.detail-panel{position:fixed;top:60px;right:0;width:480px;height:calc(100vh - 60px);background:var(--surface);border-left:1px solid var(--border);z-index:300;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column;}
+.detail-panel.open{transform:translateX(0);box-shadow:-8px 0 40px rgba(0,0,0,.4)}
+.panel-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--surface);z-index:1;}
+.panel-hdr-info{flex:1;min-width:0}
+.panel-title{font-size:17px;font-weight:800;letter-spacing:-.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel-sub{font-size:12.5px;color:var(--text2);margin-top:3px}
+.panel-body{padding:20px 24px;flex:1}
+.panel-sec{margin-bottom:20px}
+.panel-sec-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+.info-row:last-child{border:none}
+.info-row .label{color:var(--text3);font-weight:500}
+.info-row .val{font-weight:600;text-align:right}
+.prog-wrap{margin-top:8px}
+.prog-label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px}
+.prog-bar{height:7px;background:var(--surface3);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--primary-light));transition:width .6s}
+
+/* ─── STEP TIMELINE ──────────────────────────────────────────────────── */
+.step-timeline{display:flex;flex-direction:column;gap:0}
+.step-item{display:flex;gap:12px;position:relative}
+.step-item:not(:last-child) .step-line{content:'';position:absolute;left:13px;top:28px;width:2px;height:calc(100% - 10px);background:var(--border)}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:2px;position:relative;z-index:1;}
+.step-dot.done{background:var(--green);color:#fff}
+.step-dot.active{background:var(--primary);color:#fff;box-shadow:0 0 0 4px var(--primary-subtle),0 0 16px var(--primary-glow);}
+.step-dot.pending{background:var(--surface3);color:var(--text3);border:2px solid var(--border)}
+.step-dot.skipped{background:var(--surface3);color:var(--text3)}
+.step-content{flex:1;padding-bottom:16px}
+.step-title{font-size:13.5px;font-weight:700;margin-bottom:3px}
+.step-time{font-size:11.5px;color:var(--text3)}
+.step-ev{font-size:12px;color:var(--text2);margin-top:6px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+
+/* ─── EMPLOYEE ACTIVITY ──────────────────────────────────────────────── */
+.emp-activity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.emp-ac{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;display:flex;align-items:center;gap:12px}
+.emp-ac .avatar{width:40px;height:40px;border-radius:10px}
+
+/* ─── QUICK ACTIONS ──────────────────────────────────────────────────── */
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.qa-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;cursor:pointer;transition:all var(--transition);display:flex;align-items:center;gap:12px}
+.qa-item:hover{border-color:rgba(19,127,236,.25);background:var(--surface3);transform:translateX(2px)}
+.qa-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+
+/* ─── TODAY TASKS ────────────────────────────────────────────────────── */
+.today-task{padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:all var(--transition);margin-bottom:8px;}
+.today-task:hover{border-color:rgba(19,127,236,.25);background:var(--surface3)}
+.today-task-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.today-task-name{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today-task-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3)}
+
+/* ─── ROOM DETAIL PANEL ──────────────────────────────────────────────── */
+.tab-nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:8px 16px;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all var(--transition);}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--primary-light);border-bottom-color:var(--primary)}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .15s ease}
+
+/* ─── CREATE TASK WIZARD ─────────────────────────────────────────────── */
+.wizard-steps{display:flex;gap:0;margin-bottom:28px;position:relative}
+.wizard-steps::before{content:'';position:absolute;top:16px;left:0;right:0;height:2px;background:var(--border)}
+.wz-step{flex:1;text-align:center;position:relative}
+.wz-dot{width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text3);margin:0 auto 8px;position:relative;z-index:1;transition:all .25s;}
+.wz-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.wz-dot.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 0 0 4px var(--primary-subtle)}
+.wz-label{font-size:11.5px;font-weight:600;color:var(--text3)}
+.wz-label.active{color:var(--primary-light)}
+.wizard-page{display:none}
+.wizard-page.active{display:block;animation:fadeUp .15s ease}
+.member-select-list{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto}
+.member-select-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r2);border:1px solid var(--border);cursor:pointer;transition:all var(--transition);}
+.member-select-item:hover{border-color:var(--border2);background:var(--surface2)}
+.member-select-item.selected{border-color:rgba(19,127,236,.4);background:var(--primary-subtle)}
+.member-select-item .check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--transition);margin-left:auto;}
+.member-select-item.selected .check{background:var(--primary);border-color:var(--primary);color:#fff;font-size:12px;}
+.step-form-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:10px}
+.step-form-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.step-form-num{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ─── MISC ───────────────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+.empty-state{padding:60px 20px;text-align:center}
+.empty-icon{font-size:52px;margin-bottom:16px;opacity:.5}
+.empty-state h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.empty-state p{color:var(--text2);font-size:14px;max-width:320px;margin:0 auto 20px}
+.back-btn{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;transition:color var(--transition);}
+.back-btn:hover{color:var(--text)}
+
+/* ─── MOBILE SIDEBAR TOGGLE ──────────────────────────────────────────── */
+#sb-toggle{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px;cursor:pointer;color:var(--text2)}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:60px;z-index:150;transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0);box-shadow:8px 0 40px rgba(0,0,0,.5)}
+  .dash-main{padding:20px 16px}
+  #sb-toggle{display:flex}
+  .detail-panel{width:100%}
+  .form-row,.form-row3{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .rooms-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .qa-grid{grid-template-columns:1fr}
+  .hero-stats{gap:28px}
+  .hero-btns{flex-direction:column;align-items:center}
 }
 </style>
 </head>
 <body>
 
+<!-- ═══════════════════════════ NAV ════════════════════════════════════ -->
 <nav id="main-nav">
   <div class="nav-logo">
     <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
@@ -243,201 +480,241 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <a href="#how-it-works" class="nav-link">How it works</a>
     <a href="#pricing" class="nav-link">Pricing</a>
     <button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button>
-    <button class="btn btn-primary btn-sm" onclick="openCreateOrg()">Create Organization</button>
+    <button class="btn btn-primary btn-sm" onclick="openCreateOrg()">🚀 Create Org</button>
   </div>
 </nav>
 
-<!-- LANDING -->
+<!-- ═══════════════════════ LANDING ════════════════════════════════════ -->
 <div id="landing-view">
+
+<!-- Hero -->
 <section class="hero">
+  <div class="hero-grid"></div>
   <div class="hero-glow"></div>
-  <div class="hero-badge"><span class="dot"></span> Now available on iOS &amp; Android</div>
-  <h1>Manage Field Teams<br/><span class="accent">Without the Chaos</span></h1>
-  <p class="hero-sub">Task Room is the complete field work management platform. Assign tasks, track live GPS, capture proof, and monitor your entire field team in real time.</p>
-  <div class="hero-btns">
-    <button class="btn btn-primary btn-xl" onclick="openCreateOrg()">&#127968; Create Your Organization</button>
-    <a href="#how-it-works" class="btn btn-ghost btn-xl">See how it works</a>
-  </div>
-  <div class="hero-stats">
-    <div class="stat-item"><div class="stat-num" id="stat-orgs">—</div><div class="stat-lbl">Organizations</div></div>
-    <div class="stat-item"><div class="stat-num">30s</div><div class="stat-lbl">GPS Update Interval</div></div>
-    <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">Proof Captured</div></div>
-    <div class="stat-item"><div class="stat-num">Free</div><div class="stat-lbl">To Get Started</div></div>
+  <div style="position:relative;z-index:1;width:100%;max-width:900px">
+    <div class="hero-badge"><span class="badge-pulse"></span> Live GPS tracking &amp; full task accountability</div>
+    <h1>Manage your field team<br/><span class="accent">with total control</span></h1>
+    <p class="hero-sub">Create tasks, track employees in real-time, collect proof of work. Task Room gives managers complete visibility over field operations from one dashboard.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary btn-xl" onclick="openCreateOrg()">🚀 Create Organization — Free</button>
+      <button class="btn btn-ghost btn-xl" onclick="showLogin()">Sign In to Dashboard</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">GPS</div><div class="stat-lbl">Live location pings</div></div>
+      <div class="stat-item"><div class="stat-num">📸</div><div class="stat-lbl">Photo proof of work</div></div>
+      <div class="stat-item"><div class="stat-num">✍️</div><div class="stat-lbl">Digital signatures</div></div>
+      <div class="stat-item"><div class="stat-num">📊</div><div class="stat-lbl">Real-time analytics</div></div>
+    </div>
   </div>
 </section>
 
-<section id="features">
-<div class="section">
+<!-- Features -->
+<div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<section class="section" id="features">
   <div class="section-header">
-    <span class="tag">Features</span>
-    <h2>Everything your field team needs</h2>
-    <p>Built for managers who need accountability and employees who need clarity.</p>
+    <div class="tag">Features</div>
+    <h2>Everything you need to run field teams</h2>
+    <p>Built for managers who need accountability, not just scheduling software.</p>
   </div>
   <div class="features-grid">
-    <div class="feature-card"><div class="feat-icon">&#128205;</div><h3>Live GPS Tracking</h3><p>Track your field team in real time on a live map. WebSocket-powered updates every few seconds — no polling, no delays.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#9989;</div><h3>Step-by-Step Tasks</h3><p>Break tasks into ordered steps with deadlines, destinations, and validations. Employees follow a clear workflow every time.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#128247;</div><h3>Proof Collection</h3><p>Require photo proof, digital signatures, and GPS location on task completion. Every step is fully auditable.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#128506;</div><h3>Destination Check</h3><p>Pin a destination on the map. Employee must physically arrive within a defined radius before completing the step.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#128202;</div><h3>Manager Dashboard</h3><p>See all active tasks, employee locations, step progress, and completion evidence from one unified view.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#127970;</div><h3>Multi-Tenant Rooms</h3><p>Organize your workforce into rooms. Each room has its own tasks, members, and managers with full isolation.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#128267;</div><h3>Background Tracking</h3><p>Location updates continue when the app is in background or screen is off — powered by a foreground service.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#9997;</div><h3>Digital Signatures</h3><p>Collect signatures from customers, supervisors, or managers directly on mobile as proof of service delivery.</p></div>
-    <div class="feature-card"><div class="feat-icon">&#128200;</div><h3>Route History</h3><p>View the complete GPS path an employee travelled. Every 20-second ping is stored and visualized on a live map.</p></div>
+    <div class="feature-card"><div class="feat-icon">📍</div><h3>Live GPS Tracking</h3><p>Employees' GPS pings every 30 seconds. View live location and full route traces from the manager dashboard.</p><span class="feature-tag" style="background:var(--green-g);color:var(--green)">Real-time</span></div>
+    <div class="feature-card"><div class="feat-icon">📋</div><h3>Multi-Step Tasks</h3><p>Break tasks into ordered steps with individual deadlines. Each step can require photo proof, signatures, or location check-ins.</p></div>
+    <div class="feature-card"><div class="feat-icon">📸</div><h3>Photo Proof</h3><p>Require employees to capture photos at each step. Evidence is stored and visible to managers in real-time.</p></div>
+    <div class="feature-card"><div class="feat-icon">✍️</div><h3>Digital Signatures</h3><p>Collect customer or supervisor signatures digitally. Signature images are attached to task completion records.</p></div>
+    <div class="feature-card"><div class="feat-icon">🏠</div><h3>Room-Based Teams</h3><p>Organize employees into rooms by project, region, or department. Managers control who's in each room.</p></div>
+    <div class="feature-card"><div class="feat-icon">📊</div><h3>Manager Dashboard</h3><p>See all active tasks, employee status, completion rates, and today's activity at a glance. No guesswork.</p></div>
+    <div class="feature-card"><div class="feat-icon">🎯</div><h3>Destination Check</h3><p>Set physical destinations for field steps. The app verifies the employee has actually arrived at the correct location.</p></div>
+    <div class="feature-card"><div class="feat-icon">⚡</div><h3>Priority & Deadlines</h3><p>Assign low/medium/high priority. Overdue and missed tasks are flagged instantly so nothing falls through the cracks.</p></div>
+    <div class="feature-card"><div class="feat-icon">📱</div><h3>Mobile-First Employee App</h3><p>Employees work from the Task Room mobile app. Managers get full visibility from this web dashboard.</p><span class="feature-tag" style="background:var(--amber-g);color:var(--amber)">iOS + Android</span></div>
   </div>
-</div>
 </section>
+</div>
 
-<section id="how-it-works" class="section-bg">
-<div class="section">
+<!-- How it works -->
+<section class="section" id="how-it-works">
   <div class="section-header">
-    <span class="tag">How it works</span>
-    <h2>From setup to field in minutes</h2>
-    <p>Get your organization running in four simple steps.</p>
+    <div class="tag">How it works</div>
+    <h2>Up and running in minutes</h2>
+    <p>Simple setup. Powerful visibility. Your team stays accountable from day one.</p>
   </div>
   <div class="steps">
-    <div class="step"><div class="step-num">1</div><h3>Create Organization</h3><p>Register here and get a unique organization code instantly — completely free.</p></div>
-    <div class="step"><div class="step-num">2</div><h3>Add Your Team</h3><p>Share the org code. Managers and employees register in the Task Room mobile app using it.</p></div>
-    <div class="step"><div class="step-num">3</div><h3>Create Rooms &amp; Tasks</h3><p>Managers create rooms, assign members, then create tasks with steps and destination pins.</p></div>
-    <div class="step"><div class="step-num">4</div><h3>Track &amp; Monitor</h3><p>Watch your team live. View positions, task progress, and all submitted proof in real time.</p></div>
+    <div class="step"><div class="step-num">1</div><h3>Create Organization</h3><p>Set up your workspace and get a unique code to share with your team.</p></div>
+    <div class="step"><div class="step-num">2</div><h3>Build Rooms & Teams</h3><p>Create rooms for different projects or regions. Add employees as members.</p></div>
+    <div class="step"><div class="step-num">3</div><h3>Assign Tasks</h3><p>Create multi-step tasks with deadlines, locations, and validation requirements.</p></div>
+    <div class="step"><div class="step-num">4</div><h3>Track in Real-Time</h3><p>Watch live GPS, step completions, photos and signatures from your dashboard.</p></div>
   </div>
-</div>
 </section>
 
-<section id="pricing">
-<div class="section">
+<!-- Pricing -->
+<div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+<section class="section" id="pricing">
   <div class="section-header">
-    <span class="tag">Pricing</span>
-    <h2>Simple, honest pricing</h2>
-    <p>Start free. Upgrade when your team grows.</p>
+    <div class="tag">Pricing</div>
+    <h2>Simple, transparent pricing</h2>
+    <p>Start free. Scale as your team grows.</p>
   </div>
   <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="p-name">Starter</div>
+      <div class="p-price">Free<span>/mo</span></div>
+      <div class="p-period">Perfect for small teams</div>
+      <ul class="p-features">
+        <li><span class="ck">✓</span> 1 Organization</li>
+        <li><span class="ck">✓</span> Up to 50 employees</li>
+        <li><span class="ck">✓</span> Up to 10 rooms</li>
+        <li><span class="ck">✓</span> GPS tracking</li>
+        <li><span class="ck">✓</span> Photo & signature capture</li>
+        <li class="dim"><span class="xx">○</span> Advanced analytics</li>
+        <li class="dim"><span class="xx">○</span> Priority support</li>
+      </ul>
+      <button class="btn btn-ghost w-full" onclick="openCreateOrg()">Get Started Free</button>
+    </div>
     <div class="pricing-card featured">
-      <div class="p-badge">&#10022; Current Plan</div>
-      <div class="p-name">Free</div>
-      <div class="p-price">&#8377;0 <span>forever</span></div>
-      <div class="p-period">No credit card required</div>
-      <ul class="p-features">
-        <li><span class="ck">&#10003;</span> Up to 500 employees</li>
-        <li><span class="ck">&#10003;</span> Up to 50 rooms</li>
-        <li><span class="ck">&#10003;</span> Unlimited tasks</li>
-        <li><span class="ck">&#10003;</span> Live GPS tracking</li>
-        <li><span class="ck">&#10003;</span> Photo &amp; signature proof</li>
-        <li><span class="ck">&#10003;</span> Route history &amp; replay</li>
-        <li><span class="ck">&#10003;</span> Background tracking</li>
-      </ul>
-      <button class="btn btn-primary w-full" onclick="openCreateOrg()">Get Started Free &#8594;</button>
-    </div>
-    <div class="pricing-card" style="opacity:.65">
-      <div class="p-name">Plus</div>
-      <div class="p-price">Coming <span>soon</span></div>
-      <div class="p-period">More power for growing teams</div>
-      <ul class="p-features">
-        <li><span class="ck">&#10003;</span> Everything in Free <span class="cs-badge">&#8987; Soon</span></li>
-        <li class="dim"><span class="xx">&#9675;</span> Unlimited employees</li>
-        <li class="dim"><span class="xx">&#9675;</span> Advanced analytics</li>
-        <li class="dim"><span class="xx">&#9675;</span> Custom branding</li>
-        <li class="dim"><span class="xx">&#9675;</span> Priority support</li>
-        <li class="dim"><span class="xx">&#9675;</span> API access &amp; export</li>
-      </ul>
-      <button class="btn btn-ghost w-full" disabled style="opacity:.5;cursor:not-allowed">Coming Soon</button>
-    </div>
-    <div class="pricing-card" style="opacity:.65">
+      <div class="p-badge">Most Popular</div>
       <div class="p-name">Pro</div>
-      <div class="p-price">Coming <span>soon</span></div>
-      <div class="p-period">Enterprise-grade for large teams</div>
+      <div class="p-price">₹999<span>/mo</span></div>
+      <div class="p-period">For growing field teams</div>
       <ul class="p-features">
-        <li><span class="ck">&#10003;</span> Everything in Plus <span class="cs-badge">&#8987; Soon</span></li>
-        <li class="dim"><span class="xx">&#9675;</span> Multi-organization</li>
-        <li class="dim"><span class="xx">&#9675;</span> Dedicated support &amp; SLA</li>
-        <li class="dim"><span class="xx">&#9675;</span> On-premise option</li>
-        <li class="dim"><span class="xx">&#9675;</span> White-label mobile app</li>
-        <li class="dim"><span class="xx">&#9675;</span> Custom integrations</li>
+        <li><span class="ck">✓</span> 1 Organization</li>
+        <li><span class="ck">✓</span> Up to 500 employees</li>
+        <li><span class="ck">✓</span> Unlimited rooms</li>
+        <li><span class="ck">✓</span> GPS + route history</li>
+        <li><span class="ck">✓</span> Advanced analytics</li>
+        <li><span class="ck">✓</span> Priority support</li>
+        <li><span class="ck">✓</span> Export reports</li>
       </ul>
-      <button class="btn btn-ghost w-full" disabled style="opacity:.5;cursor:not-allowed">Coming Soon</button>
+      <button class="btn btn-primary w-full" onclick="openCreateOrg()">Start Free Trial</button>
+    </div>
+    <div class="pricing-card">
+      <div class="p-name">Enterprise</div>
+      <div class="p-price">Custom<span></span></div>
+      <div class="p-period">For large organizations</div>
+      <ul class="p-features">
+        <li><span class="ck">✓</span> Multi-organization</li>
+        <li><span class="ck">✓</span> Unlimited everything</li>
+        <li><span class="ck">✓</span> Dedicated support & SLA</li>
+        <li><span class="ck">✓</span> On-premise option</li>
+        <li><span class="ck">✓</span> White-label app</li>
+        <li><span class="ck">✓</span> Custom integrations</li>
+        <li><span class="ck">✓</span> API access</li>
+      </ul>
+      <button class="btn btn-ghost w-full" disabled style="opacity:.5;cursor:not-allowed">Contact Sales</button>
     </div>
   </div>
-</div>
 </section>
+</div>
 
 <div class="cta-sec">
   <h2>Ready to control your field team?</h2>
   <p>Create your organization in under 2 minutes. No credit card, no commitment.</p>
-  <button class="btn btn-primary btn-xl" onclick="openCreateOrg()">&#128640; Create Organization — It's Free</button>
+  <button class="btn btn-primary btn-xl" onclick="openCreateOrg()">🚀 Create Organization — It's Free</button>
 </div>
 
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
-      <div class="nav-logo" style="margin-bottom:10px">
-        <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
-        <span class="logo-text">Task Room</span>
-      </div>
+      <div class="nav-logo" style="margin-bottom:10px"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div>
       <p>Field work management for teams that move fast and need full accountability.</p>
     </div>
     <div class="footer-links"><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#how-it-works">How it works</a></li></ul></div>
     <div class="footer-links"><h4>Organization</h4><ul><li><a href="#" onclick="openCreateOrg();return false">Create Org</a></li><li><a href="#" onclick="showLogin();return false">Sign In</a></li><li><a href="#" onclick="openCheckOrg();return false">Check Org Code</a></li></ul></div>
     <div class="footer-links"><h4>App</h4><ul><li><a href="#">iOS (Coming Soon)</a></li><li><a href="#">Android App</a></li></ul></div>
   </div>
-  <div class="footer-bottom">
-    <p>&#169; 2025 Task Room. Built for field teams.</p>
-    <p>API: taskroom-backend.onrender.com</p>
-  </div>
+  <div class="footer-bottom"><p>© 2025 Task Room. Built for field teams.</p><p style="font-family:'JetBrains Mono',monospace;font-size:12px">API: taskroom-backend.onrender.com</p></div>
 </footer>
 </div><!-- /landing -->
 
-<!-- DASHBOARD -->
+<!-- ═══════════════════════ DASHBOARD ═══════════════════════════════════ -->
 <div id="dashboard-view">
 <div class="dash-layout">
+
+  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <div class="sb-org">
-      <div class="sb-org-name" id="sb-name">Organization</div>
-      <div class="sb-code" id="sb-code" onclick="copyCode()" title="Copy code">CODE</div>
+    <div class="sb-profile">
+      <div class="sb-prof-row">
+        <div class="sb-avatar" id="sb-av">U</div>
+        <div style="min-width:0">
+          <div class="sb-name" id="sb-uname">User</div>
+          <div class="sb-role manager" id="sb-urole">Manager</div>
+        </div>
+      </div>
+      <div class="sb-org-name" id="sb-orgname">Organization</div>
+      <div class="sb-code" id="sb-code" onclick="copyCode()" title="Click to copy org code">🔑 <span id="sb-code-val">CODE</span></div>
     </div>
     <div class="sb-nav">
       <div class="sb-sec">Overview</div>
-      <div class="sb-item active" onclick="showPage('overview',this)"><span class="ico">&#128202;</span> Dashboard</div>
-      <div class="sb-item" onclick="showPage('org',this)"><span class="ico">&#127970;</span> Organization</div>
-      <div class="sb-sec">Team</div>
-      <div class="sb-item" onclick="showPage('members',this)"><span class="ico">&#128101;</span> Members</div>
-      <div class="sb-sec">Account</div>
-      <div class="sb-item" onclick="logout()"><span class="ico">&#128682;</span> Sign Out</div>
+      <div class="sb-item active" id="nav-overview" onclick="showPage('overview',this)"><span class="ico">📊</span> Dashboard</div>
+      <div class="sb-item" id="nav-org" onclick="showPage('org',this)"><span class="ico">🏢</span> Organization</div>
+
+      <div class="sb-sec">Management</div>
+      <div class="sb-item" id="nav-rooms" onclick="showPage('rooms',this)"><span class="ico">🏠</span> Rooms</div>
+      <div class="sb-item" id="nav-tasks" onclick="showPage('tasks',this)"><span class="ico">✅</span> Tasks <span class="sb-badge" id="sb-task-badge" style="display:none">0</span></div>
+      <div class="sb-item" id="nav-members" onclick="showPage('members',this)"><span class="ico">👥</span> Members</div>
+
+      <div class="sb-divider"></div>
+      <div class="sb-item" onclick="logout()" style="color:var(--red);margin-top:4px"><span class="ico">🚪</span> Sign Out</div>
     </div>
   </aside>
-  <main class="dash-main">
 
-    <!-- Overview -->
+  <main class="dash-main" id="dash-main">
+
+    <!-- ── PAGE: OVERVIEW ─────────────────────────────────────────── -->
     <div id="page-overview" class="dash-page active">
-      <div style="margin-bottom:24px"><h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Welcome back &#128075;</h1><p style="color:var(--text2)">Here's your organization at a glance.</p></div>
-      <div class="stat-grid">
-        <div class="sc"><div class="sc-label">Employees</div><div class="sc-value c-primary" id="s-emp">—</div><div class="sc-sub">Active members</div></div>
-        <div class="sc"><div class="sc-label">Managers</div><div class="sc-value c-green" id="s-mgr">—</div><div class="sc-sub">In your org</div></div>
-        <div class="sc"><div class="sc-label">Rooms</div><div class="sc-value c-amber" id="s-rooms">—</div><div class="sc-sub">Active rooms</div></div>
-        <div class="sc"><div class="sc-label">Capacity</div><div class="sc-value" id="s-cap" style="color:var(--text2)">—</div><div class="sc-sub">Max employees</div></div>
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1 id="ov-greeting">Welcome back 👋</h1>
+          <p style="color:var(--text2)" id="ov-date">Loading...</p>
+        </div>
+        <div class="page-hdr-actions">
+          <button class="btn btn-ghost btn-sm" onclick="refreshDash()">🔄 Refresh</button>
+          <button class="btn btn-primary btn-sm manager-only" onclick="showPage('rooms',document.getElementById('nav-rooms'))">+ Create Task</button>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
-        <div class="org-card" style="margin:0">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--text2)">&#128241; Mobile App Setup</h3>
-          <p style="font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:16px">Share your <strong style="color:var(--primary-light)">Organization Code</strong> with your team. They'll use it to register in the Task Room mobile app.</p>
-          <div class="code-display" onclick="copyCode()"><div class="big-code" id="ov-code">—</div><p>&#128203; Tap to copy code</p></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="copyCode()">&#128203; Copy Code</button><button class="btn btn-ghost btn-sm" onclick="showPage('org',null)">Edit Org &#8594;</button></div>
+
+      <!-- Stats -->
+      <div class="stat-grid" id="ov-stats">
+        <div class="sc c-blue"><div class="sc-icon">👥</div><div class="sc-label">Employees</div><div class="sc-value" id="s-emp">—</div><div class="sc-sub">Active members</div></div>
+        <div class="sc c-green"><div class="sc-icon">📁</div><div class="sc-label">Rooms</div><div class="sc-value" id="s-rooms">—</div><div class="sc-sub">Active rooms</div></div>
+        <div class="sc c-amber"><div class="sc-icon">⏳</div><div class="sc-label">In Progress</div><div class="sc-value" id="s-inprog">—</div><div class="sc-sub">Tasks active today</div></div>
+        <div class="sc c-red"><div class="sc-icon">⚠️</div><div class="sc-label">Overdue</div><div class="sc-value" id="s-missed">—</div><div class="sc-sub">Missed / overdue</div></div>
+        <div class="sc c-purple"><div class="sc-icon">✅</div><div class="sc-label">Completed</div><div class="sc-value" id="s-comp">—</div><div class="sc-sub">Total completed</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:18px">
+        <!-- Today's Tasks -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title"><span class="ico">📅</span> Today's Tasks</div><button class="btn btn-ghost btn-sm" onclick="showPage('tasks',document.getElementById('nav-tasks'))">View all →</button></div>
+          <div id="today-tasks-list"><div class="loading"><div class="spinner"></div></div></div>
         </div>
-        <div class="org-card" style="margin:0">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--text2)">&#128640; Quick Actions</h3>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <button class="btn btn-ghost w-full" style="justify-content:flex-start" onclick="showPage('members',null)">&#128101; View All Members</button>
-            <button class="btn btn-ghost w-full" style="justify-content:flex-start" onclick="showPage('org',null)">&#9999;&#65039; Edit Organization</button>
-            <button class="btn btn-ghost w-full" style="justify-content:flex-start" onclick="copyCode()">&#128203; Copy Organization Code</button>
+        <!-- Org Code & Quick Actions -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title"><span class="ico">⚡</span> Quick Actions</div></div>
+          <div class="qa-grid" id="qa-grid">
+            <div class="qa-item" onclick="showPage('rooms',document.getElementById('nav-rooms'))"><div class="qa-icon" style="background:var(--primary-subtle)">🏠</div><div><div style="font-size:13.5px;font-weight:700">Rooms</div><div style="font-size:12px;color:var(--text3)">View & manage rooms</div></div></div>
+            <div class="qa-item" onclick="showPage('tasks',document.getElementById('nav-tasks'))"><div class="qa-icon" style="background:var(--green-g)">✅</div><div><div style="font-size:13.5px;font-weight:700">All Tasks</div><div style="font-size:12px;color:var(--text3)">Filter & track tasks</div></div></div>
+            <div class="qa-item manager-only" onclick="openCreateRoom()"><div class="qa-icon" style="background:var(--amber-g)">➕</div><div><div style="font-size:13.5px;font-weight:700">New Room</div><div style="font-size:12px;color:var(--text3)">Create a room</div></div></div>
+            <div class="qa-item" onclick="showPage('members',document.getElementById('nav-members'))"><div class="qa-icon" style="background:var(--purple-g)">👥</div><div><div style="font-size:13.5px;font-weight:700">Members</div><div style="font-size:12px;color:var(--text3)">Team overview</div></div></div>
           </div>
-          <div class="alert alert-info" style="margin-top:16px;font-size:13px"><span>&#8505;&#65039;</span><span>Rooms and tasks are managed inside the <strong>Task Room mobile app</strong> by your managers.</span></div>
+          <div style="margin-top:16px">
+            <div class="code-display" onclick="copyCode()"><div class="big-code" id="ov-code">—</div><p>📋 Click to copy · Share with your team</p></div>
+          </div>
         </div>
+      </div>
+
+      <!-- Employee Activity (manager only) -->
+      <div class="card manager-only" id="ov-emp-activity">
+        <div class="card-hdr"><div class="card-title"><span class="ico">🟢</span> Active Employees Today</div></div>
+        <div class="emp-activity-grid" id="emp-activity-grid"><div class="loading"><div class="spinner"></div></div></div>
       </div>
     </div>
 
-    <!-- Org detail -->
+    <!-- ── PAGE: ORGANIZATION ──────────────────────────────────────── -->
     <div id="page-org" class="dash-page">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-        <div><h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Organization</h1><p style="color:var(--text2)">Manage your organization settings.</p></div>
-        <button class="btn btn-primary" onclick="openEditOrg()">&#9999;&#65039; Edit Organization</button>
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h1>Organization</h1><p>Manage your organization settings and details.</p></div>
+        <div class="page-hdr-actions manager-only">
+          <button class="btn btn-primary" onclick="openEditOrg()">✏️ Edit Organization</button>
+        </div>
       </div>
       <div class="org-card">
         <div class="org-hdr">
@@ -446,29 +723,89 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="org-info"><h2 id="org-n">—</h2><p id="org-e">—</p></div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-            <div class="code-chip" onclick="copyCode()">&#128273; <span id="org-c">—</span></div>
-            <div id="org-status" class="status-badge active">&#9679; Active</div>
+            <div class="code-chip" onclick="copyCode()">🔑 <span id="org-c">—</span></div>
+            <div id="org-status" class="badge badge-active">● Active</div>
           </div>
         </div>
         <div class="org-grid" id="org-grid"></div>
       </div>
-      <div class="org-card" style="margin:0"><h3 style="font-size:16px;font-weight:700;margin-bottom:20px">&#9881;&#65039; Settings &amp; Limits</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px" id="org-settings"></div></div>
+      <div class="org-card" style="margin:0"><h3 style="font-size:15px;font-weight:700;margin-bottom:18px">⚙️ Settings & Limits</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px" id="org-settings"></div></div>
     </div>
 
-    <!-- Members -->
+    <!-- ── PAGE: ROOMS ─────────────────────────────────────────────── -->
+    <div id="page-rooms" class="dash-page">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h1>Rooms</h1><p>All rooms in your organization.</p></div>
+        <div class="page-hdr-actions">
+          <div class="tbl-search" style="min-width:180px"><span style="color:var(--text3)">🔍</span><input type="text" id="room-search" placeholder="Search rooms…" oninput="debRoomSearch()"/></div>
+          <select id="room-cat-filter" onchange="loadRooms(1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text)">
+            <option value="">All Categories</option>
+            <option value="sales">Sales</option>
+            <option value="delivery">Delivery</option>
+            <option value="service">Service</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="inspection">Inspection</option>
+            <option value="other">Other</option>
+          </select>
+          <button class="btn btn-primary btn-sm manager-only" onclick="openCreateRoom()">+ New Room</button>
+        </div>
+      </div>
+      <div id="rooms-grid-wrap">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+      <div class="pagination" id="rooms-pg"></div>
+    </div>
+
+    <!-- ── PAGE: TASKS ─────────────────────────────────────────────── -->
+    <div id="page-tasks" class="dash-page">
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h1>Tasks</h1><p>All tasks you've created across rooms.</p></div>
+        <div class="page-hdr-actions">
+          <select id="task-priority-filter" onchange="loadTasks(1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text)">
+            <option value="">All Priority</option>
+            <option value="high">🔴 High</option>
+            <option value="medium">🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-tabs" id="task-filter-tabs">
+        <div class="filter-tab active" data-val="" onclick="setTaskFilter('',this)">All</div>
+        <div class="filter-tab" data-val="pending" onclick="setTaskFilter('pending',this)">Pending</div>
+        <div class="filter-tab" data-val="in_progress" onclick="setTaskFilter('in_progress',this)">In Progress</div>
+        <div class="filter-tab" data-val="completed" onclick="setTaskFilter('completed',this)">Completed</div>
+        <div class="filter-tab" data-val="overdue" onclick="setTaskFilter('overdue',this)">Overdue</div>
+        <div class="filter-tab" data-val="cancelled" onclick="setTaskFilter('cancelled',this)">Cancelled</div>
+        <div class="filter-tab" data-val="missed" onclick="setTaskFilter('missed',this)">Missed</div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-hdr">
+          <h3 id="tasks-count-label">Tasks</h3>
+          <div class="tbl-tools">
+            <div class="tbl-search"><span style="color:var(--text3)">🔍</span><input type="text" id="task-search" placeholder="Search tasks…" oninput="debTaskSearch()"/></div>
+          </div>
+        </div>
+        <div id="tasks-body"><div class="loading"><div class="spinner"></div></div></div>
+        <div class="pagination" id="tasks-pg"></div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: MEMBERS ───────────────────────────────────────────── -->
     <div id="page-members" class="dash-page">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-        <div><h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Members</h1><p style="color:var(--text2)">All managers and employees in your organization.</p></div>
-        <select id="role-filter" onchange="loadMembers(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)">
-          <option value="">All Roles</option>
-          <option value="manager">Managers</option>
-          <option value="employee">Employees</option>
-        </select>
+      <div class="page-hdr">
+        <div class="page-hdr-left"><h1>Members</h1><p>All managers and employees in your organization.</p></div>
+        <div class="page-hdr-actions">
+          <select id="role-filter" onchange="loadMembers(1)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text)">
+            <option value="">All Roles</option>
+            <option value="manager">Managers</option>
+            <option value="employee">Employees</option>
+          </select>
+        </div>
       </div>
       <div class="tbl-wrap">
         <div class="tbl-hdr">
           <h3>Team Members</h3>
-          <div class="tbl-search"><span style="color:var(--text3)">&#128269;</span><input type="text" id="m-search" placeholder="Search name, username…" oninput="debSearch()"/></div>
+          <div class="tbl-search"><span style="color:var(--text3)">🔍</span><input type="text" id="m-search" placeholder="Search name, username…" oninput="debMSearch()"/></div>
         </div>
         <div id="m-body"><div class="loading"><div class="spinner"></div></div></div>
         <div class="pagination" id="m-pg"></div>
@@ -477,19 +814,37 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
   </main>
 </div>
+
+<!-- TASK DETAIL PANEL -->
+<div class="detail-panel" id="task-panel">
+  <div class="panel-hdr">
+    <div class="panel-hdr-info">
+      <div class="panel-title" id="tp-title">Task Detail</div>
+      <div class="panel-sub" id="tp-sub">Loading...</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-danger btn-sm manager-only" id="tp-cancel-btn" onclick="cancelCurrentTask()" style="display:none">Cancel</button>
+      <div class="modal-close" onclick="closeTaskPanel()">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="tp-body"><div class="loading"><div class="spinner"></div></div></div>
 </div>
 
-<!-- Modal: Create Org -->
+</div><!-- /dashboard -->
+
+<!-- ═══════════════════════ MODALS ══════════════════════════════════════ -->
+
+<!-- Create Org -->
 <div class="overlay" id="modal-create">
-<div class="modal" style="max-width:560px">
-  <div class="modal-hdr"><div><div class="modal-title">Create Organization</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Set up your Task Room workspace</div></div><div class="modal-close" onclick="closeM('modal-create')">&#10005;</div></div>
+<div class="modal">
+  <div class="modal-hdr"><div><div class="modal-title">Create Organization</div><div class="modal-sub">Set up your Task Room workspace in seconds</div></div><div class="modal-close" onclick="closeM('modal-create')">✕</div></div>
   <div id="alert-create"></div>
   <form onsubmit="submitCreate(event)">
     <div class="settings-sec"><h4>Basic Information</h4>
       <div class="fg" id="fg-name"><label>Organization Name *</label><input type="text" id="in-name" placeholder="e.g. Acme Field Services" maxlength="100"/><div class="f-err">Organization name is required</div></div>
       <div class="form-row">
         <div class="fg" id="fg-email"><label>Contact Email *</label><input type="email" id="in-email" placeholder="admin@company.com"/><div class="f-err">Valid email required</div></div>
-        <div class="fg"><label>Contact Phone</label><input type="tel" id="in-phone" placeholder="10-digit number" maxlength="10"/><div class="f-hint">10 digits, no spaces</div></div>
+        <div class="fg"><label>Contact Phone</label><input type="tel" id="in-phone" placeholder="10-digit number" maxlength="10"/><div class="f-hint">Optional, 10 digits</div></div>
       </div>
       <div class="fg"><label>Company Domain</label><input type="text" id="in-domain" placeholder="company.com"/><div class="f-hint">Optional</div></div>
     </div>
@@ -503,55 +858,55 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="fg"><label>Country</label><input type="text" id="in-country" placeholder="India" value="India"/></div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-create">&#128640; Create Organization</button>
+    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-create">🚀 Create Organization</button>
   </form>
 </div>
 </div>
 
-<!-- Modal: Success -->
+<!-- Success -->
 <div class="overlay" id="modal-success">
 <div class="modal" style="max-width:460px;text-align:center">
-  <div class="success-icon">&#127881;</div>
+  <div style="font-size:56px;margin-bottom:16px">🎉</div>
   <h2 style="font-size:22px;font-weight:800;margin-bottom:8px">Organization Created!</h2>
   <p style="color:var(--text2);font-size:15px;margin-bottom:0">Share this code with your team so they can join via the <strong style="color:var(--text)">Task Room mobile app</strong>.</p>
-  <div class="code-display" onclick="copyCode()"><div class="big-code" id="success-code">—</div><p>&#128203; Tap to copy &#183; Share with your team</p></div>
-  <div class="alert alert-info" style="text-align:left"><span>&#128241;</span><div><strong>Next Steps:</strong><ol style="margin:6px 0 0 16px;font-size:13px;line-height:1.8"><li>Download the Task Room app</li><li>Register with this org code</li><li>Start creating rooms and tasks</li></ol></div></div>
-  <button class="btn btn-primary w-full btn-lg" onclick="openDash()">Open Dashboard &#8594;</button>
+  <div class="code-display" onclick="copyCode()"><div class="big-code" id="success-code">—</div><p>📋 Click to copy · Share with your team</p></div>
+  <div class="alert alert-info" style="text-align:left"><span>📱</span><div><strong>Next Steps:</strong><ol style="margin:6px 0 0 16px;font-size:13px;line-height:1.9"><li>Download the Task Room app</li><li>Register with this org code</li><li>Create rooms and assign tasks</li></ol></div></div>
+  <button class="btn btn-primary w-full btn-lg" onclick="openDash()">Open Dashboard →</button>
   <button class="btn btn-ghost w-full" style="margin-top:8px" onclick="closeM('modal-success')">Close</button>
 </div>
 </div>
 
-<!-- Modal: Login -->
+<!-- Login -->
 <div class="overlay" id="modal-login">
 <div class="modal" style="max-width:420px">
-  <div class="modal-hdr"><div><div class="modal-title">Sign In</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Access your organization dashboard</div></div><div class="modal-close" onclick="closeM('modal-login')">&#10005;</div></div>
+  <div class="modal-hdr"><div><div class="modal-title">Sign In</div><div class="modal-sub">Access your organization dashboard</div></div><div class="modal-close" onclick="closeM('modal-login')">✕</div></div>
   <div id="alert-login"></div>
   <form onsubmit="submitLogin(event)">
-    <div class="fg" id="fg-lcode"><label>Organization Code *</label><input type="text" id="in-lcode" placeholder="e.g. ORGXYZ123" oninput="this.value=this.value.toUpperCase()"/><div class="f-err">Code required</div></div>
-    <div class="fg" id="fg-luser"><label>Username *</label><input type="text" id="in-luser" placeholder="Your username"/><div class="f-err">Username required</div></div>
-    <div class="fg" id="fg-lpass"><label>Password *</label><input type="password" id="in-lpass" placeholder="Your password"/><div class="f-err">Password required</div></div>
-    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-login">Sign In</button>
+    <div class="fg" id="fg-lcode"><label>Organization Code *</label><input type="text" id="in-lcode" placeholder="e.g. ORGXYZ123" oninput="this.value=this.value.toUpperCase()" autocomplete="off"/><div class="f-err">Code required</div></div>
+    <div class="fg" id="fg-luser"><label>Username *</label><input type="text" id="in-luser" placeholder="Your username" autocomplete="username"/><div class="f-err">Username required</div></div>
+    <div class="fg" id="fg-lpass"><label>Password *</label><input type="password" id="in-lpass" placeholder="Your password" autocomplete="current-password"/><div class="f-err">Password required</div></div>
+    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-login">Sign In →</button>
   </form>
-  <div style="text-align:center;margin-top:16px"><span style="color:var(--text3);font-size:14px">No organization? </span><a href="#" style="color:var(--primary-light);font-size:14px;font-weight:600" onclick="closeM('modal-login');openCreateOrg();return false">Create one &#8594;</a></div>
+  <div style="text-align:center;margin-top:16px"><span style="color:var(--text3);font-size:14px">No organization? </span><a href="#" style="color:var(--primary-light);font-size:14px;font-weight:600" onclick="closeM('modal-login');openCreateOrg();return false">Create one →</a></div>
 </div>
 </div>
 
-<!-- Modal: Check Org -->
+<!-- Check Org -->
 <div class="overlay" id="modal-check">
 <div class="modal" style="max-width:400px">
-  <div class="modal-hdr"><div class="modal-title">Check Organization</div><div class="modal-close" onclick="closeM('modal-check')">&#10005;</div></div>
+  <div class="modal-hdr"><div class="modal-title">Check Organization</div><div class="modal-close" onclick="closeM('modal-check')">✕</div></div>
   <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Look up an organization by its code.</p>
   <div id="alert-check"></div>
   <div class="fg"><label>Organization Code</label><input type="text" id="in-ccode" placeholder="Enter code" oninput="this.value=this.value.toUpperCase()"/></div>
-  <button class="btn btn-primary w-full" onclick="doCheck()">Check &#8594;</button>
+  <button class="btn btn-primary w-full" onclick="doCheck()">Check →</button>
   <div id="check-result" style="margin-top:16px"></div>
 </div>
 </div>
 
-<!-- Modal: Edit Org -->
+<!-- Edit Org -->
 <div class="overlay" id="modal-edit">
 <div class="modal" style="max-width:560px">
-  <div class="modal-hdr"><div><div class="modal-title">Edit Organization</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Update your organization details</div></div><div class="modal-close" onclick="closeM('modal-edit')">&#10005;</div></div>
+  <div class="modal-hdr"><div><div class="modal-title">Edit Organization</div><div class="modal-sub">Update your organization details</div></div><div class="modal-close" onclick="closeM('modal-edit')">✕</div></div>
   <div id="alert-edit"></div>
   <form onsubmit="submitEdit(event)">
     <div class="settings-sec"><h4>Basic Information</h4>
@@ -566,53 +921,1067 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="form-row"><div class="fg"><label>City</label><input type="text" id="e-city"/></div><div class="fg"><label>State</label><input type="text" id="e-state"/></div></div>
       <div class="form-row"><div class="fg"><label>Pincode</label><input type="text" id="e-pin"/></div><div class="fg"><label>Country</label><input type="text" id="e-country"/></div></div>
     </div>
-    <div class="settings-sec"><h4>Settings</h4>
+    <div class="settings-sec"><h4>Settings & Limits</h4>
       <div class="form-row">
         <div class="fg"><label>Max Rooms</label><input type="number" id="e-maxr" min="1" max="500"/></div>
         <div class="fg"><label>Max Employees</label><input type="number" id="e-maxe" min="1" max="10000"/></div>
       </div>
-      <div class="toggle-row"><div class="tr-info"><h5>Location Tracking</h5><p>Enable GPS for field work tasks</p></div><label class="toggle"><input type="checkbox" id="e-loc"/><span class="t-slider"></span></label></div>
-      <div class="toggle-row"><div class="tr-info"><h5>Active</h5><p>Accepting new registrations</p></div><label class="toggle"><input type="checkbox" id="e-active"/><span class="t-slider"></span></label></div>
+      <div class="toggle-row"><div class="tr-info"><h5>Location Tracking</h5><p>Enable GPS tracking for field tasks</p></div><label class="toggle"><input type="checkbox" id="e-loc"/><span class="toggle-slider"></span></label></div>
+      <div class="toggle-row"><div class="tr-info"><h5>Organization Active</h5><p>Allow members to access this organization</p></div><label class="toggle"><input type="checkbox" id="e-active"/><span class="toggle-slider"></span></label></div>
     </div>
     <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-edit">Save Changes</button>
   </form>
 </div>
 </div>
 
+<!-- Create Room -->
+<div class="overlay" id="modal-create-room">
+<div class="modal" style="max-width:520px">
+  <div class="modal-hdr"><div><div class="modal-title">Create Room</div><div class="modal-sub">Set up a new team room for task assignment</div></div><div class="modal-close" onclick="closeM('modal-create-room')">✕</div></div>
+  <div id="alert-create-room"></div>
+  <form onsubmit="submitCreateRoom(event)">
+    <div class="fg" id="fg-rname"><label>Room Name *</label><input type="text" id="r-name" placeholder="e.g. Mumbai Delivery Team" maxlength="80"/><div class="f-err">Room name is required</div></div>
+    <div class="fg"><label>Description</label><textarea id="r-desc" placeholder="What does this room handle?" rows="2" style="resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="fg"><label>Category</label>
+        <select id="r-cat">
+          <option value="other">Other</option>
+          <option value="sales">Sales</option>
+          <option value="delivery">Delivery</option>
+          <option value="service">Service</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="inspection">Inspection</option>
+        </select>
+      </div>
+      <div class="fg"><label>Max Members</label><input type="number" id="r-max" value="100" min="1" max="500"/></div>
+    </div>
+    <div class="divider"></div>
+    <div class="fg"><label>Room Settings</label>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="form-check"><input type="checkbox" id="r-auto-accept" checked/><div class="form-check-info"><h6>Auto Accept Members</h6><p>Employees can join without approval</p></div></label>
+        <label class="form-check"><input type="checkbox" id="r-see-each"/><div class="form-check-info"><h6>Members Can See Each Other</h6><p>Show team members to employees</p></div></label>
+        <label class="form-check"><input type="checkbox" id="r-active" checked/><div class="form-check-info"><h6>Active</h6><p>Room is active and visible to members</p></div></label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary w-full btn-lg" id="btn-create-room">🏠 Create Room</button>
+  </form>
+</div>
+</div>
+
+<!-- Room Detail Modal -->
+<div class="overlay" id="modal-room-detail">
+<div class="modal modal-xl">
+  <div class="modal-hdr">
+    <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+      <div class="room-icon" id="rd-icon" style="width:48px;height:48px;border-radius:12px;font-size:22px;flex-shrink:0">🏠</div>
+      <div style="min-width:0">
+        <div class="modal-title" id="rd-name">Room</div>
+        <div style="font-size:12.5px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:10px">
+          <span id="rd-code" class="mono" style="color:var(--primary-light)">CODE</span>
+          <span id="rd-cat-badge" class="room-cat-badge">other</span>
+          <span id="rd-status-badge" class="badge badge-active">Active</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-close" onclick="closeM('modal-room-detail')">✕</div>
+  </div>
+  <div class="tab-nav" id="rd-tabs">
+    <button class="tab-btn active" onclick="showRoomTab('overview',this)">Overview</button>
+    <button class="tab-btn" onclick="showRoomTab('members',this)">Members</button>
+    <button class="tab-btn" onclick="showRoomTab('tasks',this)">Tasks</button>
+  </div>
+
+  <!-- Room Overview Tab -->
+  <div class="tab-content active" id="rd-tab-overview">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px">
+      <div class="sc c-blue"><div class="sc-label">Members</div><div class="sc-value" id="rd-member-count">—</div></div>
+      <div class="sc c-amber"><div class="sc-label">Active Tasks</div><div class="sc-value" id="rd-active-tasks">—</div></div>
+      <div class="sc c-green"><div class="sc-label">Completed</div><div class="sc-value" id="rd-comp-tasks">—</div></div>
+    </div>
+    <div id="rd-overview-info"></div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap" class="manager-only">
+      <button class="btn btn-primary btn-sm" onclick="openCreateTaskForRoom()">+ Create Task</button>
+      <button class="btn btn-ghost btn-sm" id="rd-archive-btn" onclick="archiveCurrentRoom()">Archive Room</button>
+    </div>
+  </div>
+
+  <!-- Room Members Tab -->
+  <div class="tab-content" id="rd-tab-members">
+    <div id="rd-members-list"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- Room Tasks Tab -->
+  <div class="tab-content" id="rd-tab-tasks">
+    <div id="rd-tasks-list"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+</div>
+
+<!-- Create Task Modal (Wizard) -->
+<div class="overlay" id="modal-create-task">
+<div class="modal modal-lg">
+  <div class="modal-hdr">
+    <div><div class="modal-title">Create Task</div><div class="modal-sub" id="ct-room-sub">Assign a new task to team members</div></div>
+    <div class="modal-close" onclick="closeM('modal-create-task')">✕</div>
+  </div>
+
+  <!-- Wizard progress -->
+  <div class="wizard-steps">
+    <div class="wz-step"><div class="wz-dot active" id="wz-dot-1">1</div><div class="wz-label active" id="wz-lbl-1">Details</div></div>
+    <div class="wz-step"><div class="wz-dot" id="wz-dot-2">2</div><div class="wz-label" id="wz-lbl-2">Steps</div></div>
+    <div class="wz-step"><div class="wz-dot" id="wz-dot-3">3</div><div class="wz-label" id="wz-lbl-3">Assign</div></div>
+  </div>
+
+  <div id="alert-create-task"></div>
+
+  <!-- Page 1: Task Details -->
+  <div class="wizard-page active" id="wz-page-1">
+    <div class="form-row">
+      <div class="fg" id="fg-ct-title" style="grid-column:1/-1"><label>Task Title *</label><input type="text" id="ct-title" placeholder="e.g. Deliver Order #204 to Site C" maxlength="120"/><div class="f-err">Title is required</div></div>
+    </div>
+    <div class="fg"><label>Note / Instructions</label><textarea id="ct-note" placeholder="Extra instructions for the employee…" rows="2" style="resize:vertical"></textarea></div>
+    <div class="form-row">
+      <div class="fg"><label>Priority</label>
+        <select id="ct-priority">
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="fg" style="display:flex;align-items:flex-end">
+        <label class="form-check w-full" style="margin:0">
+          <input type="checkbox" id="ct-track"/>
+          <div class="form-check-info">
+            <h6>📍 Track Employee Location</h6>
+            <p>GPS ping every 30 seconds</p>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg" id="fg-ct-start"><label>Start Date & Time *</label><input type="datetime-local" id="ct-start"/><div class="f-err">Start time required</div></div>
+      <div class="fg" id="fg-ct-end"><label>End Date & Time *</label><input type="datetime-local" id="ct-end"/><div class="f-err">End time required</div></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-primary" onclick="wzNext(1)">Next: Add Steps →</button>
+    </div>
+  </div>
+
+  <!-- Page 2: Steps -->
+  <div class="wizard-page" id="wz-page-2">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600;color:var(--text2)">Define the steps for this task</div>
+      <button class="btn btn-ghost btn-sm" onclick="addTaskStep()">+ Add Step</button>
+    </div>
+    <div id="ct-steps-list"></div>
+    <div id="ct-steps-empty" style="text-align:center;padding:32px;color:var(--text3);display:none">
+      <div style="font-size:36px;margin-bottom:8px">📋</div>
+      <div style="font-size:14px">No steps added yet. Click "Add Step" to begin.</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px">
+      <button class="btn btn-ghost" onclick="wzBack(2)">← Back</button>
+      <button class="btn btn-primary" onclick="wzNext(2)">Next: Assign →</button>
+    </div>
+  </div>
+
+  <!-- Page 3: Assign -->
+  <div class="wizard-page" id="wz-page-3">
+    <div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:14px">Select employees to assign this task to:</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:13px;color:var(--text3)" id="ct-member-count">0 members</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="ctSelectAll()">Select All</button>
+        <button class="btn btn-ghost btn-sm" onclick="ctClearAll()">Clear</button>
+      </div>
+    </div>
+    <div class="member-select-list" id="ct-members-list"><div class="loading"><div class="spinner"></div></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;align-items:center">
+      <button class="btn btn-ghost" onclick="wzBack(3)">← Back</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="font-size:13px;color:var(--text2)" id="ct-selected-info">None selected</div>
+        <button class="btn btn-primary" id="btn-create-task" onclick="submitCreateTask()">🚀 Create Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════ SCRIPTS ══════════════════════════════════════ -->
 <script>
-const API='https://taskroom-backend.onrender.com/api';
-let _org=null,_user=null,_token=null,_pg=1,_st=null;
+/* ── GLOBALS ────────────────────────────────────────────────────────── */
+const BASE = 'https://taskroom-backend.onrender.com/api';
+let _user=null, _token=null, _org=null;
+let _pg=1, _rpg=1, _tpg=1;
+let _st=null, _rst=null, _tst=null;
+let _taskFilter='', _taskRoomId=null, _currentTaskId=null, _currentRoomId=null;
+let _ctRoom=null, _ctMembers=[], _ctSelectedIds=new Set(), _ctSteps=[];
+let _wzStep=1;
 
-// restore session
-(function(){
-  try{const s=JSON.parse(localStorage.getItem('tr_s')||'null');if(s&&s.org){_org=s.org;_user=s.user;_token=s.token;showDash();}}catch(e){}
-  loadStats();
-})();
+const STORAGE_KEY='taskroom_v2';
 
-function save(){localStorage.setItem('tr_s',JSON.stringify({org:_org,user:_user,token:_token}));}
-function clear(){localStorage.removeItem('tr_s');_org=null;_user=null;_token=null;}
+/* ── STORAGE ────────────────────────────────────────────────────────── */
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({user:_user,token:_token,org:_org}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');_user=d.user||null;_token=d.token||null;_org=d.org||null;}catch(e){}}
+function clear(){_user=null;_token=null;_org=null;try{localStorage.removeItem(STORAGE_KEY);}catch(e){}}
 
-async function api(m,p,b,t){
-  const o={method:m,headers:{'Content-Type':'application/json'}};
-  if(t)o.headers['Authorization']='Bearer '+t;
-  if(b)o.body=JSON.stringify(b);
-  const r=await fetch(API+p,o);return r.json();
+/* ── HTTP ───────────────────────────────────────────────────────────── */
+async function api(method,path,body,token){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(token)opts.headers['Authorization']='Bearer '+token;
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(BASE+path,opts);
+  if(r.status===401&&token){clear();showLanding();toast('Session expired. Please sign in again.','error');throw new Error('Unauthorized');}
+  return r.json();
 }
 
-async function loadStats(){
-  try{const d=await api('GET','/organization/getAll');if(d.success)document.getElementById('stat-orgs').textContent=d.data.length+'+';}catch(e){}
+/* ── MODAL HELPERS ──────────────────────────────────────────────────── */
+function openM(id){document.getElementById(id)?.classList.add('open')}
+function closeM(id){document.getElementById(id)?.classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.overlay.open').forEach(m=>m.classList.remove('open'));}});
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+/* ── TOAST ──────────────────────────────────────────────────────────── */
+function toast(m,t='info'){
+  const el=document.createElement('div');
+  const colors={success:'rgba(16,185,129,.25)',error:'rgba(239,68,68,.25)',info:'rgba(19,127,236,.2)',amber:'rgba(245,158,11,.2)'};
+  el.style.cssText=`position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid ${colors[t]||colors.info};color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:all .3s;max-width:340px;font-family:'Sora',sans-serif`;
+  const icons={success:'✅',error:'❌',info:'ℹ️',amber:'⚠️'};
+  el.textContent=(icons[t]||'')+'  '+m;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>{el.style.opacity='1';el.style.transform='translateY(0)';});
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(8px)';setTimeout(()=>el.remove(),400);},3000);
 }
 
-function openM(id){document.getElementById(id).classList.add('open');}
-function closeM(id){document.getElementById(id).classList.remove('open');}
-document.addEventListener('click',e=>{if(e.target.classList.contains('overlay'))e.target.classList.remove('open');});
+/* ── ALERT ──────────────────────────────────────────────────────────── */
+function showA(id,t,m){const el=document.getElementById(id);if(el)el.innerHTML=aHTML(t,m);}
+function aHTML(t,m){const c={success:'alert-success',error:'alert-error',info:'alert-info',amber:'alert-amber'};return `<div class="alert ${c[t]||'alert-info'}">${m}</div>`;}
 
-// Create org
-function openCreateOrg(){
-  document.getElementById('alert-create').innerHTML='';
-  ['fg-name','fg-email'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
-  openM('modal-create');
+/* ── ESC ────────────────────────────────────────────────────────────── */
+function esc(s){const d=document.createElement('div');d.appendChild(document.createTextNode(s||''));return d.innerHTML;}
+
+/* ── DATES ──────────────────────────────────────────────────────────── */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(d){if(!d)return '—';const dt=new Date(d);return `${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;}
+function fmtDT(d){if(!d)return '—';const dt=new Date(d);const h=dt.getHours()%12||12,m=String(dt.getMinutes()).padStart(2,'0'),p=dt.getHours()>=12?'PM':'AM';return `${dt.getDate()} ${MONTHS[dt.getMonth()]} · ${h}:${m} ${p}`;}
+function fmtTime(d){if(!d)return '—';const dt=new Date(d);const h=dt.getHours()%12||12,m=String(dt.getMinutes()).padStart(2,'0'),p=dt.getHours()>=12?'PM':'AM';return `${h}:${m} ${p}`;}
+function isOverdue(d){return d&&new Date(d)<new Date()}
+
+/* ── LANDING / DASH TOGGLES ─────────────────────────────────────────── */
+function showLanding(){
+  document.getElementById('landing-view').style.display='';
+  document.getElementById('dashboard-view').style.display='none';
+  setNavLanding();
 }
+function setNavLanding(){
+  document.getElementById('main-nav').innerHTML=`<div class="nav-logo"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div><div class="nav-links"><a href="#features" class="nav-link">Features</a><a href="#how-it-works" class="nav-link">How it works</a><a href="#pricing" class="nav-link">Pricing</a><button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button><button class="btn btn-primary btn-sm" onclick="openCreateOrg()">🚀 Create Org</button></div>`;
+}
+function showDash(){
+  document.getElementById('landing-view').style.display='none';
+  document.getElementById('dashboard-view').style.display='block';
+  document.getElementById('main-nav').innerHTML=`<div class="nav-logo"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div><div style="display:flex;align-items:center;gap:12px"><button id="sb-toggle" onclick="toggleSidebar()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><div style="font-size:13px;color:var(--text2)">Signed in as <strong style="color:var(--text)">${esc(_user?.fullName||_user?.username||'User')}</strong></div><div class="badge badge-${_user?.role==='manager'?'manager':'employee'}">${_user?.role||'employee'}</div><button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button></div>`;
+  fillDash();
+  applyRoleUI();
+  showPage('overview',document.getElementById('nav-overview'));
+  loadDashData();
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+
+/* ── ROLE UI ────────────────────────────────────────────────────────── */
+function applyRoleUI(){
+  const isManager=_user?.role==='manager';
+  document.querySelectorAll('.manager-only').forEach(el=>el.style.display=isManager?'':'none');
+  if(!isManager){
+    // Employees can't see rooms or task creation
+    document.getElementById('nav-rooms').style.display='none';
+  }
+}
+
+/* ── FILL DASH ──────────────────────────────────────────────────────── */
+function fillDash(){
+  if(!_org)return;
+  const L=(_org.name||'O')[0].toUpperCase();
+  document.getElementById('sb-av').textContent=L;
+  document.getElementById('sb-uname').textContent=_user?.fullName||_user?.username||'User';
+  document.getElementById('sb-urole').textContent=(_user?.role||'employee');
+  document.getElementById('sb-urole').className='sb-role '+(_user?.role||'employee');
+  document.getElementById('sb-orgname').textContent=_org.name||'Organization';
+  document.getElementById('sb-code-val').textContent=_org.code||'—';
+  document.getElementById('ov-code').textContent=_org.code||'—';
+  document.getElementById('s-emp').textContent=_org.stats?.totalEmployees??'—';
+  document.getElementById('s-rooms').textContent=_org.stats?.totalRooms??'—';
+  // Org page
+  document.getElementById('org-av').textContent=L;
+  document.getElementById('org-n').textContent=_org.name||'—';
+  document.getElementById('org-e').textContent=_org.contactEmail||'—';
+  document.getElementById('org-c').textContent=_org.code||'—';
+  const sb=document.getElementById('org-status');
+  if(_org.isSuspended){sb.className='badge badge-suspended';sb.textContent='● Suspended';}
+  else if(!_org.isActive){sb.className='badge badge-inactive';sb.textContent='● Inactive';}
+  else{sb.className='badge badge-active';sb.textContent='● Active';}
+  const a=_org.address||{};
+  const addr=[a.city,a.state,a.country].filter(Boolean).join(', ')||'—';
+  document.getElementById('org-grid').innerHTML=`
+    <div class="org-di"><label>Phone</label><div class="val">${esc(_org.contactPhone||'—')}</div></div>
+    <div class="org-di"><label>Domain</label><div class="val">${esc(_org.domain||'—')}</div></div>
+    <div class="org-di"><label>Address</label><div class="val">${esc(addr)}</div></div>
+    <div class="org-di"><label>Created</label><div class="val">${fmtDate(_org.createdAt)}</div></div>`;
+  document.getElementById('org-settings').innerHTML=`
+    <div class="sc c-amber"><div class="sc-icon">🏠</div><div class="sc-label">Max Rooms</div><div class="sc-value">${_org.settings?.maxRooms??50}</div></div>
+    <div class="sc c-blue"><div class="sc-icon">👥</div><div class="sc-label">Max Employees</div><div class="sc-value">${_org.settings?.maxEmployees??500}</div></div>
+    <div class="sc c-green"><div class="sc-icon">📍</div><div class="sc-label">Location Track</div><div class="sc-value" style="font-size:18px">${_org.settings?.enableLocationTracking!==false?'✅':'❌'}</div></div>
+    <div class="sc c-purple" onclick="copyCode()" style="cursor:pointer"><div class="sc-icon">🔑</div><div class="sc-label">Org Code</div><div class="sc-value" style="font-size:18px;letter-spacing:2px">${_org.code||'—'}</div><div class="sc-sub">Click to copy</div></div>`;
+  // Greeting
+  const h=new Date().getHours();
+  const greet=h<12?'Good morning':'h<17'?'Good afternoon':'Good evening';
+  document.getElementById('ov-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+' '+((_user?.fullName||'').split(' ')[0]||'')+'  👋';
+  document.getElementById('ov-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+/* ── LOAD DASH DATA ─────────────────────────────────────────────────── */
+async function loadDashData(){
+  if(!_token)return;
+  if(_user?.role==='manager'){
+    loadTaskDashboard();
+  }
+}
+
+async function loadTaskDashboard(){
+  try{
+    const d=await api('GET','/tasks/dashboard',null,_token);
+    if(!d.success)return;
+    const s=d.data?.summary||{};
+    document.getElementById('s-inprog').textContent=s.in_progress||0;
+    document.getElementById('s-missed').textContent=(s.missed||0)+(s.overdue||0);
+    document.getElementById('s-comp').textContent=s.completed||0;
+    // Task badge
+    const active=(s.in_progress||0)+(s.pending||0);
+    const b=document.getElementById('sb-task-badge');
+    if(active>0){b.style.display='';b.textContent=active;}
+    // Today tasks
+    renderTodayTasks(d.data?.todayTasks||[]);
+    // Employee activity
+    renderEmpActivity(d.data?.employeeActivity||[]);
+  }catch(e){console.error('dash error',e)}
+}
+
+function renderTodayTasks(tasks){
+  const el=document.getElementById('today-tasks-list');
+  if(!tasks.length){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No tasks scheduled for today</div>`;return;}
+  el.innerHTML=tasks.slice(0,5).map(t=>{
+    const pct=t.totalSteps>0?Math.round((t.completedSteps||0)/t.totalSteps*100):0;
+    const statusCls={'pending':'badge-pending','in_progress':'badge-in-progress','completed':'badge-completed','cancelled':'badge-cancelled'}[t.status]||'badge-pending';
+    return `<div class="today-task" onclick="openTaskPanel('${t._id}')">
+      <div class="today-task-top">
+        <div class="today-task-name">${esc(t.title)}</div>
+        <div class="badge ${statusCls}" style="font-size:10px;flex-shrink:0">${t.status?.replace('_',' ')}</div>
+      </div>
+      <div class="today-task-meta">
+        <span>${t.assignedTo?.fullName||t.assignedTo?.username||'—'}</span>
+        <span>·</span><span>${t.room?.name||'—'}</span>
+        <span>·</span><span style="${isOverdue(t.endDatetime)&&t.status!=='completed'?'color:var(--red)':''}">${fmtTime(t.startDatetime)} – ${fmtTime(t.endDatetime)}</span>
+        ${t.totalSteps>0?`<span>·</span><span>${pct}% done</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEmpActivity(activity){
+  const el=document.getElementById('emp-activity-grid');
+  if(!activity.length){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;grid-column:1/-1">No active employees today</div>`;return;}
+  el.innerHTML=activity.map(a=>{
+    const emp=a.employee;
+    const init=(emp?.fullName||emp?.username||'?')[0].toUpperCase();
+    return `<div class="emp-ac">
+      <div class="avatar" style="position:relative">
+        ${init}
+        <div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:${emp?.isOnline?'var(--green)':'var(--text3)'};border:2px solid var(--surface2)"></div>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(emp?.fullName||emp?.username||'Employee')}</div>
+        <div style="font-size:11.5px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.activeTask||'Assigned task')}</div>
+        <div class="badge ${a.taskStatus==='in_progress'?'badge-in-progress':'badge-pending'}" style="font-size:10px;margin-top:3px">${a.taskStatus?.replace('_',' ')||'pending'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function refreshDash(){fillDash();loadDashData();toast('Dashboard refreshed','info');}
+
+/* ── PAGE NAVIGATION ────────────────────────────────────────────────── */
+function showPage(id,el){
+  document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  closeTaskPanel();
+  // Load data for page
+  if(id==='members')loadMembers(1);
+  else if(id==='rooms')loadRooms(1);
+  else if(id==='tasks')loadTasks(1);
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+/* ── ROOMS ──────────────────────────────────────────────────────────── */
+async function loadRooms(pg=1){
+  _rpg=pg;
+  const container=document.getElementById('rooms-grid-wrap');
+  if(!container)return;
+  container.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  const search=document.getElementById('room-search')?.value.trim()||'';
+  const cat=document.getElementById('room-cat-filter')?.value||'';
+  let url=`/rooms?page=${pg}&limit=12`;
+  if(search)url+='&search='+encodeURIComponent(search);
+  if(cat)url+='&category='+cat;
+  try{
+    const d=await api('GET',url,null,_token);
+    if(!d.success){container.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Failed to load</h3><p>${esc(d.message||'Could not load rooms')}</p></div>`;return;}
+    const rooms=d.data?.rooms||[];
+    const pag=d.data?.pagination||{};
+    if(!rooms.length){
+      container.innerHTML=`<div class="empty-state"><div class="empty-icon">🏠</div><h3>No Rooms Found</h3><p>${search?'No rooms match your search.':'No rooms in your organization yet. Create one to get started.'}</p>${_user?.role==='manager'?'<button class="btn btn-primary btn-sm" onclick="openCreateRoom()">+ Create Room</button>':''}</div>`;
+      renderRoomsPg(pag);return;
+    }
+    container.innerHTML='<div class="rooms-grid">'+rooms.map(r=>roomCard(r)).join('')+'</div>';
+    renderRoomsPg(pag);
+  }catch(e){container.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Error</h3><p>Failed to load rooms.</p></div>';}
+}
+
+const ROOM_ICONS={'sales':'💼','delivery':'🚚','service':'🔧','maintenance':'⚙️','inspection':'🔍','other':'🏠'};
+const ROOM_COLORS={'sales':'var(--primary)','delivery':'var(--amber)','service':'var(--green)','maintenance':'var(--purple)','inspection':'var(--info)','other':'var(--primary)'};
+
+function roomCard(r){
+  const icon=ROOM_ICONS[r.category]||'🏠';
+  const color=ROOM_COLORS[r.category]||'var(--primary)';
+  const isArchived=r.isArchived;
+  return `<div class="room-card" onclick="openRoomDetail('${r._id}')">
+    <div class="room-card-top">
+      <div class="room-icon" style="background:linear-gradient(135deg,${color},${color}88)">${icon}</div>
+      <div style="min-width:0">
+        <div class="room-name">${esc(r.name)}</div>
+        <div class="room-code">${esc(r.roomCode||'—')}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="room-cat-badge">${esc(r.category||'other')}</span>
+        ${isArchived?'<span class="badge badge-inactive" style="font-size:10px">Archived</span>':''}
+      </div>
+    </div>
+    ${r.description?`<div class="room-desc">${esc(r.description)}</div>`:''}
+    <div class="room-stats">
+      <div class="room-stat">👥 <strong>${r.stats?.totalMembers||r.members?.length||0}</strong> members</div>
+      <div class="room-stat">✅ <strong>${r.stats?.completedTasks||0}</strong> done</div>
+      <div class="room-stat">⏳ <strong>${r.stats?.activeTasks||0}</strong> active</div>
+    </div>
+  </div>`;
+}
+
+function renderRoomsPg(p){
+  const el=document.getElementById('rooms-pg');
+  if(!p||p.totalPages<=1){el.innerHTML='';return;}
+  let h=`<button class="pg-btn" onclick="loadRooms(${_rpg-1})" ${_rpg<=1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=p.totalPages;i++){
+    if(Math.abs(i-_rpg)<3||i===1||i===p.totalPages)h+=`<button class="pg-btn ${i===_rpg?'active':''}" onclick="loadRooms(${i})">${i}</button>`;
+    else if(Math.abs(i-_rpg)===3)h+=`<span style="color:var(--text3);padding:0 4px">…</span>`;
+  }
+  h+=`<button class="pg-btn" onclick="loadRooms(${_rpg+1})" ${_rpg>=p.totalPages?'disabled':''}>›</button>`;
+  el.innerHTML=h;
+}
+
+function debRoomSearch(){clearTimeout(_rst);_rst=setTimeout(()=>loadRooms(1),400);}
+
+/* ── ROOM DETAIL ────────────────────────────────────────────────────── */
+async function openRoomDetail(roomId){
+  _currentRoomId=roomId;
+  openM('modal-room-detail');
+  document.getElementById('rd-name').textContent='Loading…';
+  document.getElementById('rd-members-list').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('rd-tasks-list').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  // Reset tabs
+  showRoomTab('overview',document.querySelector('#rd-tabs .tab-btn'));
+  try{
+    const d=await api('GET','/rooms/'+roomId,null,_token);
+    if(!d.success){toast('Could not load room','error');closeM('modal-room-detail');return;}
+    const r=d.data?.room;
+    const icon=ROOM_ICONS[r.category]||'🏠';
+    document.getElementById('rd-icon').textContent=icon;
+    document.getElementById('rd-name').textContent=r.name||'Room';
+    document.getElementById('rd-code').textContent=r.roomCode||'—';
+    document.getElementById('rd-cat-badge').textContent=r.category||'other';
+    const sb=document.getElementById('rd-status-badge');
+    if(r.isArchived){sb.className='badge badge-inactive';sb.textContent='Archived';}
+    else if(r.settings?.isActive!==false){sb.className='badge badge-active';sb.textContent='Active';}
+    else{sb.className='badge badge-inactive';sb.textContent='Inactive';}
+    document.getElementById('rd-member-count').textContent=r.stats?.totalMembers||r.members?.length||0;
+    document.getElementById('rd-active-tasks').textContent=r.stats?.activeTasks||0;
+    document.getElementById('rd-comp-tasks').textContent=r.stats?.completedTasks||0;
+    const archBtn=document.getElementById('rd-archive-btn');
+    if(archBtn){archBtn.textContent=r.isArchived?'Restore Room':'Archive Room';archBtn.className=r.isArchived?'btn btn-success btn-sm':'btn btn-ghost btn-sm';}
+    const a=r.address||{};
+    document.getElementById('rd-overview-info').innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px">
+        <div class="org-di"><label>Created by</label><div class="val">${esc(r.createdBy?.fullName||r.createdBy?.username||'—')}</div></div>
+        <div class="org-di"><label>Created</label><div class="val">${fmtDate(r.createdAt)}</div></div>
+        <div class="org-di"><label>Max Members</label><div class="val">${r.settings?.maxMembers||100}</div></div>
+        <div class="org-di"><label>Auto Accept</label><div class="val">${r.settings?.autoAcceptMembers?'✅ Yes':'❌ No'}</div></div>
+        ${r.description?`<div class="org-di" style="grid-column:1/-1"><label>Description</label><div class="val">${esc(r.description)}</div></div>`:''}
+      </div>`;
+    renderRoomMembers(r.members||[]);
+    loadRoomTasks(roomId);
+  }catch(e){toast('Error loading room','error');}
+}
+
+function renderRoomMembers(members){
+  const el=document.getElementById('rd-members-list');
+  if(!members.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><h3>No Members</h3><p>No active members in this room.</p></div>';return;}
+  el.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">
+    ${members.map(m=>{
+      const u=m.user||m;
+      const init=(u.fullName||u.username||'?')[0].toUpperCase();
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div class="avatar" style="position:relative">${init}<div style="position:absolute;bottom:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:${u.isOnline?'var(--green)':'var(--text3)'};border:2px solid var(--surface2)"></div></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:700">${esc(u.fullName||u.username||'—')}</div>
+          <div style="font-size:12px;color:var(--text3)">@${esc(u.username||'—')}${u.department?' · '+esc(u.department):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="badge badge-${u.role||'employee'}">${u.role||'employee'}</div>
+          <div style="font-size:12px;color:${u.isOnline?'var(--green)':'var(--text3)'}">● ${u.isOnline?'Online':'Offline'}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function loadRoomTasks(roomId){
+  const el=document.getElementById('rd-tasks-list');
+  try{
+    const d=await api('GET',`/tasks?roomId=${roomId}&limit=20`,null,_token);
+    if(!d.success){el.innerHTML='<div style="padding:20px;color:var(--red);font-size:13px">Failed to load tasks.</div>';return;}
+    const tasks=d.data?.tasks||[];
+    if(!tasks.length){
+      el.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><h3>No Tasks</h3><p>No tasks in this room yet.</p>${_user?.role==='manager'?'<button class="btn btn-primary btn-sm" onclick="openCreateTaskForRoom()">+ Create Task</button>':''}</div>`;
+      return;
+    }
+    el.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">
+      ${tasks.map(t=>{
+        const pct=t.totalSteps>0?Math.round((t.completedSteps||0)/t.totalSteps*100):0;
+        const statusCls={'pending':'badge-pending','in_progress':'badge-in-progress','completed':'badge-completed','cancelled':'badge-cancelled'}[t.status]||'badge-pending';
+        return `<div style="padding:12px 14px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border);cursor:pointer;transition:border-color var(--transition)" onclick="closeM('modal-room-detail');setTimeout(()=>openTaskPanel('${t._id}'),100)" onmouseover="this.style.borderColor='rgba(19,127,236,.3)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+            <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</div>
+            <div class="badge ${statusCls}" style="font-size:10px;flex-shrink:0">${t.status?.replace('_',' ')||'pending'}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3)">
+            <span>👤 ${esc(t.assignedTo?.fullName||t.assignedTo?.username||'—')}</span>
+            <span>·</span><span>${fmtDT(t.startDatetime)}</span>
+            <span>·</span><span class="badge badge-${t.priority||'medium'}" style="font-size:10px">${t.priority||'medium'}</span>
+          </div>
+          ${t.totalSteps>0?`<div class="prog-wrap" style="margin-top:8px"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=50?'var(--primary)':'var(--amber)'}"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">${t.completedSteps||0}/${t.totalSteps} steps · ${pct}%</div></div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }catch(e){el.innerHTML='<div style="padding:20px;color:var(--red);font-size:13px">Error loading tasks.</div>';}
+}
+
+function showRoomTab(tab,btn){
+  document.querySelectorAll('#rd-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('rd-tab-'+tab)?.classList.add('active');
+}
+
+async function archiveCurrentRoom(){
+  if(!_currentRoomId)return;
+  const d=await api('GET','/rooms/'+_currentRoomId,null,_token);
+  const r=d.data?.room;
+  const isArchived=r?.isArchived;
+  if(!confirm(`${isArchived?'Restore':'Archive'} this room?`))return;
+  try{
+    const res=await api('PATCH','/rooms/archive/'+_currentRoomId,{archive:!isArchived},_token);
+    if(res.success){toast(res.message,'success');closeM('modal-room-detail');loadRooms(1);}
+    else toast(res.message||'Failed','error');
+  }catch(e){toast('Error','error');}
+}
+
+/* ── TASKS ──────────────────────────────────────────────────────────── */
+let _taskStatusFilter='';
+function setTaskFilter(val,btn){
+  _taskStatusFilter=val;
+  document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  loadTasks(1);
+}
+
+async function loadTasks(pg=1){
+  _tpg=pg;
+  const body=document.getElementById('tasks-body');
+  body.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  const priority=document.getElementById('task-priority-filter')?.value||'';
+  const search=document.getElementById('task-search')?.value.trim()||'';
+  let url=`/tasks?page=${pg}&limit=15`;
+  if(_taskStatusFilter)url+='&status='+_taskStatusFilter;
+  if(priority)url+='&priority='+priority;
+  try{
+    const d=await api('GET',url,null,_token);
+    if(!d.success){body.innerHTML=`<div class="tbl-empty">${esc(d.message||'Failed to load tasks')}</div>`;return;}
+    const tasks=d.data?.tasks||[];
+    const pag=d.data?.pagination||{};
+    document.getElementById('tasks-count-label').textContent=`Tasks (${pag.total||tasks.length})`;
+    // Filter by search client-side
+    const filtered=search?tasks.filter(t=>(t.title||'').toLowerCase().includes(search.toLowerCase())||(t.assignedTo?.fullName||'').toLowerCase().includes(search.toLowerCase())):tasks;
+    if(!filtered.length){body.innerHTML=`<div class="tbl-empty">No tasks found${search?' for "'+esc(search)+'"':''}</div>`;renderTasksPg(pag);return;}
+    body.innerHTML=`<table><thead><tr>
+      <th>Title</th><th>Employee</th><th>Room</th><th>Priority</th><th>Status</th><th>Progress</th><th>Deadline</th>
+    </tr></thead><tbody>
+    ${filtered.map(t=>{
+      const pct=t.totalSteps>0?Math.round((t.completedSteps||0)/t.totalSteps*100):0;
+      const statusCls={'pending':'badge-pending','in_progress':'badge-in-progress','completed':'badge-completed','cancelled':'badge-cancelled','overdue':'badge-overdue'}[t.status]||'badge-pending';
+      const overdue=isOverdue(t.endDatetime)&&t.status!=='completed'&&t.status!=='cancelled';
+      const init=(t.assignedTo?.fullName||t.assignedTo?.username||'?')[0].toUpperCase();
+      return `<tr class="task-row" onclick="openTaskPanel('${t._id}')">
+        <td><div class="task-title-cell">${esc(t.title)}</div>${t.isFieldWork?'<div style="font-size:11px;color:var(--info);margin-top:2px">📍 GPS tracked</div>':''}</td>
+        <td><div class="task-emp"><div class="avatar" style="width:28px;height:28px;font-size:11px">${init}</div><div style="min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">${esc(t.assignedTo?.fullName||t.assignedTo?.username||'—')}</div></div></div></td>
+        <td style="color:var(--text2);font-size:12.5px">${esc(t.room?.name||'—')}</td>
+        <td><div class="badge badge-${t.priority||'medium'}">${t.priority||'medium'}</div></td>
+        <td><div class="badge ${statusCls}">${(t.status||'pending').replace('_',' ')}</div>${overdue?'<div style="font-size:10px;color:var(--red);margin-top:2px">Overdue</div>':''}</td>
+        <td>${t.totalSteps>0?`<div class="progress-bar"><div class="progress-fill ${pct>=100?'':pct>=50?'':'amber'}" style="width:${pct}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:3px">${pct}%</div>`:'<span style="color:var(--text3);font-size:12px">—</span>'}</td>
+        <td style="font-size:12.5px;${overdue?'color:var(--red)':''}">${fmtDT(t.endDatetime)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+    renderTasksPg(pag);
+  }catch(e){body.innerHTML=`<div class="tbl-empty">Error loading tasks.</div>`;}
+}
+
+function renderTasksPg(p){
+  const el=document.getElementById('tasks-pg');
+  if(!p||p.totalPages<=1){el.innerHTML='';return;}
+  let h=`<button class="pg-btn" onclick="loadTasks(${_tpg-1})" ${_tpg<=1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=p.totalPages;i++){
+    if(Math.abs(i-_tpg)<3||i===1||i===p.totalPages)h+=`<button class="pg-btn ${i===_tpg?'active':''}" onclick="loadTasks(${i})">${i}</button>`;
+    else if(Math.abs(i-_tpg)===3)h+=`<span style="color:var(--text3);padding:0 4px">…</span>`;
+  }
+  h+=`<button class="pg-btn" onclick="loadTasks(${_tpg+1})" ${_tpg>=p.totalPages?'disabled':''}>›</button>`;
+  el.innerHTML=h;
+}
+
+function debTaskSearch(){clearTimeout(_tst);_tst=setTimeout(()=>loadTasks(1),400);}
+
+/* ── TASK DETAIL PANEL ──────────────────────────────────────────────── */
+async function openTaskPanel(taskId){
+  _currentTaskId=taskId;
+  const panel=document.getElementById('task-panel');
+  panel.classList.add('open');
+  document.getElementById('tp-title').textContent='Loading…';
+  document.getElementById('tp-sub').textContent='';
+  document.getElementById('tp-body').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('tp-cancel-btn').style.display='none';
+  try{
+    const d=await api('POST','/tasks/detail',{taskId},_token);
+    if(!d.success){document.getElementById('tp-body').innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Error</h3><p>${esc(d.message||'Failed to load')}</p></div>`;return;}
+    const t=d.data?.task;
+    renderTaskPanel(t);
+  }catch(e){document.getElementById('tp-body').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Error</h3><p>Failed to load task details.</p></div>`;}
+}
+
+function renderTaskPanel(t){
+  const statusCls={'pending':'badge-pending','in_progress':'badge-in-progress','completed':'badge-completed','cancelled':'badge-cancelled'}[t.status]||'badge-pending';
+  const pct=t.totalSteps>0?Math.round((t.completedSteps||0)/t.totalSteps*100):0;
+  document.getElementById('tp-title').textContent=t.title||'Task';
+  document.getElementById('tp-sub').innerHTML=`<span class="badge ${statusCls}">${(t.status||'pending').replace('_',' ')}</span> &nbsp;${esc(t.room?.name||'—')}`;
+  // Show cancel btn for manager if not done
+  const canCancel=_user?.role==='manager'&&['pending','in_progress'].includes(t.status);
+  if(canCancel)document.getElementById('tp-cancel-btn').style.display='';
+  const overdue=isOverdue(t.endDatetime)&&t.status!=='completed'&&t.status!=='cancelled';
+  const u=t.assignedTo;
+  const init=u?(u.fullName||u.username||'?')[0].toUpperCase():'?';
+
+  let html=`
+    <!-- Employee -->
+    <div class="panel-sec">
+      <div class="panel-sec-title">Assigned Employee</div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border)">
+        <div class="avatar" style="position:relative">${init}<div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:${u?.isOnline?'var(--green)':'var(--text3)'};border:2px solid var(--surface2)"></div></div>
+        <div>
+          <div style="font-size:14px;font-weight:700">${esc(u?.fullName||u?.username||'—')}</div>
+          ${u?.username?`<div style="font-size:12px;color:var(--text3)">@${esc(u.username)}</div>`:''}
+        </div>
+        <div style="margin-left:auto;font-size:12px;color:${u?.isOnline?'var(--green)':'var(--text3)'}">● ${u?.isOnline?'Online':'Offline'}</div>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="panel-sec">
+      <div class="panel-sec-title">Task Info</div>
+      <div class="info-row"><span class="label">Priority</span><div class="badge badge-${t.priority||'medium'}">${t.priority||'medium'}</div></div>
+      <div class="info-row"><span class="label">Field Work</span><span class="val">${t.isFieldWork?'📍 GPS tracked':'—'}</span></div>
+      <div class="info-row"><span class="label">Start</span><span class="val">${fmtDT(t.startDatetime)}</span></div>
+      <div class="info-row"><span class="label">Deadline</span><span class="val" style="${overdue?'color:var(--red)':''}">${fmtDT(t.endDatetime)}${overdue?' ⚠️':''}</span></div>
+      ${t.employeeStartTime?`<div class="info-row"><span class="label">Started At</span><span class="val">${fmtDT(t.employeeStartTime)}</span></div>`:''}
+      ${t.completedAt?`<div class="info-row"><span class="label">Completed At</span><span class="val" style="color:var(--green)">${fmtDT(t.completedAt)}</span></div>`:''}
+      ${t.cancelledAt?`<div class="info-row"><span class="label">Cancelled At</span><span class="val" style="color:var(--red)">${fmtDT(t.cancelledAt)}</span></div>`:''}
+    </div>
+
+    <!-- Progress -->
+    ${t.totalSteps>0?`<div class="panel-sec">
+      <div class="panel-sec-title">Progress</div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span style="color:var(--text2)">${t.completedSteps||0}/${t.totalSteps} steps completed</span><span style="font-weight:700;color:${pct>=100?'var(--green)':pct>=50?'var(--primary)':'var(--amber)'}">${pct}%</span></div>
+        <div class="prog-bar" style="height:8px"><div class="prog-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=50?'var(--primary)':'var(--amber)'}"></div></div>
+      </div>
+    </div>`:''}
+
+    <!-- Note -->
+    ${t.note?`<div class="panel-sec">
+      <div class="panel-sec-title">Manager Note</div>
+      <div style="background:var(--amber-g);border:1px solid rgba(245,158,11,.22);border-radius:var(--r2);padding:12px;font-size:13px;line-height:1.6;color:var(--text2)">📝 ${esc(t.note)}</div>
+    </div>`:''}
+
+    <!-- Steps -->
+    ${t.steps?.length?`<div class="panel-sec">
+      <div class="panel-sec-title">Steps (${t.steps.length})</div>
+      <div class="step-timeline">
+        ${t.steps.map((s,i)=>{
+          const isDone=s.status==='completed'||s.status==='skipped';
+          const isActive=s.status==='in_progress'||s.status==='reached';
+          const dotCls=isDone?'done':isActive?'active':'pending';
+          const statusLabel={'completed':'✓ Done','in_progress':'● Active','reached':'📍 Reached','skipped':'Skip','pending':'Pending'}[s.status]||'Pending';
+          const statusColor={'completed':'var(--green)','in_progress':'var(--primary)','reached':'var(--amber)','skipped':'var(--text3)','pending':'var(--text3)'}[s.status]||'var(--text3)';
+          return `<div class="step-item">
+            <div style="position:relative">
+              <div class="step-dot ${dotCls}">${isDone?'✓':i+1}</div>
+              ${i<t.steps.length-1?`<div class="step-line" style="position:absolute;left:13px;top:30px;width:2px;height:calc(100% + 8px);background:${isDone?'var(--green)':'var(--border)'}"></div>`:''}
+            </div>
+            <div class="step-content">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                <div class="step-title">${esc(s.title||'Step '+(i+1))}</div>
+                ${s.isFieldWorkStep?'<span style="font-size:10px;color:var(--green);font-weight:700;background:var(--green-g);padding:1px 6px;border-radius:4px">Field</span>':''}
+              </div>
+              <div class="step-time">${fmtTime(s.startDatetime)} → ${fmtTime(s.endDatetime)}</div>
+              <div style="margin-top:4px"><span style="font-size:11.5px;font-weight:700;color:${statusColor}">${statusLabel}</span></div>
+              ${s.destinationLocation?.address?`<div class="step-ev">📍 Destination: ${esc(s.destinationLocation.address)}</div>`:''}
+              ${s.employeeNotes?`<div class="step-ev">📝 ${esc(s.employeeNotes)}</div>`:''}
+              ${s.submittedPhotoUrl?`<div class="step-ev">📸 <a href="${esc(s.submittedPhotoUrl)}" target="_blank" style="color:var(--amber)">View photo proof</a></div>`:''}
+              ${s.signatureData?`<div class="step-ev">✍️ Signature collected${s.signatureSignedBy?' by '+esc(s.signatureSignedBy):''}</div>`:''}
+              ${s.isOverdue?`<div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:700">⚠️ Completed after deadline</div>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`:''}
+  `;
+  document.getElementById('tp-body').innerHTML=html;
+}
+
+function closeTaskPanel(){
+  document.getElementById('task-panel').classList.remove('open');
+  _currentTaskId=null;
+}
+
+async function cancelCurrentTask(){
+  if(!_currentTaskId)return;
+  if(!confirm('Cancel this task? This cannot be undone.'))return;
+  try{
+    const d=await api('PATCH','/tasks/cancel',{taskId:_currentTaskId},_token);
+    if(d.success){toast('Task cancelled','success');closeTaskPanel();loadTasks(_tpg);loadDashData();}
+    else toast(d.message||'Failed to cancel','error');
+  }catch(e){toast('Error cancelling task','error');}
+}
+
+/* ── CREATE ROOM ────────────────────────────────────────────────────── */
+function openCreateRoom(){openM('modal-create-room');document.getElementById('alert-create-room').innerHTML='';}
+
+async function submitCreateRoom(e){
+  e.preventDefault();
+  const name=document.getElementById('r-name').value.trim();
+  const fg=document.getElementById('fg-rname');
+  fg.classList.remove('field-error');
+  if(!name){fg.classList.add('field-error');return;}
+  const btn=document.getElementById('btn-create-room');
+  btn.innerHTML='<div class="spinner spinner-sm" style="border-top-color:#fff;display:inline-block;margin:0 5px -3px 0"></div> Creating…';
+  btn.disabled=true;
+  document.getElementById('alert-create-room').innerHTML='';
+  const body={
+    name,
+    description:document.getElementById('r-desc').value.trim()||undefined,
+    category:document.getElementById('r-cat').value,
+    maxMembers:parseInt(document.getElementById('r-max').value)||100,
+    settings:{
+      autoAcceptMembers:document.getElementById('r-auto-accept').checked,
+      allowMembersToSeeEachOther:document.getElementById('r-see-each').checked,
+      isActive:document.getElementById('r-active').checked
+    }
+  };
+  try{
+    const d=await api('POST','/rooms',body,_token);
+    if(d.success){toast('Room created: '+d.data?.room?.name,'success');closeM('modal-create-room');loadRooms(1);}
+    else showA('alert-create-room','error',d.message||'Failed to create room');
+  }catch(err){showA('alert-create-room','error','Network error');}
+  finally{btn.innerHTML='🏠 Create Room';btn.disabled=false;}
+}
+
+/* ── CREATE TASK WIZARD ─────────────────────────────────────────────── */
+function openCreateTaskForRoom(){
+  _ctRoom=_currentRoomId;
+  document.getElementById('ct-room-sub').textContent=_ctRoom?'Assign a new task to room members':'Select a room first';
+  closeM('modal-room-detail');
+  resetWizard();
+  openM('modal-create-task');
+  // Load min datetime
+  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  const str=now.toISOString().slice(0,16);
+  document.getElementById('ct-start').min=str;
+  document.getElementById('ct-end').min=str;
+  // Load members
+  if(_ctRoom)loadCtMembers();
+}
+
+function resetWizard(){
+  _wzStep=1;_ctSteps=[];_ctSelectedIds=new Set();_ctMembers=[];
+  document.getElementById('alert-create-task').innerHTML='';
+  document.getElementById('ct-title').value='';
+  document.getElementById('ct-note').value='';
+  document.getElementById('ct-priority').value='medium';
+  document.getElementById('ct-track').checked=false;
+  document.getElementById('ct-start').value='';
+  document.getElementById('ct-end').value='';
+  document.getElementById('ct-steps-list').innerHTML='';
+  document.getElementById('ct-steps-empty').style.display='';
+  document.getElementById('ct-members-list').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  updateWizardUI();
+}
+
+function updateWizardUI(){
+  for(let i=1;i<=3;i++){
+    const dot=document.getElementById('wz-dot-'+i);
+    const lbl=document.getElementById('wz-lbl-'+i);
+    const page=document.getElementById('wz-page-'+i);
+    if(i<_wzStep){dot.className='wz-dot done';dot.textContent='✓';lbl.className='wz-label';}
+    else if(i===_wzStep){dot.className='wz-dot active';dot.textContent=i;lbl.className='wz-label active';}
+    else{dot.className='wz-dot';dot.textContent=i;lbl.className='wz-label';}
+    page?.classList.toggle('active',i===_wzStep);
+  }
+}
+
+function wzNext(from){
+  document.getElementById('alert-create-task').innerHTML='';
+  if(from===1){
+    const title=document.getElementById('ct-title').value.trim();
+    const start=document.getElementById('ct-start').value;
+    const end=document.getElementById('ct-end').value;
+    let ok=true;
+    ['fg-ct-title','fg-ct-start','fg-ct-end'].forEach(id=>document.getElementById(id)?.classList.remove('field-error'));
+    if(!title){document.getElementById('fg-ct-title').classList.add('field-error');ok=false;}
+    if(!start){document.getElementById('fg-ct-start').classList.add('field-error');ok=false;}
+    if(!end){document.getElementById('fg-ct-end').classList.add('field-error');ok=false;}
+    if(ok&&new Date(end)<=new Date(start)){showA('alert-create-task','error','End time must be after start time');ok=false;}
+    if(!ok)return;
+    _wzStep=2;
+  }else if(from===2){
+    if(!_ctRoom){showA('alert-create-task','error','No room selected. Please go back and select a room first.');return;}
+    if(_ctSteps.length===0){showA('alert-create-task','error','Add at least one step');return;}
+    _wzStep=3;
+    renderCtMembers();
+  }
+  updateWizardUI();
+}
+
+function wzBack(from){
+  _wzStep=from-1;
+  updateWizardUI();
+  document.getElementById('alert-create-task').innerHTML='';
+}
+
+// Steps management
+function addTaskStep(){
+  const start=document.getElementById('ct-start').value||'';
+  const end=document.getElementById('ct-end').value||'';
+  const id='step_'+Date.now();
+  _ctSteps.push({id,title:'',description:'',startDatetime:start,endDatetime:end,requirePhoto:false,requireSignature:false,requireLocationCheck:false,signatureFrom:'customer'});
+  renderCtSteps();
+}
+
+function deleteCtStep(id){_ctSteps=_ctSteps.filter(s=>s.id!==id);renderCtSteps();}
+
+function updateCtStep(id,field,val){
+  const s=_ctSteps.find(s=>s.id===id);
+  if(s)s[field]=val;
+}
+
+function renderCtSteps(){
+  const el=document.getElementById('ct-steps-list');
+  const empty=document.getElementById('ct-steps-empty');
+  if(!_ctSteps.length){el.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  el.innerHTML=_ctSteps.map((s,i)=>`
+    <div class="step-form-item" id="sfi-${s.id}">
+      <div class="step-form-hdr">
+        <div style="display:flex;align-items:center;gap:8px"><div class="step-form-num">${i+1}</div><div style="font-size:13px;font-weight:600">Step ${i+1}</div></div>
+        <button class="btn btn-danger btn-sm" onclick="deleteCtStep('${s.id}')">✕ Remove</button>
+      </div>
+      <div class="form-row">
+        <div class="fg" style="grid-column:1/-1"><label>Step Title *</label><input type="text" placeholder="e.g. Visit Site, Collect Signature" value="${esc(s.title)}" oninput="updateCtStep('${s.id}','title',this.value)" style="font-size:13px;padding:8px 12px"/></div>
+        <div class="fg"><label>Start Time *</label><input type="datetime-local" value="${esc(s.startDatetime)}" oninput="updateCtStep('${s.id}','startDatetime',this.value)" style="font-size:13px;padding:8px 12px"/></div>
+        <div class="fg"><label>End Time *</label><input type="datetime-local" value="${esc(s.endDatetime)}" oninput="updateCtStep('${s.id}','endDatetime',this.value)" style="font-size:13px;padding:8px 12px"/></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        <label style="text-transform:none;font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:500"><input type="checkbox" ${s.requirePhoto?'checked':''} onchange="updateCtStep('${s.id}','requirePhoto',this.checked)"/> 📸 Require Photo</label>
+        <label style="text-transform:none;font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:500"><input type="checkbox" ${s.requireSignature?'checked':''} onchange="updateCtStep('${s.id}','requireSignature',this.checked)"/> ✍️ Require Signature</label>
+        <label style="text-transform:none;font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:500"><input type="checkbox" ${s.requireLocationCheck?'checked':''} onchange="updateCtStep('${s.id}','requireLocationCheck',this.checked)"/> 📍 Location Check</label>
+      </div>
+    </div>`).join('');
+}
+
+// Members
+async function loadCtMembers(){
+  if(!_ctRoom)return;
+  try{
+    const d=await api('GET','/rooms/member/'+_ctRoom,null,_token);
+    _ctMembers=(d.data?.members||[]).filter(m=>m.user&&m.status!=='removed');
+  }catch(e){_ctMembers=[];}
+}
+
+function renderCtMembers(){
+  const el=document.getElementById('ct-members-list');
+  if(!_ctMembers.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No active members in this room. Add employees first.</div>';updateCtMemberCount();return;}
+  el.innerHTML=_ctMembers.map(m=>{
+    const u=m.user||m;
+    const id=u._id||u.id;
+    const sel=_ctSelectedIds.has(id);
+    const init=(u.fullName||u.username||'?')[0].toUpperCase();
+    return `<div class="member-select-item ${sel?'selected':''}" onclick="ctToggleMember('${id}',this)">
+      <div class="avatar" style="width:34px;height:34px;font-size:13px">${init}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.fullName||u.username||'—')}</div>
+        <div style="font-size:11.5px;color:var(--text3)">@${esc(u.username||'—')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:11px;color:${u.isOnline?'var(--green)':'var(--text3)'}">● ${u.isOnline?'Online':'Offline'}</div>
+        <div class="check">${sel?'✓':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateCtMemberCount();
+  document.getElementById('ct-member-count').textContent=_ctMembers.length+' member'+(+(_ctMembers.length!==1)?'s':'');
+}
+
+function ctToggleMember(id,el){
+  if(_ctSelectedIds.has(id)){_ctSelectedIds.delete(id);el.classList.remove('selected');el.querySelector('.check').textContent='';}
+  else{_ctSelectedIds.add(id);el.classList.add('selected');el.querySelector('.check').textContent='✓';}
+  updateCtMemberCount();
+}
+
+function ctSelectAll(){_ctMembers.forEach(m=>{const id=(m.user||m)._id||(m.user||m).id;if(id)_ctSelectedIds.add(id);});renderCtMembers();}
+function ctClearAll(){_ctSelectedIds.clear();renderCtMembers();}
+
+function updateCtMemberCount(){
+  const n=_ctSelectedIds.size;
+  document.getElementById('ct-selected-info').textContent=n?`${n} selected`:'None selected';
+}
+
+async function submitCreateTask(){
+  document.getElementById('alert-create-task').innerHTML='';
+  if(_ctSelectedIds.size===0){showA('alert-create-task','error','Select at least one employee');return;}
+  if(!_ctRoom){showA('alert-create-task','error','No room selected');return;}
+  const title=document.getElementById('ct-title').value.trim();
+  const note=document.getElementById('ct-note').value.trim();
+  const priority=document.getElementById('ct-priority').value;
+  const isFieldWork=document.getElementById('ct-track').checked;
+  const startDatetime=document.getElementById('ct-start').value;
+  const endDatetime=document.getElementById('ct-end').value;
+  // Validate steps
+  for(let i=0;i<_ctSteps.length;i++){
+    const s=_ctSteps[i];
+    if(!s.title.trim()){showA('alert-create-task','error',`Step ${i+1}: Title is required`);return;}
+    if(!s.startDatetime||!s.endDatetime){showA('alert-create-task','error',`Step ${i+1}: Start and end time are required`);return;}
+    if(new Date(s.endDatetime)<=new Date(s.startDatetime)){showA('alert-create-task','error',`Step ${i+1}: End time must be after start`);return;}
+    if(s.requireSignature&&!s.signatureFrom){s.signatureFrom='customer';}
+  }
+  const btn=document.getElementById('btn-create-task');
+  btn.innerHTML='<div class="spinner spinner-sm" style="border-top-color:#fff;display:inline-block;margin:0 5px -3px 0"></div> Creating…';
+  btn.disabled=true;
+  const body={
+    roomId:_ctRoom,
+    title,
+    note:note||undefined,
+    priority,
+    startDatetime:new Date(startDatetime).toISOString(),
+    endDatetime:new Date(endDatetime).toISOString(),
+    isFieldWork,
+    assignedTo:Array.from(_ctSelectedIds),
+    steps:_ctSteps.map(s=>({
+      title:s.title,
+      description:s.description||undefined,
+      startDatetime:new Date(s.startDatetime).toISOString(),
+      endDatetime:new Date(s.endDatetime).toISOString(),
+      validations:{requirePhoto:s.requirePhoto,requireSignature:s.requireSignature,signatureFrom:s.requireSignature?s.signatureFrom:null,requireLocationCheck:s.requireLocationCheck,requireLocationTrace:isFieldWork}
+    }))
+  };
+  try{
+    const d=await api('POST','/tasks',body,_token);
+    if(d.success){
+      const n=_ctSelectedIds.size;
+      toast(n>1?`Task created for ${n} employees!`:'Task created!','success');
+      closeM('modal-create-task');
+      loadTasks(1);loadDashData();
+    }else showA('alert-create-task','error',d.message||'Failed to create task');
+  }catch(e){showA('alert-create-task','error','Network error');}
+  finally{btn.innerHTML='🚀 Create Task';btn.disabled=false;}
+}
+
+/* ── MEMBERS ────────────────────────────────────────────────────────── */
+async function loadMembers(pg=1){
+  if(!_org||!_token)return;
+  _pg=pg;
+  const search=document.getElementById('m-search')?.value.trim()||'';
+  const role=document.getElementById('role-filter')?.value||'';
+  const body=document.getElementById('m-body');
+  body.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  let url=`/organization/members?page=${pg}&limit=15`;
+  if(search)url+='&search='+encodeURIComponent(search);
+  if(role)url+='&role='+role;
+  try{
+    const d=await api('GET',url,null,_token);
+    if(!d.success){body.innerHTML=`<div class="tbl-empty">${esc(d.message||'Failed to load')}</div>`;return;}
+    const mbs=d.data?.members||[];
+    const pag=d.data?.pagination||{};
+    if(!mbs.length){body.innerHTML='<div class="tbl-empty">No members found.</div>';renderMPg(pag);return;}
+    body.innerHTML=`<table><thead><tr>
+      <th>Member</th><th>Username</th><th>Role</th><th>Status</th><th>Department</th><th>Joined</th>
+    </tr></thead><tbody>
+    ${mbs.map(m=>{
+      const init=(m.fullName||m.username||'?')[0].toUpperCase();
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar">${init}</div><div><div style="font-weight:600;font-size:13.5px">${esc(m.fullName||m.username)}</div><div style="font-size:12px;color:var(--text3)">${esc(m.email||m.mobile||'')}</div></div></div></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2)">@${esc(m.username)}</td>
+        <td><div class="badge badge-${m.role||'employee'}">${m.role||'employee'}</div></td>
+        <td><div style="display:flex;align-items:center;gap:6px"><div class="online-dot ${m.isOnline?'on':'off'}"></div><span style="font-size:13px;color:var(--text2)">${m.isOnline?'Online':'Offline'}</span></div></td>
+        <td style="color:var(--text2);font-size:13px">${esc(m.department||'—')}</td>
+        <td style="color:var(--text3);font-size:13px">${fmtDate(m.createdAt)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+    renderMPg(pag);
+  }catch(e){body.innerHTML='<div class="tbl-empty">Failed to load members.</div>';}
+}
+
+function renderMPg(p){
+  const el=document.getElementById('m-pg');
+  if(!p||p.totalPages<=1){el.innerHTML='';return;}
+  let h=`<button class="pg-btn" onclick="loadMembers(${_pg-1})" ${_pg<=1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=p.totalPages;i++){
+    if(Math.abs(i-_pg)<3||i===1||i===p.totalPages)h+=`<button class="pg-btn ${i===_pg?'active':''}" onclick="loadMembers(${i})">${i}</button>`;
+    else if(Math.abs(i-_pg)===3)h+=`<span style="color:var(--text3);padding:0 4px">…</span>`;
+  }
+  h+=`<button class="pg-btn" onclick="loadMembers(${_pg+1})" ${_pg>=p.totalPages?'disabled':''}>›</button>`;
+  el.innerHTML=h;
+}
+
+function debMSearch(){clearTimeout(_st);_st=setTimeout(()=>loadMembers(1),400);}
+
+/* ── CREATE ORG ─────────────────────────────────────────────────────── */
+function openCreateOrg(){openM('modal-create');document.getElementById('alert-create').innerHTML='';}
 
 async function submitCreate(e){
   e.preventDefault();
@@ -621,25 +1990,27 @@ async function submitCreate(e){
   let ok=true;
   ['fg-name','fg-email'].forEach(id=>document.getElementById(id).classList.remove('field-error'));
   if(!name){document.getElementById('fg-name').classList.add('field-error');ok=false;}
-  if(!email||!email.includes('@')){document.getElementById('fg-email').classList.add('field-error');ok=false;}
+  if(!email||!/\S+@\S+\.\S+/.test(email)){document.getElementById('fg-email').classList.add('field-error');ok=false;}
   if(!ok)return;
   const btn=document.getElementById('btn-create');
-  btn.innerHTML='<div class="spinner spin-sm" style="border-top-color:#fff;display:inline-block;margin:0 6px -3px 0"></div> Creating…';
+  btn.innerHTML='<div class="spinner spinner-sm" style="border-top-color:#fff;display:inline-block;margin:0 5px -3px 0"></div> Creating…';
   btn.disabled=true;
-  const body={name,contactEmail:email,
-    contactPhone:document.getElementById('in-phone').value.trim()||undefined,
-    domain:document.getElementById('in-domain').value.trim()||undefined,
-    address:{city:document.getElementById('in-city').value.trim()||undefined,state:document.getElementById('in-state').value.trim()||undefined,pincode:document.getElementById('in-pin').value.trim()||undefined,country:document.getElementById('in-country').value.trim()||'India'}};
+  document.getElementById('alert-create').innerHTML='';
+  const body={name,contactEmail:email,contactPhone:document.getElementById('in-phone').value.trim()||undefined,domain:document.getElementById('in-domain').value.trim()||undefined,address:{city:document.getElementById('in-city').value.trim()||undefined,state:document.getElementById('in-state').value.trim()||undefined,pincode:document.getElementById('in-pin').value.trim()||undefined,country:document.getElementById('in-country').value.trim()||'India'}};
   try{
     const d=await api('POST','/organization/create',body);
-    if(d.success){_org=d.data;save();closeM('modal-create');document.getElementById('success-code').textContent=_org.code;openM('modal-success');}
-    else showA('alert-create','error',d.message||'Failed to create');
-  }catch(err){showA('alert-create','error','Network error — please try again');}
-  finally{btn.innerHTML='&#128640; Create Organization';btn.disabled=false;}
+    if(d.success){
+      _org=d.data?.organization||d.data;
+      save();closeM('modal-create');
+      document.getElementById('success-code').textContent=_org.code||'—';
+      openM('modal-success');
+    }else showA('alert-create','error',d.message||'Failed to create organization');
+  }catch(err){showA('alert-create','error','Network error. Please check your connection.');}
+  finally{btn.innerHTML='🚀 Create Organization';btn.disabled=false;}
 }
 
-// Login
-function showLogin(){openM('modal-login');}
+/* ── LOGIN ──────────────────────────────────────────────────────────── */
+function showLogin(){openM('modal-login');document.getElementById('alert-login').innerHTML='';}
 
 async function submitLogin(e){
   e.preventDefault();
@@ -653,7 +2024,7 @@ async function submitLogin(e){
   if(!pass){document.getElementById('fg-lpass').classList.add('field-error');ok=false;}
   if(!ok)return;
   const btn=document.getElementById('btn-login');
-  btn.innerHTML='<div class="spinner spin-sm" style="border-top-color:#fff;display:inline-block;margin:0 6px -3px 0"></div> Signing in…';
+  btn.innerHTML='<div class="spinner spinner-sm" style="border-top-color:#fff;display:inline-block;margin:0 5px -3px 0"></div> Signing in…';
   btn.disabled=true;
   document.getElementById('alert-login').innerHTML='';
   try{
@@ -661,117 +2032,15 @@ async function submitLogin(e){
     if(d.success){
       _user=d.data.user;_token=d.data.token;
       const oid=_user.organization?._id||_user.organization;
-      const od=await api('GET','/organization/detail/'+oid);
+      const od=await api('GET','/organization/detail/'+oid,null,_token);
       _org=od.success?od.data:_user.organization;
       save();closeM('modal-login');showDash();
     }else showA('alert-login','error',d.message||'Invalid credentials');
-  }catch(err){showA('alert-login','error','Network error');}
-  finally{btn.innerHTML='Sign In';btn.disabled=false;}
+  }catch(err){showA('alert-login','error','Network error. Please try again.');}
+  finally{btn.innerHTML='Sign In →';btn.disabled=false;}
 }
 
-// Open dashboard from success
-function openDash(){closeM('modal-success');showDash();}
-
-function showDash(){
-  document.getElementById('landing-view').style.display='none';
-  document.getElementById('dashboard-view').style.display='block';
-  const n=document.getElementById('main-nav');
-  n.innerHTML=`<div class="nav-logo"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div><div class="nav-links" style="gap:12px"><div style="font-size:13px;color:var(--text2)">Signed in as <strong style="color:var(--text)">${_user?(_user.fullName||_user.username):_org?.name||'Organization'}</strong></div><button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button></div>`;
-  fillDash();showPage('overview',null);loadMembers(1);
-}
-
-function fillDash(){
-  if(!_org)return;
-  document.getElementById('sb-name').textContent=_org.name||'Organization';
-  document.getElementById('sb-code').textContent=_org.code||'—';
-  document.getElementById('ov-code').textContent=_org.code||'—';
-  document.getElementById('s-emp').textContent=_org.stats?.totalEmployees??'—';
-  document.getElementById('s-mgr').textContent=_org.stats?.totalManagers??'—';
-  document.getElementById('s-rooms').textContent=_org.stats?.totalRooms??'—';
-  document.getElementById('s-cap').textContent=_org.settings?.maxEmployees??'—';
-  // Org page
-  const L=(_org.name||'O')[0].toUpperCase();
-  document.getElementById('org-av').textContent=L;
-  document.getElementById('org-n').textContent=_org.name||'—';
-  document.getElementById('org-e').textContent=_org.contactEmail||'—';
-  document.getElementById('org-c').textContent=_org.code||'—';
-  const sb=document.getElementById('org-status');
-  if(_org.isSuspended){sb.className='status-badge suspended';sb.textContent='● Suspended';}
-  else if(!_org.isActive){sb.className='status-badge inactive';sb.textContent='● Inactive';}
-  else{sb.className='status-badge active';sb.textContent='● Active';}
-  const a=_org.address||{};
-  const addr=[a.city,a.state,a.country].filter(Boolean).join(', ')||'—';
-  document.getElementById('org-grid').innerHTML=`
-    <div class="org-di"><label>Phone</label><div class="val">${esc(_org.contactPhone||'—')}</div></div>
-    <div class="org-di"><label>Domain</label><div class="val">${esc(_org.domain||'—')}</div></div>
-    <div class="org-di"><label>Address</label><div class="val">${esc(addr)}</div></div>
-    <div class="org-di"><label>Created</label><div class="val">${_org.createdAt?new Date(_org.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—'}</div></div>`;
-  document.getElementById('org-settings').innerHTML=`
-    <div class="sc"><div class="sc-label">Max Rooms</div><div class="sc-value c-amber">${_org.settings?.maxRooms??50}</div></div>
-    <div class="sc"><div class="sc-label">Max Employees</div><div class="sc-value c-primary">${_org.settings?.maxEmployees??500}</div></div>
-    <div class="sc"><div class="sc-label">Location Track</div><div class="sc-value" style="font-size:20px">${_org.settings?.enableLocationTracking!==false?'✅':'❌'}</div></div>
-    <div class="sc" onclick="copyCode()" style="cursor:pointer"><div class="sc-label">Org Code</div><div class="sc-value c-green" style="font-size:22px;letter-spacing:2px">${_org.code||'—'}</div><div class="sc-sub">Click to copy</div></div>`;
-}
-
-function showPage(id,el){
-  document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+id)?.classList.add('active');
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
-  if(el)el.classList.add('active');
-  else{document.querySelectorAll('.sb-item').forEach(i=>{if(i.textContent.toLowerCase().includes(id.split('-')[0]))i.classList.add('active');});}
-  if(id==='members')loadMembers(1);
-}
-
-// Members
-async function loadMembers(pg){
-  if(!_org||!_token)return;
-  _pg=pg;
-  const search=document.getElementById('m-search')?.value.trim()||'';
-  const role=document.getElementById('role-filter')?.value||'';
-  const body=document.getElementById('m-body');
-  body.innerHTML='<div class="loading"><div class="spinner"></div></div>';
-  let url=`/organization/members?page=${pg}&limit=15`;
-  if(search)url+='&search='+encodeURIComponent(search);
-  if(role)url+='&role='+role;
-  try{
-    const d=await api('GET',url,null,_token);
-    if(!d.success){body.innerHTML=`<div class="empty">${d.message||'Failed to load'}</div>`;return;}
-    const mbs=d.data.members||[];
-    const pag=d.data.pagination||{};
-    if(!mbs.length){body.innerHTML='<div class="empty">No members found.</div>';renderPg(pag);return;}
-    let rows='<table><thead><tr><th>Member</th><th>Username</th><th>Role</th><th>Status</th><th>Department</th><th>Joined</th></tr></thead><tbody>';
-    mbs.forEach(m=>{
-      const init=(m.fullName||m.username||'?')[0].toUpperCase();
-      const joined=m.createdAt?new Date(m.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
-      rows+=`<tr>
-        <td><div style="display:flex;align-items:center;gap:10px"><div class="m-avatar">${init}</div><div><div style="font-weight:600;font-size:14px">${esc(m.fullName||m.username)}</div><div style="font-size:12px;color:var(--text3)">${esc(m.email||m.mobile||'')}</div></div></div></td>
-        <td style="font-family:monospace;font-size:13px;color:var(--text2)">@${esc(m.username)}</td>
-        <td><span class="role-badge ${m.role}">${m.role}</span></td>
-        <td><div style="display:flex;align-items:center;gap:6px"><div class="dot ${m.isOnline?'on':'off'}"></div><span style="font-size:13px;color:var(--text2)">${m.isOnline?'Online':'Offline'}</span></div></td>
-        <td style="color:var(--text2);font-size:13px">${esc(m.department||'—')}</td>
-        <td style="color:var(--text3);font-size:13px">${joined}</td>
-      </tr>`;
-    });
-    rows+='</tbody></table>';
-    body.innerHTML=rows;renderPg(pag);
-  }catch(e){body.innerHTML='<div class="empty">Failed to load members.</div>';}
-}
-
-function renderPg(p){
-  const el=document.getElementById('m-pg');
-  if(!p||p.totalPages<=1){el.innerHTML='';return;}
-  let h=`<button class="pg-btn" onclick="loadMembers(${_pg-1})" ${_pg<=1?'disabled':''}>&#8249;</button>`;
-  for(let i=1;i<=p.totalPages;i++){
-    if(Math.abs(i-_pg)<3||i===1||i===p.totalPages)h+=`<button class="pg-btn ${i===_pg?'active':''}" onclick="loadMembers(${i})">${i}</button>`;
-    else if(Math.abs(i-_pg)===3)h+=`<span style="color:var(--text3);padding:0 4px">…</span>`;
-  }
-  h+=`<button class="pg-btn" onclick="loadMembers(${_pg+1})" ${_pg>=p.totalPages?'disabled':''}>&#8250;</button>`;
-  el.innerHTML=h;
-}
-
-function debSearch(){clearTimeout(_st);_st=setTimeout(()=>loadMembers(1),400);}
-
-// Edit org
+/* ── EDIT ORG ───────────────────────────────────────────────────────── */
 function openEditOrg(){
   if(!_org)return;
   document.getElementById('alert-edit').innerHTML='';
@@ -794,18 +2063,10 @@ async function submitEdit(e){
   e.preventDefault();
   if(!_org?._id)return;
   const btn=document.getElementById('btn-edit');
-  btn.innerHTML='<div class="spinner spin-sm" style="border-top-color:#fff;display:inline-block;margin:0 6px -3px 0"></div> Saving…';
+  btn.innerHTML='<div class="spinner spinner-sm" style="border-top-color:#fff;display:inline-block;margin:0 5px -3px 0"></div> Saving…';
   btn.disabled=true;
   document.getElementById('alert-edit').innerHTML='';
-  const body={
-    name:document.getElementById('e-name').value.trim(),
-    contactEmail:document.getElementById('e-email').value.trim(),
-    contactPhone:document.getElementById('e-phone').value.trim()||undefined,
-    domain:document.getElementById('e-domain').value.trim()||undefined,
-    address:{city:document.getElementById('e-city').value.trim()||undefined,state:document.getElementById('e-state').value.trim()||undefined,pincode:document.getElementById('e-pin').value.trim()||undefined,country:document.getElementById('e-country').value.trim()||'India'},
-    settings:{maxRooms:parseInt(document.getElementById('e-maxr').value)||50,maxEmployees:parseInt(document.getElementById('e-maxe').value)||500,enableLocationTracking:document.getElementById('e-loc').checked},
-    isActive:document.getElementById('e-active').checked
-  };
+  const body={name:document.getElementById('e-name').value.trim(),contactEmail:document.getElementById('e-email').value.trim(),contactPhone:document.getElementById('e-phone').value.trim()||undefined,domain:document.getElementById('e-domain').value.trim()||undefined,address:{city:document.getElementById('e-city').value.trim()||undefined,state:document.getElementById('e-state').value.trim()||undefined,pincode:document.getElementById('e-pin').value.trim()||undefined,country:document.getElementById('e-country').value.trim()||'India'},settings:{maxRooms:parseInt(document.getElementById('e-maxr').value)||50,maxEmployees:parseInt(document.getElementById('e-maxe').value)||500,enableLocationTracking:document.getElementById('e-loc').checked},isActive:document.getElementById('e-active').checked};
   try{
     const d=await api('PUT','/organization/update/'+_org._id,body,_token);
     if(d.success){_org=d.data;save();closeM('modal-edit');fillDash();toast('Organization updated!','success');}
@@ -814,7 +2075,7 @@ async function submitEdit(e){
   finally{btn.innerHTML='Save Changes';btn.disabled=false;}
 }
 
-// Check org
+/* ── CHECK ORG ──────────────────────────────────────────────────────── */
 function openCheckOrg(){openM('modal-check');}
 async function doCheck(){
   const code=document.getElementById('in-ccode').value.trim().toUpperCase();
@@ -824,32 +2085,29 @@ async function doCheck(){
   res.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try{
     const d=await api('POST','/organization/check',{code});
-    if(!d.success){res.innerHTML=aHTML('error',d.message);return;}
-    if(!d.exists){res.innerHTML=aHTML('error','No organization found with code <strong>'+code+'</strong>');return;}
-    if(!d.move){res.innerHTML=aHTML('error',d.message||'Organization is inactive');return;}
+    if(!d.success){res.innerHTML=aHTML('error',d.message||'Check failed');return;}
+    if(!d.exists){res.innerHTML=aHTML('error','No organization found with code <strong>'+esc(code)+'</strong>');return;}
     const o=d.organization;
-    res.innerHTML=`<div class="alert alert-success">&#9989; <div><strong>${esc(o.name)}</strong> found!<br/><span style="font-size:12px;color:var(--text2)">Code: ${esc(o.code)} &nbsp;•&nbsp; ${o.isActive?'Active':'Inactive'}</span></div></div>`;
+    res.innerHTML=`<div class="alert alert-success">✅ <div><strong>${esc(o.name)}</strong> found!<br/><span style="font-size:12px;color:var(--text2)">Code: ${esc(o.code)} &nbsp;•&nbsp; ${o.isActive?'Active':'Inactive'}</span></div></div>`;
   }catch(e){res.innerHTML=aHTML('error','Network error');}
 }
 
+/* ── MISC ───────────────────────────────────────────────────────────── */
 function copyCode(){
   if(!_org?.code)return;
-  navigator.clipboard.writeText(_org.code).then(()=>toast('Code copied: '+_org.code,'success'));
+  navigator.clipboard?.writeText(_org.code).then(()=>toast('Org code copied: '+_org.code,'success')).catch(()=>{
+    const el=document.createElement('textarea');el.value=_org.code;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();toast('Code copied: '+_org.code,'success');
+  });
 }
+function openDash(){closeM('modal-success');showDash();}
+function logout(){clear();showLanding();document.querySelectorAll('.overlay.open').forEach(m=>m.classList.remove('open'));}
 
-function logout(){clear();document.getElementById('landing-view').style.display='';document.getElementById('dashboard-view').style.display='none';document.getElementById('main-nav').innerHTML=`<div class="nav-logo"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div><div class="nav-links"><a href="#features" class="nav-link">Features</a><a href="#how-it-works" class="nav-link">How it works</a><a href="#pricing" class="nav-link">Pricing</a><button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button><button class="btn btn-primary btn-sm" onclick="openCreateOrg()">Create Organization</button></div>`;}
-
-function esc(s){const d=document.createElement('div');d.appendChild(document.createTextNode(s||''));return d.innerHTML;}
-function aHTML(t,m){const i={success:'&#9989;',error:'&#10060;',info:'&#8505;&#65039;'};return `<div class="alert alert-${t}">${i[t]||''} ${m}</div>`;}
-function showA(id,t,m){const el=document.getElementById(id);if(el)el.innerHTML=aHTML(t,m);}
-function toast(m,t='info'){
-  const el=document.createElement('div');
-  el.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:12px 18px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:all .3s';
-  if(t==='success')el.style.borderColor='rgba(16,185,129,.4)';
-  el.textContent=(t==='success'?'✅ ':t==='error'?'❌ ':'')+m;
-  document.body.appendChild(el);
-  requestAnimationFrame(()=>{el.style.opacity='1';el.style.transform='translateY(0)';});
-  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300);},2600);
+/* ── INIT ───────────────────────────────────────────────────────────── */
+load();
+if(_user&&_token&&_org){
+  showDash();
+}else{
+  setNavLanding();
 }
 </script>
 </body>
