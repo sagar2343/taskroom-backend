@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Task Room — Field Work Management Platform</title>
+<link rel="icon" type="image/png" href="app_icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -48,8 +49,25 @@ code,tt,.mono{font-family:'JetBrains Mono',monospace}
 /* ─── NAV ────────────────────────────────────────────────────────────── */
 nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,13,18,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;}
 .nav-logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px var(--primary-glow);flex-shrink:0;}
-.logo-icon svg{width:18px;height:18px}
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* IMPORTANT */
+  box-shadow: 0 4px 14px rgba(19,127,236,0.25);
+  background: #fff;
+  padding: 2px;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .logo-text{font-size:17px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,var(--primary-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .nav-links{display:flex;align-items:center;gap:6px}
 .nav-link{color:var(--text2);font-size:14px;font-weight:500;padding:6px 14px;border-radius:8px;transition:all var(--transition);}
@@ -472,7 +490,11 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <!-- ═══════════════════════════ NAV ════════════════════════════════════ -->
 <nav id="main-nav">
   <div class="nav-logo">
-    <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+
+    <div class="logo-icon">      
+      <img src="./app_icon.png" alt="Task Room Logo">
+    </div>
+
     <span class="logo-text">Task Room</span>
   </div>
   <div class="nav-links">
@@ -613,7 +635,11 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
-      <div class="nav-logo" style="margin-bottom:10px"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div>
+      
+      <div class="logo-icon">
+        <img src="./app_icon.png" alt="Task Room Logo">
+      </div>
+
       <p>Field work management for teams that move fast and need full accountability.</p>
     </div>
     <div class="footer-links"><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#how-it-works">How it works</a></li></ul></div>
@@ -1174,7 +1200,21 @@ function showLanding(){
   setNavLanding();
 }
 function setNavLanding(){
-  document.getElementById('main-nav').innerHTML=`<div class="nav-logo"><div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="logo-text">Task Room</span></div><div class="nav-links"><a href="#features" class="nav-link">Features</a><a href="#how-it-works" class="nav-link">How it works</a><a href="#pricing" class="nav-link">Pricing</a><button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button><button class="btn btn-primary btn-sm" onclick="openCreateOrg()">🚀 Create Org</button></div>`;
+  document.getElementById('main-nav').innerHTML = `
+    <div class="nav-logo">
+      <div class="logo-icon">
+        <img src="app_icon.png" alt="Logo">
+      </div>
+      <span class="logo-text">Task Room</span>
+    </div>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#how-it-works" class="nav-link">How it works</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button>
+      <button class="btn btn-primary btn-sm" onclick="openCreateOrg()">🚀 Create Org</button>
+    </div>
+  `;
 }
 function showDash(){
   document.getElementById('landing-view').style.display='none';
