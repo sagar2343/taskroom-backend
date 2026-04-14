@@ -111,6 +111,12 @@ const userSchema = new mongoose.Schema({
     default: false // Currently online/offline
   },
 
+  fcmToken: {
+    type:    String,
+    default: null,
+    index:   true,   // indexed so stale-token cleanup queries are fast
+  },
+
 }, {
   timestamps: true
 });

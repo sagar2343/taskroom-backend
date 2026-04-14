@@ -11,6 +11,7 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
+    "firebase-admin": "^13.8.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.21.1",
     "socket.io": "^4.8.3"

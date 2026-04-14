@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express');
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
@@ -8,8 +10,10 @@ const authMiddleware = require('../middleware/auth');
 const { isManager } = require('../middleware/roleCheck');
 const { getDistanceMeters } = require('../models/Task');
 
-const router = express.Router();
+// ── Notification service ──────────────────────────────────────────────────────
+const { sendToUser, sendToUsers } = require('../services/notificationService');
 
+const router = express.Router();
 router.use(authMiddleware);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -229,9 +233,20 @@ router.post('/', isManager, async (req, res) => {
     const populatedTasks = await Task.find({
       _id: { $in: createdTasks.map(t => t._id) }
     })
-      .populate('assignedTo', 'username fullName profilePicture employeeId')
+      .populate('assignedTo', 'username fullName profilePicture employeeId fcmToken')
       .populate('createdBy', 'username fullName')
       .populate('room', 'name roomCode');
+
+    // ── 🔔 Notify every assigned employee ──────────────────────────────────
+    const managerName = req.user.fullName || req.user.username || 'Your manager';
+    const employees   = await User.find({ _id: { $in: assignedTo } }).select('fcmToken');
+
+    // Fire-and-forget: don't await so it never slows the response
+    sendToUsers(employees, 'TASK_ASSIGNED', [title, managerName], {
+      type:   'task_assigned',
+      taskId: createdTasks[0]._id.toString(),
+    });
+
 
     return res.status(201).json({
       success: true,
@@ -527,8 +542,15 @@ router.put('/edit', isManager, async (req, res) => {
     await task.save();
 
     const updatedTask = await Task.findById(task._id)
-      .populate('assignedTo', 'username fullName profilePicture')
+      .populate('assignedTo', 'username fullName profilePicture fcmToken')
       .populate('room', 'name roomCode');
+
+    // ── 🔔 Notify the assigned employee ──────────────────────────────────
+    const managerName = req.user.fullName || req.user.username || 'Your manager';
+    sendToUser(updatedTask.assignedTo, 'TASK_UPDATED', [task.title, managerName], {
+      type:   'task_updated',
+      taskId: task._id.toString(),
+    });
 
     res.json({
       success: true,
@@ -576,6 +598,14 @@ router.patch('/cancel', isManager, async (req, res) => {
 
     await Room.findByIdAndUpdate(task.room, {
       $inc: { 'stats.activeTasks': -1 }
+    });
+
+    // ── 🔔 Notify the employee ────────────────────────────────────────────
+    const employee = await User.findById(task.assignedTo).select('fcmToken');
+    sendToUser(employee, 'TASK_CANCELLED', [task.title, reason || null], {
+      type:   'task_cancelled',
+      taskId: task._id.toString(),
+      reason: reason || '',
     });
 
     res.json({ success: true, message: 'Task cancelled successfully' });
@@ -744,6 +774,14 @@ router.post('/steps/add', isManager, async (req, res) => {
 
     await task.save();
 
+    // ── 🔔 Notify the employee ────────────────────────────────────────────
+    const employee = await User.findById(task.assignedTo).select('fcmToken');
+    sendToUser(employee, 'STEP_ADDED', [task.title, step.title], {
+      type:   'step_added',
+      taskId: task._id.toString(),
+      stepId: newStep.stepId,
+    });
+
     res.json({
       success: true,
       message: 'Step added successfully',
@@ -809,6 +847,15 @@ router.put('/steps/edit', isManager, async (req, res) => {
     task.lastEditedAt = new Date();
 
     await task.save();
+
+    // ── 🔔 Notify the employee ────────────────────────────────────────────
+    const employee = await User.findById(task.assignedTo).select('fcmToken');
+    sendToUser(employee, 'STEP_UPDATED', [task.title, step.title], {
+      type:   'step_updated',
+      taskId: task._id.toString(),
+      stepId: step.stepId,
+    });
+
 
     res.json({
       success: true,
@@ -1006,6 +1053,14 @@ router.post('/start', async (req, res) => {
 
     await task.save();
 
+    // ── 🔔 Notify the manager ─────────────────────────────────────────────
+    const manager      = await User.findById(task.createdBy).select('fcmToken');
+    const employeeName = req.user.fullName || req.user.username || 'An employee';
+    sendToUser(manager, 'TASK_STARTED', [employeeName, task.title], {
+      type:   'task_started',
+      taskId: task._id.toString(),
+    });
+
     res.json({
       success: true,
       message: 'Task started successfully',
@@ -1069,6 +1124,15 @@ router.post('/steps/start', async (req, res) => {
     step.employeeStartTime = new Date();
 
     await task.save();
+
+    // ── 🔔 Notify the manager ─────────────────────────────────────────────
+    const manager      = await User.findById(task.createdBy).select('fcmToken');
+    const employeeName = req.user.fullName || req.user.username || 'An employee';
+    sendToUser(manager, 'STEP_STARTED', [employeeName, task.title, step.title], {
+      type:   'step_started',
+      taskId: task._id.toString(),
+      stepId: step.stepId,
+    });
 
     res.json({ success: true, message: 'Step started', data: { step } });
 
@@ -1143,6 +1207,16 @@ router.post('/steps/reached', async (req, res) => {
     });
 
     await task.save();
+
+    // ── 🔔 Notify the manager ─────────────────────────────────────────────
+    const manager      = await User.findById(task.createdBy).select('fcmToken');
+    const employeeName = req.user.fullName || req.user.username || 'An employee';
+    sendToUser(manager, 'STEP_REACHED', [employeeName, task.title, step.title], {
+      type:   'step_reached',
+      taskId: task._id.toString(),
+      stepId: step.stepId,
+    });
+
 
     res.json({
       success: true,
@@ -1230,29 +1304,63 @@ router.post('/steps/complete', async (req, res) => {
     }
     if (employeeNotes) step.employeeNotes = employeeNotes;
 
-    if (task.allStepsCompleted()) {
-      task.status = 'completed';
-      task.completedAt = now;
-      await Room.findByIdAndUpdate(task.room, {
-        $inc: { 'stats.activeTasks': -1, 'stats.completedTasks': 1 }
-      });
-    }
+    // if (task.allStepsCompleted()) {
+    //   task.status = 'completed';
+    //   task.completedAt = now;
+    //   await Room.findByIdAndUpdate(task.room, {
+    //     $inc: { 'stats.activeTasks': -1, 'stats.completedTasks': 1 }
+    //   });
+    // }
 
+    // await task.save();
+
+    const allDone = task.allStepsCompleted();
+    if (allDone) {
+      task.status      = 'completed';
+      task.completedAt = now;
+      await Room.findByIdAndUpdate(task.room, { $inc: { 'stats.activeTasks': -1, 'stats.completedTasks': 1 } });
+    }
+ 
     await task.save();
 
-    const isTaskDone = task.status === 'completed';
-
+    // ── 🔔 Notify the manager ─────────────────────────────────────────────
+    const manager      = await User.findById(task.createdBy).select('fcmToken');
+    const employeeName = req.user.fullName || req.user.username || 'An employee';
+    const isLastStep   = allDone;
+ 
+    // If it's the last step we send TASK_COMPLETED (stronger) + STEP_COMPLETED
+    if (allDone) {
+      sendToUser(manager, 'TASK_COMPLETED', [employeeName, task.title], {
+        type:   'task_completed',
+        taskId: task._id.toString(),
+      });
+    } else {
+      sendToUser(manager, 'STEP_COMPLETED', [employeeName, task.title, step.title, isLastStep], {
+        type:   'step_completed',
+        taskId: task._id.toString(),
+        stepId: step.stepId,
+      });
+    }
+    
     res.json({
       success: true,
-      message: isTaskDone
-        ? 'Step completed! All steps done — task completed!'
-        : 'Step completed successfully',
-      data: {
-        step,
-        taskCompleted: isTaskDone,
-        nextStep: isTaskDone ? null : task.steps[stepIdx + 1] || null
-      }
+      message: allDone ? 'All steps done — task completed! 🎉' : 'Step completed successfully',
+      data: { step, taskCompleted: allDone, nextStep: allDone ? null : task.steps[stepIdx + 1] || null },
     });
+
+    // const isTaskDone = task.status === 'completed';
+
+    // res.json({
+    //   success: true,
+    //   message: isTaskDone
+    //     ? 'Step completed! All steps done — task completed!'
+    //     : 'Step completed successfully',
+    //   data: {
+    //     step,
+    //     taskCompleted: isTaskDone,
+    //     nextStep: isTaskDone ? null : task.steps[stepIdx + 1] || null
+    //   }
+    // });
 
   } catch (error) {
     console.error('Complete step error:', error);
