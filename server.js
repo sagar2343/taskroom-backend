@@ -10,6 +10,7 @@ const organizationRoutes = require('./routes/organization');
 const roomRoutes = require('./routes/room');
 const taskRoutes = require('./routes/task');
 const fcmTokenRoutes = require('./routes/fcmToken');
+const uploadRoutes = require('./routes/upload');
 
 const path = require('path');
 
@@ -55,7 +56,8 @@ app.use('/api/user',         userRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/rooms',        roomRoutes);
 app.use('/api/tasks',        taskRoutes);
-app.use('/api/fcm',         fcmTokenRoutes); 
+app.use('/api/fcm',          fcmTokenRoutes); 
+app.use('/api/upload',       uploadRoutes);
 
 
 // ── Socket.IO handlers ─────────────────────────────────────────────────────

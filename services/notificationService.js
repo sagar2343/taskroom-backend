@@ -1,3 +1,5 @@
+'use strict';
+
 const admin = require('firebase-admin');
 
 // ── Initialise once ───────────────────────────────────────────────────────────
