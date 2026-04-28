@@ -11,6 +11,7 @@ const roomRoutes = require('./routes/room');
 const taskRoutes = require('./routes/task');
 const fcmTokenRoutes = require('./routes/fcmToken');
 const uploadRoutes = require('./routes/upload');
+const { verifyCloudinaryConnection } = require('./services/cloudinaryService');
 
 const path = require('path');
 
@@ -38,8 +39,14 @@ app.use(express.json());
 
 // ── MongoDB ────────────────────────────────────────────────────────────────
 // Connect to MongoDB
+// mongoose.connect(process.env.MONGO_URI)
+//   .then(() => console.log('✅ MongoDB connected'))
+//   .catch(err => console.error('❌ Mongo error:', err.message));
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    verifyCloudinaryConnection();   // ← add this line here
+  })
   .catch(err => console.error('❌ Mongo error:', err.message));
 
 // Serve static files

@@ -7,32 +7,40 @@ cloudinary.config({
 });
 
 /**
- * Upload a Buffer to Cloudinary with size optimisation.
- *
- * Valid top-level delivery params used:
- *   quality:      'auto:eco'  → smallest file that still looks sharp
- *   fetch_format: 'auto'      → WebP on Android (~30% smaller than JPEG)
- *   flags:        'progressive:strip_icc'
- *                              → progressive JPEG + strips ICC/colour profile
- *                                (ICC profiles alone add 3–60 KB per image)
- *
- * Metadata/EXIF stripping is done via the 'strip_icc' flag (valid) — full EXIF
- * stripping requires Cloudinary's "metadata" add-on or is handled automatically
- * when the image is re-encoded (quality + format change always drops raw EXIF).
+ * Ping Cloudinary to verify credentials are loaded correctly.
+ * Call this once at server startup.
+ */
+const verifyCloudinaryConnection = async () => {
+  try {
+    await cloudinary.api.ping();
+    console.log('✅ Cloudinary connected — cloud:', process.env.CLOUDINARY_CLOUD_NAME);
+  } catch (err) {
+    console.error('❌ Cloudinary connection FAILED:', err.message);
+    console.error('   Check CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET in .env');
+  }
+};
+
+/**
+ * Upload a Buffer to Cloudinary using base64 data URI.
+ * Only uses confirmed-valid top-level params: quality + fetch_format.
+ * Transformation array handles geometric resizing only.
  */
 const uploadToCloudinary = async (buffer, mimeType = 'image/jpeg', options = {}) => {
   const b64     = Buffer.from(buffer).toString('base64');
   const dataUri = `data:${mimeType};base64,${b64}`;
 
+  console.log(`[Cloudinary] Uploading ${(buffer.length / 1024).toFixed(1)} KB (${mimeType})`);
+
   const result = await cloudinary.uploader.upload(dataUri, {
     resource_type: 'image',
-    quality:       'auto:eco',
-    fetch_format:  'auto',
-    flags:         'progressive:strip_icc',  // valid flag — strips ICC colour profiles
-    ...options,                              // caller options last (override above if needed)
+    quality:       'auto:eco',   // smallest file that still looks sharp
+    fetch_format:  'auto',       // WebP on Android (~30% smaller than JPEG)
+    ...options,
   });
 
+  console.log(`[Cloudinary] Done → ${result.secure_url}`);
+  console.log(`[Cloudinary] Original: ${result.bytes} bytes | Format: ${result.format}`);
   return result.secure_url;
 };
 
-module.exports = { uploadToCloudinary };
+module.exports = { uploadToCloudinary, verifyCloudinaryConnection };
