@@ -1,71 +1,61 @@
-const express = require('express');
-const http = require('http');
+const express    = require('express');
+const http       = require('http');
 const { Server } = require('socket.io');
-const mongoose = require('mongoose');
+const mongoose   = require('mongoose');
+const path       = require('path');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');
+// ── Routes ─────────────────────────────────────────────────────────────────
+const authRoutes         = require('./routes/auth');
+const userRoutes         = require('./routes/user');
 const organizationRoutes = require('./routes/organization');
-const roomRoutes = require('./routes/room');
-const taskRoutes = require('./routes/task');
-const fcmTokenRoutes = require('./routes/fcmToken');
-const uploadRoutes = require('./routes/upload');
-const { verifyCloudinaryConnection } = require('./services/cloudinaryService');
+const roomRoutes         = require('./routes/room');
+const taskRoutes         = require('./routes/task');
+const fcmTokenRoutes     = require('./routes/fcmToken');
+const uploadRoutes       = require('./routes/upload');
 
-const path = require('path');
+// ── Services ───────────────────────────────────────────────────────────────
+const { registerSocketHandlers }      = require('./socket/locationSocket');
+const { verifyCloudinaryConnection }  = require('./services/cloudinaryService');
 
-
-// ── Socket handler ─────────────────────────────────────────────────────────
-const { registerSocketHandlers } = require('./socket/locationSocket');
-
+// ── App setup ──────────────────────────────────────────────────────────────
 const app    = express();
-const server = http.createServer(app);          // wrap express in http.Server
+const server = http.createServer(app);
 
-// ── Socket.IO setup ────────────────────────────────────────────────────────
+// ── Socket.IO ──────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin: '*',                                // tighten in production
-    methods: ['GET', 'POST']
-  }
+    origin:  '*',
+    methods: ['GET', 'POST'],
+  },
 });
-
-// Make io accessible to REST route handlers if ever needed
 app.set('io', io);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json());
-
-
-// ── MongoDB ────────────────────────────────────────────────────────────────
-// Connect to MongoDB
-// mongoose.connect(process.env.MONGO_URI)
-//   .then(() => console.log('✅ MongoDB connected'))
-//   .catch(err => console.error('❌ Mongo error:', err.message));
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    verifyCloudinaryConnection();   // ← add this line here
-  })
-  .catch(err => console.error('❌ Mongo error:', err.message));
-
-// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── MongoDB ────────────────────────────────────────────────────────────────
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    verifyCloudinaryConnection();   // ping Cloudinary after DB is ready
+  })
+  .catch((err) => console.error('❌ Mongo error:', err.message));
 
-// ── REST routes ────────────────────────────────────────────────
-// app.get('/', (req, res) => res.json({ success: true, message: 'Backend is running' }));
+// ── REST routes ────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 app.use('/api/auth',         authRoutes);
 app.use('/api/user',         userRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/rooms',        roomRoutes);
 app.use('/api/tasks',        taskRoutes);
-app.use('/api/fcm',          fcmTokenRoutes); 
+app.use('/api/fcm',          fcmTokenRoutes);
 app.use('/api/upload',       uploadRoutes);
-
 
 // ── Socket.IO handlers ─────────────────────────────────────────────────────
 registerSocketHandlers(io);
