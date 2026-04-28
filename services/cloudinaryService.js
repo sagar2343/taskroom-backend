@@ -7,25 +7,29 @@ cloudinary.config({
 });
 
 /**
- * Upload a Buffer to Cloudinary using a base64 data URI.
- * More reliable than upload_stream — no piping, no stream lifecycle issues.
+ * Upload a Buffer to Cloudinary with size optimisation.
  *
- * @param {Buffer} buffer       - image buffer from multer memoryStorage
- * @param {string} mimeType     - e.g. 'image/jpeg', 'image/png'
- * @param {Object} options      - cloudinary upload options (folder, public_id, transformation, etc.)
- * @returns {Promise<string>}   - secure_url of the uploaded image
+ * Valid top-level delivery params used:
+ *   quality:      'auto:eco'  → smallest file that still looks sharp
+ *   fetch_format: 'auto'      → WebP on Android (~30% smaller than JPEG)
+ *   flags:        'progressive:strip_icc'
+ *                              → progressive JPEG + strips ICC/colour profile
+ *                                (ICC profiles alone add 3–60 KB per image)
+ *
+ * Metadata/EXIF stripping is done via the 'strip_icc' flag (valid) — full EXIF
+ * stripping requires Cloudinary's "metadata" add-on or is handled automatically
+ * when the image is re-encoded (quality + format change always drops raw EXIF).
  */
 const uploadToCloudinary = async (buffer, mimeType = 'image/jpeg', options = {}) => {
-  // Convert buffer → base64 data URI (Cloudinary accepts this directly)
   const b64     = Buffer.from(buffer).toString('base64');
   const dataUri = `data:${mimeType};base64,${b64}`;
 
   const result = await cloudinary.uploader.upload(dataUri, {
     resource_type: 'image',
-    // quality + fetch_format are TOP-LEVEL delivery params, NOT inside transformation[]
-    quality:      'auto',
-    fetch_format: 'auto',
-    ...options,
+    quality:       'auto:eco',
+    fetch_format:  'auto',
+    flags:         'progressive:strip_icc',  // valid flag — strips ICC colour profiles
+    ...options,                              // caller options last (override above if needed)
   });
 
   return result.secure_url;
