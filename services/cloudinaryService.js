@@ -7,26 +7,28 @@ cloudinary.config({
 });
 
 /**
- * Upload a buffer directly to Cloudinary via upload_stream.
- * @param {Buffer} buffer  - image buffer from multer memoryStorage
- * @param {Object} options - cloudinary upload options
- * @returns {Promise<string>} secure_url of the uploaded image
+ * Upload a Buffer to Cloudinary using a base64 data URI.
+ * More reliable than upload_stream — no piping, no stream lifecycle issues.
+ *
+ * @param {Buffer} buffer       - image buffer from multer memoryStorage
+ * @param {string} mimeType     - e.g. 'image/jpeg', 'image/png'
+ * @param {Object} options      - cloudinary upload options (folder, public_id, transformation, etc.)
+ * @returns {Promise<string>}   - secure_url of the uploaded image
  */
-const uploadToCloudinary = (buffer, options = {}) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: 'image',
-        folder: 'fieldwork',
-        ...options,
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result.secure_url);
-      }
-    );
-    stream.end(buffer);
+const uploadToCloudinary = async (buffer, mimeType = 'image/jpeg', options = {}) => {
+  // Convert buffer → base64 data URI (Cloudinary accepts this directly)
+  const b64     = Buffer.from(buffer).toString('base64');
+  const dataUri = `data:${mimeType};base64,${b64}`;
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    resource_type: 'image',
+    // quality + fetch_format are TOP-LEVEL delivery params, NOT inside transformation[]
+    quality:      'auto',
+    fetch_format: 'auto',
+    ...options,
   });
+
+  return result.secure_url;
 };
 
 module.exports = { uploadToCloudinary };
