@@ -70,7 +70,10 @@ router.post('/step-photo', upload.single('image'), async (req, res) => {
     });
   } catch (err) {
     console.error('Step photo upload error:', err);
-    res.status(500).json({ success: false, message: 'Upload failed' });
+    res.status(500).json({
+    success: false,
+    message: err.message || 'Upload failed',
+  });
   }
 });
 
