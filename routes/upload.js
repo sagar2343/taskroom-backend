@@ -3,6 +3,7 @@ const authMiddleware         = require('../middleware/auth');
 const upload                 = require('../middleware/multerUpload');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
 const User                   = require('../models/User');
+const Room                   = require('../models/Room');
 
 const router = express.Router();
 router.use(authMiddleware);
