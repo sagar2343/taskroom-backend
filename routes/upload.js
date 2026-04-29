@@ -141,4 +141,50 @@ router.post('/step-photo', multerSingle('image'), async (req, res) => {
   }
 });
 
+// ── POST /api/upload/room-image ───────────────────────────────────────────────
+// Accepts:     multipart/form-data  field name: "image"
+//              required body field: roomId
+// Returns:     { success, data: { url } }
+// Side-effect: updates Room.roomImage in MongoDB
+// Optimised:   800×450 landscape crop → ~25-50 KB WebP on Android
+router.post('/room-image', multerSingle('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No image provided' });
+ 
+    const { roomId } = req.body;
+    if (!roomId) return res.status(400).json({ success: false, message: 'roomId is required' });
+ 
+    // Verify the room belongs to the user's organisation and the user created it
+    const user = await User.findById(req.userId).select('organization');
+    const room = await Room.findOne({ _id: roomId, organization: user.organization });
+ 
+    if (!room) {
+      return res.status(404).json({ success: false, message: 'Room not found' });
+    }
+ 
+    const isCreator = room.createdBy.toString() === req.userId.toString();
+    if (!isCreator) {
+      return res.status(403).json({ success: false, message: 'Only the room creator can change the room image' });
+    }
+ 
+    console.log('[Upload] room-image → roomId:', roomId, 'size:', req.file.size, 'mime:', req.file.mimetype);
+ 
+    const url = await uploadToCloudinary(req.file.buffer, req.file.mimetype, {
+      folder:         'fieldwork/rooms',
+      public_id:      `room_${roomId}`,   // one slot per room → auto-overwrites
+      overwrite:      true,
+      transformation: [
+        { width: 800, height: 450, crop: 'fill', gravity: 'auto' }, // 16:9 landscape
+      ],
+    });
+ 
+    await Room.findByIdAndUpdate(roomId, { roomImage: url });
+ 
+    res.json({ success: true, message: 'Room image uploaded successfully', data: { url } });
+  } catch (err) {
+    console.error('[Upload] room-image error:', err.message, '\n', err.stack);
+    res.status(500).json({ success: false, message: err.message || 'Upload failed' });
+  }
+});
+
 module.exports = router;
