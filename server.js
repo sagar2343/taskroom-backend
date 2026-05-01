@@ -13,6 +13,7 @@ const roomRoutes         = require('./routes/room');
 const taskRoutes         = require('./routes/task');
 const fcmTokenRoutes     = require('./routes/fcmToken');
 const uploadRoutes       = require('./routes/upload');
+const attendanceRoutes   = require('./routes/attendance');
 
 // ── Services ───────────────────────────────────────────────────────────────
 const { registerSocketHandlers }      = require('./socket/locationSocket');
@@ -24,10 +25,7 @@ const server = http.createServer(app);
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────
 const io = new Server(server, {
-  cors: {
-    origin:  '*',
-    methods: ['GET', 'POST'],
-  },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 app.set('io', io);
 
@@ -56,6 +54,7 @@ app.use('/api/rooms',        roomRoutes);
 app.use('/api/tasks',        taskRoutes);
 app.use('/api/fcm',          fcmTokenRoutes);
 app.use('/api/upload',       uploadRoutes);
+app.use('/api/attendance',   attendanceRoutes);
 
 // ── Socket.IO handlers ─────────────────────────────────────────────────────
 registerSocketHandlers(io);

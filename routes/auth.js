@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Attendance = require('../models/Attendance');
 
 const router = express.Router();
 
@@ -242,7 +243,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Update online status and last seen
-    user.isOnline = true;
+    // user.isOnline = true;
+    user.lastSeen = new Date(); 
     await user.save();
 
     // Generate JWT token
@@ -287,11 +289,26 @@ router.post('/logout', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
 
+    // if (user) {
+    //   user.isOnline = false;
+    //   user.lastSeen = new Date();
+    //   await user.save();
+    // }
+
     if (user) {
-      user.isOnline = false;
-      user.lastSeen = new Date();
-      await user.save();
-    }
+    // Close open attendance session if one exists
+    try {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const record = await Attendance.findOne({ employee: user._id, workDate: { $gte: start } });
+      if (record && record.isOnline) {
+        await record.goOffline();
+      }
+    } catch (_) { /* non-fatal */ }
+
+  user.isOnline = false;
+  user.lastSeen = new Date();
+  await user.save();
+}
 
     res.json({
       success: true,

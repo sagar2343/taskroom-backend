@@ -3,7 +3,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
-const { LocationTrace, Attendance } = require('../models/Locationtrace');
+// const { LocationTrace, Attendance } = require('../models/Locationtrace');
+const LocationTrace = require('../models/Locationtrace');
+const Attendance = require('../models/Attendance');
+
 const Room = require('../models/Room');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
@@ -776,7 +779,7 @@ router.post('/steps/add', isManager, async (req, res) => {
 
     // ── 🔔 Notify the employee ────────────────────────────────────────────
     const employee = await User.findById(task.assignedTo).select('fcmToken');
-    sendToUser(employee, 'STEP_ADDED', [task.title, step.title], {
+    sendToUser(employee, 'STEP_ADDED', [task.title, newStep.title], {
       type:   'step_added',
       taskId: task._id.toString(),
       stepId: newStep.stepId,
@@ -1028,23 +1031,32 @@ router.post('/start', async (req, res) => {
     }
 
     const { start } = getTodayRange();
-    let attendance = await Attendance.findOne({
-      employee: req.userId,
-      workDate: { $gte: start }
-    });
+    // let attendance = await Attendance.findOne({
+    //   employee: req.userId,
+    //   workDate: { $gte: start }
+    // });
 
-    if (!attendance) {
-      attendance = new Attendance({
-        organization: req.user.organization,
-        employee: req.userId,
-        workDate: start,
-        punchInTime: now,
-        punchInLocation: coordinates ? { type: 'Point', coordinates } : undefined,
-        firstTaskId: task._id,
-        punchInMethod: 'auto_task_start'
-      });
-      await attendance.save();
-    }
+    // if (!attendance) {
+    //   attendance = new Attendance({
+    //     organization: req.user.organization,
+    //     employee: req.userId,
+    //     workDate: start,
+    //     punchInTime: now,
+    //     punchInLocation: coordinates ? { type: 'Point', coordinates } : undefined,
+    //     firstTaskId: task._id,
+    //     punchInMethod: 'auto_task_start'
+    //   });
+    //   await attendance.save();
+    // }
+
+    let attendance = await Attendance.getOrCreateToday(
+      req.userId,
+      req.user.organization
+    );
+    
+    // Auto go online if not already
+    await attendance.goOnline(coordinates, 'auto_task_start');
+    await User.findByIdAndUpdate(req.userId, { isOnline: true });
 
     task.status = 'in_progress';
     task.employeeStartTime = now;
@@ -1453,171 +1465,171 @@ router.post('/location/ping', async (req, res) => {
 //  ATTENDANCE ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-// ─── POST /api/tasks/attendance/punch-in ──────────────────────────────
-router.post('/attendance/punch-in', async (req, res) => {
-  try {
-    if (req.user.role !== 'employee') {
-      return res.status(403).json({ success: false, message: 'Employee access only' });
-    }
+// // ─── POST /api/tasks/attendance/punch-in ──────────────────────────────
+// router.post('/attendance/punch-in', async (req, res) => {
+//   try {
+//     if (req.user.role !== 'employee') {
+//       return res.status(403).json({ success: false, message: 'Employee access only' });
+//     }
 
-    const { start } = getTodayRange();
-    const existing = await Attendance.findOne({
-      employee: req.userId,
-      workDate: { $gte: start }
-    });
+//     const { start } = getTodayRange();
+//     const existing = await Attendance.findOne({
+//       employee: req.userId,
+//       workDate: { $gte: start }
+//     });
 
-    if (existing && existing.punchInTime) {
-      return res.status(400).json({
-        success: false,
-        message: 'Already punched in today',
-        data: { punchInTime: existing.punchInTime }
-      });
-    }
+//     if (existing && existing.punchInTime) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Already punched in today',
+//         data: { punchInTime: existing.punchInTime }
+//       });
+//     }
 
-    const { coordinates } = req.body;
-    const now = new Date();
+//     const { coordinates } = req.body;
+//     const now = new Date();
 
-    const attendance = new Attendance({
-      organization: req.user.organization,
-      employee: req.userId,
-      workDate: start,
-      punchInTime: now,
-      punchInLocation: coordinates ? { type: 'Point', coordinates } : undefined,
-      punchInMethod: 'manual'
-    });
+//     const attendance = new Attendance({
+//       organization: req.user.organization,
+//       employee: req.userId,
+//       workDate: start,
+//       punchInTime: now,
+//       punchInLocation: coordinates ? { type: 'Point', coordinates } : undefined,
+//       punchInMethod: 'manual'
+//     });
 
-    await attendance.save();
+//     await attendance.save();
 
-    res.json({
-      success: true,
-      message: 'Punched in successfully',
-      data: { attendance }
-    });
+//     res.json({
+//       success: true,
+//       message: 'Punched in successfully',
+//       data: { attendance }
+//     });
 
-  } catch (error) {
-    console.error('Punch in error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//   } catch (error) {
+//     console.error('Punch in error:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
-// ─── POST /api/tasks/attendance/punch-out ─────────────────────────────
-router.post('/attendance/punch-out', async (req, res) => {
-  try {
-    if (req.user.role !== 'employee') {
-      return res.status(403).json({ success: false, message: 'Employee access only' });
-    }
+// // ─── POST /api/tasks/attendance/punch-out ─────────────────────────────
+// router.post('/attendance/punch-out', async (req, res) => {
+//   try {
+//     if (req.user.role !== 'employee') {
+//       return res.status(403).json({ success: false, message: 'Employee access only' });
+//     }
 
-    const { start } = getTodayRange();
-    const attendance = await Attendance.findOne({
-      employee: req.userId,
-      workDate: { $gte: start }
-    });
+//     const { start } = getTodayRange();
+//     const attendance = await Attendance.findOne({
+//       employee: req.userId,
+//       workDate: { $gte: start }
+//     });
 
-    if (!attendance || !attendance.punchInTime) {
-      return res.status(400).json({ success: false, message: 'You have not punched in today' });
-    }
+//     if (!attendance || !attendance.punchInTime) {
+//       return res.status(400).json({ success: false, message: 'You have not punched in today' });
+//     }
 
-    if (attendance.punchOutTime) {
-      return res.status(400).json({
-        success: false,
-        message: 'Already punched out today',
-        data: { punchOutTime: attendance.punchOutTime }
-      });
-    }
+//     if (attendance.punchOutTime) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Already punched out today',
+//         data: { punchOutTime: attendance.punchOutTime }
+//       });
+//     }
 
-    const { coordinates } = req.body;
-    await attendance.punchOut(coordinates || null);
+//     const { coordinates } = req.body;
+//     await attendance.punchOut(coordinates || null);
 
-    res.json({
-      success: true,
-      message: 'Punched out successfully',
-      data: {
-        punchInTime: attendance.punchInTime,
-        punchOutTime: attendance.punchOutTime,
-        totalHours: attendance.totalHours
-      }
-    });
+//     res.json({
+//       success: true,
+//       message: 'Punched out successfully',
+//       data: {
+//         punchInTime: attendance.punchInTime,
+//         punchOutTime: attendance.punchOutTime,
+//         totalHours: attendance.totalHours
+//       }
+//     });
 
-  } catch (error) {
-    console.error('Punch out error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//   } catch (error) {
+//     console.error('Punch out error:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
-// ─── GET /api/tasks/attendance/today ──────────────────────────────────
-router.get('/attendance/today', async (req, res) => {
-  try {
-    const { start } = getTodayRange();
-    const attendance = await Attendance.findOne({
-      employee: req.userId,
-      workDate: { $gte: start }
-    });
+// // ─── GET /api/tasks/attendance/today ──────────────────────────────────
+// router.get('/attendance/today', async (req, res) => {
+//   try {
+//     const { start } = getTodayRange();
+//     const attendance = await Attendance.findOne({
+//       employee: req.userId,
+//       workDate: { $gte: start }
+//     });
 
-    res.json({
-      success: true,
-      message: 'ok',
-      data: {
-        isPunchedIn: !!(attendance && attendance.punchInTime),
-        isPunchedOut: !!(attendance && attendance.punchOutTime),
-        attendance: attendance || null
-      }
-    });
+//     res.json({
+//       success: true,
+//       message: 'ok',
+//       data: {
+//         isPunchedIn: !!(attendance && attendance.punchInTime),
+//         isPunchedOut: !!(attendance && attendance.punchOutTime),
+//         attendance: attendance || null
+//       }
+//     });
 
-  } catch (error) {
-    console.error('Attendance today error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//   } catch (error) {
+//     console.error('Attendance today error:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
-// ─── GET /api/tasks/attendance/history ────────────────────────────────
-router.get('/attendance/history', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 30;
-    const skip = (page - 1) * limit;
+// // ─── GET /api/tasks/attendance/history ────────────────────────────────
+// router.get('/attendance/history', async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 30;
+//     const skip = (page - 1) * limit;
 
-    let query = { organization: req.user.organization };
+//     let query = { organization: req.user.organization };
 
-    if (req.user.role === 'employee') {
-      query.employee = req.userId;
-    } else if (req.query.employeeId && isValidObjectId(req.query.employeeId)) {
-      query.employee = req.query.employeeId;
-    }
+//     if (req.user.role === 'employee') {
+//       query.employee = req.userId;
+//     } else if (req.query.employeeId && isValidObjectId(req.query.employeeId)) {
+//       query.employee = req.query.employeeId;
+//     }
 
-    if (req.query.month) {
-      const [year, month] = req.query.month.split('-').map(Number);
-      const monthStart = new Date(year, month - 1, 1);
-      const monthEnd = new Date(year, month, 1);
-      query.workDate = { $gte: monthStart, $lt: monthEnd };
-    }
+//     if (req.query.month) {
+//       const [year, month] = req.query.month.split('-').map(Number);
+//       const monthStart = new Date(year, month - 1, 1);
+//       const monthEnd = new Date(year, month, 1);
+//       query.workDate = { $gte: monthStart, $lt: monthEnd };
+//     }
 
-    const [records, total] = await Promise.all([
-      Attendance.find(query)
-        .populate('employee', 'username fullName profilePicture')
-        .sort({ workDate: -1 })
-        .skip(skip)
-        .limit(limit),
-      Attendance.countDocuments(query)
-    ]);
+//     const [records, total] = await Promise.all([
+//       Attendance.find(query)
+//         .populate('employee', 'username fullName profilePicture')
+//         .sort({ workDate: -1 })
+//         .skip(skip)
+//         .limit(limit),
+//       Attendance.countDocuments(query)
+//     ]);
 
-    res.json({
-      success: true,
-      message: 'ok',
-      data: {
-        records,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(total / limit),
-          total,
-          limit
-        }
-      }
-    });
+//     res.json({
+//       success: true,
+//       message: 'ok',
+//       data: {
+//         records,
+//         pagination: {
+//           currentPage: page,
+//           totalPages: Math.ceil(total / limit),
+//           total,
+//           limit
+//         }
+//       }
+//     });
 
-  } catch (error) {
-    console.error('Attendance history error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+//   } catch (error) {
+//     console.error('Attendance history error:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
 
 module.exports = router;

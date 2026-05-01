@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Organization = require('../models/Organization');
 const authMiddleware = require('../middleware/auth');
 const { isManager } = require('../middleware/roleCheck');
+const Attendance = require('../models/Attendance');
 
 const router = express.Router();
 
@@ -599,13 +600,57 @@ router.delete('/member/remove', authMiddleware, async (req, res) => {
 // @route   GET /api/rooms/member/:id
 // @desc    Get room members
 // @access  Private
+// router.get('/member/:id', authMiddleware, async (req, res) => {
+//   try {
+//     const user = await User.findById(req.userId);
+//     const room = await Room.findOne({
+//       _id: req.params.id,
+//       organization: user.organization
+//     }).populate('members.user', 'username fullName profilePicture role department isOnline lastSeen');
+
+//     if (!room) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Room not found'
+//       });
+//     }
+
+//     // Check if user has access (member or manager)
+//     const isMember = room.members.some(m => m.user._id.toString() === req.userId.toString());
+//     const isCreator = room.createdBy.toString() === req.userId.toString();
+//     const isAdmin = ['super_admin', 'admin', 'manager'].includes(user.role);
+
+//     if (!isMember && !isCreator && !isAdmin) {
+//       return res.status(403).json({
+//         success: false,
+//         message: 'You do not have access to view this room\'s members'
+//       });
+//     }
+
+//     res.json({
+//       success: true,
+//       data: {
+//         members: room.members,
+//         totalMembers: room.stats.totalMembers
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Get members error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error'
+//     });
+//   }
+// });
 router.get('/member/:id', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
+
     const room = await Room.findOne({
       _id: req.params.id,
       organization: user.organization
-    }).populate('members.user', 'username fullName profilePicture role department isOnline lastSeen');
+    }).populate('members.user', 'username fullName profilePicture role department lastSeen');
 
     if (!room) {
       return res.status(404).json({
@@ -614,7 +659,7 @@ router.get('/member/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check if user has access (member or manager)
+    // Access check
     const isMember = room.members.some(m => m.user._id.toString() === req.userId.toString());
     const isCreator = room.createdBy.toString() === req.userId.toString();
     const isAdmin = ['super_admin', 'admin', 'manager'].includes(user.role);
@@ -622,14 +667,57 @@ router.get('/member/:id', authMiddleware, async (req, res) => {
     if (!isMember && !isCreator && !isAdmin) {
       return res.status(403).json({
         success: false,
-        message: 'You do not have access to view this room\'s members'
+        message: 'You do not have access'
       });
     }
+
+    // 🟢 TODAY START
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    // Get all member IDs
+    const memberIds = room.members.map(m => m.user._id);
+
+    // Fetch today's attendance
+    const attendanceRecords = await Attendance.find({
+      employee: { $in: memberIds },
+      workDate: { $gte: start }
+    });
+
+    // Convert to map
+    const attendanceMap = {};
+    attendanceRecords.forEach(a => {
+      attendanceMap[a.employee.toString()] = a;
+    });
+
+    // 🔥 Merge attendance into members
+    const membersWithAttendance = room.members.map(m => {
+      const user = m.user;
+      const attendance = attendanceMap[user._id.toString()];
+
+      return {
+        ...m.toObject(),
+        user: {
+          ...user.toObject(),
+
+          // ✅ REAL ONLINE STATUS
+          isOnline: attendance?.isOnline || false,
+
+          // 💡 Extra useful fields
+          totalMinutes: attendance?.totalMinutes || 0,
+          sessionsCount: attendance?.sessions?.length || 0,
+          lastActive:
+            attendance?.sessions?.length > 0
+              ? attendance.sessions[attendance.sessions.length - 1]?.endTime
+              : null
+        }
+      };
+    });
 
     res.json({
       success: true,
       data: {
-        members: room.members,
+        members: membersWithAttendance,
         totalMembers: room.stats.totalMembers
       }
     });

@@ -60,108 +60,110 @@ locationTraceSchema.index({ location: '2dsphere' });
 const LocationTrace = mongoose.model('LocationTrace', locationTraceSchema);
 
 
-// ─── Attendance Schema ─────────────────────────────────────────────────────
-const attendanceSchema = new mongoose.Schema({
-  organization: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Organization',
-    required: true
-  },
-  employee: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+// // ─── Attendance Schema ─────────────────────────────────────────────────────
+// const attendanceSchema = new mongoose.Schema({
+//   organization: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: 'Organization',
+//     required: true
+//   },
+//   employee: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: 'User',
+//     required: true
+//   },
 
-  // Work date (YYYY-MM-DD stored as Date at midnight UTC)
-  workDate: {
-    type: Date,
-    required: true
-  },
+//   // Work date (YYYY-MM-DD stored as Date at midnight UTC)
+//   workDate: {
+//     type: Date,
+//     required: true
+//   },
 
-  // Punch In
-  punchInTime: {
-    type: Date,
-    default: null
-  },
-  punchInLocation: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number],
-      default: undefined
-    }
-  },
+//   // Punch In
+//   punchInTime: {
+//     type: Date,
+//     default: null
+//   },
+//   punchInLocation: {
+//     type: {
+//       type: String,
+//       enum: ['Point'],
+//       default: 'Point'
+//     },
+//     coordinates: {
+//       type: [Number],
+//       default: undefined
+//     }
+//   },
 
-  // Punch Out
-  punchOutTime: {
-    type: Date,
-    default: null
-  },
-  punchOutLocation: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number],
-      default: undefined
-    }
-  },
+//   // Punch Out
+//   punchOutTime: {
+//     type: Date,
+//     default: null
+//   },
+//   punchOutLocation: {
+//     type: {
+//       type: String,
+//       enum: ['Point'],
+//       default: 'Point'
+//     },
+//     coordinates: {
+//       type: [Number],
+//       default: undefined
+//     }
+//   },
 
-  // Derived
-  totalHours: {
-    type: Number,
-    default: null   // Computed on punch-out
-  },
+//   // Derived
+//   totalHours: {
+//     type: Number,
+//     default: null   // Computed on punch-out
+//   },
 
-  // The task that auto-triggered punch-in (if any)
-  firstTaskId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task',
-    default: null
-  },
+//   // The task that auto-triggered punch-in (if any)
+//   firstTaskId: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: 'Task',
+//     default: null
+//   },
 
-  // Manual or auto
-  punchInMethod: {
-    type: String,
-    enum: ['manual', 'auto_task_start'],
-    default: 'manual'
-  },
+//   // Manual or auto
+//   punchInMethod: {
+//     type: String,
+//     enum: ['manual', 'auto_task_start'],
+//     default: 'manual'
+//   },
 
-  notes: {
-    type: String,
-    default: null
-  }
-}, {
-  timestamps: true
-});
+//   notes: {
+//     type: String,
+//     default: null
+//   }
+// }, {
+//   timestamps: true
+// });
 
 
-attendanceSchema.index({ employee: 1, workDate: -1 });
-attendanceSchema.index({ organization: 1, workDate: -1 });
-attendanceSchema.index({ employee: 1, workDate: 1 }, { unique: true });   // One record per employee per day
+// attendanceSchema.index({ employee: 1, workDate: -1 });
+// attendanceSchema.index({ organization: 1, workDate: -1 });
+// attendanceSchema.index({ employee: 1, workDate: 1 }, { unique: true });   // One record per employee per day
 
-// Compute total hours on punch-out
-attendanceSchema.methods.punchOut = async function(coordinates = null) {
-  this.punchOutTime = new Date();
+// // Compute total hours on punch-out
+// attendanceSchema.methods.punchOut = async function(coordinates = null) {
+//   this.punchOutTime = new Date();
 
-  if (coordinates) {
-    this.punchOutLocation = { type: 'Point', coordinates };
-  }
+//   if (coordinates) {
+//     this.punchOutLocation = { type: 'Point', coordinates };
+//   }
 
-  if (this.punchInTime) {
-    const diffMs = this.punchOutTime - this.punchInTime;
-    this.totalHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
-  }
+//   if (this.punchInTime) {
+//     const diffMs = this.punchOutTime - this.punchInTime;
+//     this.totalHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
+//   }
 
-  return await this.save();
-};
+//   return await this.save();
+// };
 
-const Attendance = mongoose.model('Attendance', attendanceSchema);
+// const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-module.exports = { LocationTrace, Attendance };
+// module.exports = { LocationTrace, Attendance };
+
+module.exports = LocationTrace;
