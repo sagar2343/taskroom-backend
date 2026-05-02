@@ -233,7 +233,9 @@ router.get('/history', async (req, res) => {
           _id: null,
           totalMinutes:    { $sum: '$totalMinutes' },
           totalDays:       { $sum: 1 },
-          presentDays:     { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
+        //   presentDays:     { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
+          // BUG-FIX: also count today if session is still open (isOnline=true, totalMinutes=0)
+          presentDays: { $sum: { $cond: [{ $or: [{ $gt: ['$totalMinutes', 0] }, { $eq: ['$isOnline', true] }] }, 1, 0] } },
           tasksCompleted:  { $sum: '$tasksCompleted' },
       }},
     ]);
@@ -461,7 +463,9 @@ router.get('/employee/:id', async (req, res) => {
         $group: {
           _id:          null,
           totalMinutes: { $sum: '$totalMinutes' },
-          presentDays:  { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
+        //   presentDays:  { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
+        // BUG-FIX: also count today if session is still open (isOnline=true, totalMinutes=0)
+          presentDays:  { $sum: { $cond: [{ $or: [{ $gt: ['$totalMinutes', 0] }, { $eq: ['$isOnline', true] }] }, 1, 0] } },
           totalDays:    { $sum: 1 },
         },
       },
