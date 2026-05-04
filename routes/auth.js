@@ -45,11 +45,14 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Check if organization can add more employees
+    // Check if organization can add more employees (plan-enforced)
     if (role == 'employee' && !organization.canAddEmployee()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Organization has reached maximum employee limit'
+      return res.status(403).json({
+        success:    false,
+        message:    `Your ${organization.effectivePlan} plan allows a maximum of ${organization.limits.maxEmployees} employees. Upgrade to add more.`,
+        upgradeUrl: '/billing',
+        limit:      organization.limits.maxEmployees,
+        current:    organization.stats.totalEmployees,
       });
     }
 

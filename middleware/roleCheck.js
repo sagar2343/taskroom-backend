@@ -10,8 +10,8 @@ const isEmployee = (req, res, next) => {
 };
 
 const isManager = (req, res, next) => {
-  const allowedRoles = ['manager'];
-  if (!allowedRoles.includes(req.user.role)) {
+  // User model only supports 'manager' and 'employee' roles
+  if (req.user.role !== 'manager') {
     return res.status(403).json({
       success: false,
       message: 'Access denied. Manager privileges required.'

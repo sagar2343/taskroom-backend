@@ -1,202 +1,266 @@
+'use strict';
 const mongoose = require('mongoose');
 
+// ─── Plan Limits Configuration ────────────────────────────────────────────────
+// Single source of truth. Import this anywhere you need to check limits.
+const PLAN_LIMITS = {
+  starter: {
+    label:              'Starter',
+    price:              0,
+    maxEmployees:       20,
+    maxRooms:           5,
+    historyDays:        7,
+    gpsTrace:           false,
+    exportReports:      false,
+    productivityScores: false,
+    perSeatPrice:       0,
+  },
+  pro: {
+    label:              'Pro',
+    price:              1499,
+    maxEmployees:       100,
+    maxRooms:           30,
+    historyDays:        90,
+    gpsTrace:           true,
+    exportReports:      true,
+    productivityScores: true,
+    perSeatPrice:       25,
+  },
+  business: {
+    label:              'Business',
+    price:              3999,
+    maxEmployees:       500,
+    maxRooms:           100,
+    historyDays:        365,
+    gpsTrace:           true,
+    exportReports:      true,
+    productivityScores: true,
+    perSeatPrice:       20,   // ₹20/seat (cheaper than Pro to reward volume)
+  },
+  enterprise: {
+    label:              'Enterprise',
+    price:              null,          // contact sales
+    maxEmployees:       Infinity,
+    maxRooms:           Infinity,
+    historyDays:        Infinity,
+    gpsTrace:           true,
+    exportReports:      true,
+    productivityScores: true,
+    perSeatPrice:       20,
+  },
+};
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
 const organizationSchema = new mongoose.Schema({
   // Basic Info
-  // "name": "Tech Solutions Ltd",
-  // "code": "TECHSOL",
   name: {
-    type: String,
-    required: [true, 'Organization name is required'],
-    trim: true,
-    maxlength: [100, 'Organization name cannot exceed 100 characters']
+    type:      String,
+    required:  [true, 'Organization name is required'],
+    trim:      true,
+    maxlength: [100, 'Organization name cannot exceed 100 characters'],
   },
   code: {
-    type: String,
-    required: true,
-    unique: true,
+    type:      String,
+    required:  true,
+    unique:    true,
     uppercase: true,
-    trim: true,
-    minlength: [3, 'Organization code must be at least 3 characters']
+    trim:      true,
+    minlength: [3, 'Organization code must be at least 3 characters'],
   },
-  // Company Details "domain": "techsolutions.com",
+
+  // Company Details
   domain: {
-    type: String,
-    trim: true,
+    type:      String,
+    trim:      true,
     lowercase: true,
     validate: {
-      validator: function(v) {
-        if (!v) return true; // Domain is optional
+      validator(v) {
+        if (!v) return true;
         return /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(v);
       },
-      message: 'Please enter a valid domain (e.g., company.com)'
-    }
+      message: 'Please enter a valid domain (e.g., company.com)',
+    },
   },
+
   // Contact Info
   contactEmail: {
-    type: String,
-    required: [true, 'Contact email is required'],
-    trim: true,
+    type:      String,
+    required:  [true, 'Contact email is required'],
+    trim:      true,
     lowercase: true,
     validate: {
-      validator: function(v) {
-        return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
-      },
-      message: 'Please enter a valid email'
-    }
+      validator: v => /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v),
+      message:   'Please enter a valid email',
+    },
   },
   contactPhone: {
     type: String,
     validate: {
-      validator: function(v) {
+      validator(v) {
         if (!v) return true;
         return /^[0-9]{10}$/.test(v);
       },
-      message: 'Phone number must be 10 digits'
-    }
+      message: 'Phone number must be 10 digits',
+    },
   },
-  
+
   // Organization Logo
-  logo: {
-    type: String,
-    default: null
-  },
+  logo: { type: String, default: null },
 
   // Address
   address: {
-    street: String,
-    city: String,
-    state: String,
+    street:  String,
+    city:    String,
+    state:   String,
     pincode: String,
-    country: {
-      type: String,
-      default: 'India'
-    }
+    country: { type: String, default: 'India' },
   },
 
-  // Settings & Limits
+  // ─── BILLING / PLAN FIELDS ────────────────────────────────────────────────
+  plan: {
+    type:    String,
+    enum:    ['starter', 'pro', 'business', 'enterprise'],
+    default: 'starter',
+  },
+  planExpiresAt: {
+    type:    Date,
+    default: null,   // null = free/starter never expires
+  },
+  trialEndsAt: {
+    type:    Date,
+    default: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 14); // 14-day Pro trial on signup
+      return d;
+    },
+  },
+  isTrialActive: {
+    type:    Boolean,
+    default: true,
+  },
+  billingEmail: {
+    type:    String,
+    default: null,
+  },
+  razorpayCustomerId: {
+    type:    String,
+    default: null,
+  },
+  // Cached billable seats (synced on member change)
+  billableSeats: {
+    type:    Number,
+    default: 0,
+  },
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Settings & Limits (synced from plan on upgrade)
   settings: {
-    maxRooms: {
-      type: Number,
-      default: 50
-    },
-    maxEmployees: {
-      type: Number,
-      default: 500
-    },
-    enableLocationTracking: {
-      type: Boolean,
-      default: true
-    },
+    maxRooms:               { type: Number,  default: 5 },
+    maxEmployees:           { type: Number,  default: 20 },
+    enableLocationTracking: { type: Boolean, default: true },
   },
 
   // Status
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isSuspended: {
-    type: Boolean,
-    default: false
-  },
-  suspensionReason: {
-    type: String,
-    default: null
-  },
+  isActive:         { type: Boolean, default: true },
+  isSuspended:      { type: Boolean, default: false },
+  suspensionReason: { type: String,  default: null },
 
   // Statistics
   stats: {
-    totalEmployees: {
-      type: Number,
-      default: 0
-    },
-    totalManagers: {
-      type: Number,
-      default: 0
-    },
-    totalRooms: {
-      type: Number,
-      default: 0
-    },
-    totalTasks: {
-      type: Number,
-      default: 0
-    },
-    totalTasksCompleted: {
-      type: Number,
-      default: 0
-    }
+    totalEmployees:      { type: Number, default: 0 },
+    totalManagers:       { type: Number, default: 0 },
+    totalRooms:          { type: Number, default: 0 },
+    totalTasks:          { type: Number, default: 0 },
+    totalTasksCompleted: { type: Number, default: 0 },
   },
-}, {
-  timestamps: true
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+// ─── Indexes ──────────────────────────────────────────────────────────────────
+organizationSchema.index({ domain:   1 });
+organizationSchema.index({ isActive: 1 });
+organizationSchema.index({ plan:     1 });
+
+// ─── Virtual: effective plan (active trial counts as Pro) ─────────────────────
+organizationSchema.virtual('effectivePlan').get(function () {
+  if (this.isTrialActive && this.trialEndsAt && new Date() < this.trialEndsAt) {
+    return 'pro';
+  }
+  return this.plan;
 });
 
+// ─── Virtual: current plan limits object ──────────────────────────────────────
+organizationSchema.virtual('limits').get(function () {
+  return PLAN_LIMITS[this.effectivePlan] || PLAN_LIMITS.starter;
+});
 
-// Indexes
-// organizationSchema.index({ code: 1 });
-organizationSchema.index({ domain: 1 });
-organizationSchema.index({ isActive: 1 });
+// ─── Statics ──────────────────────────────────────────────────────────────────
+organizationSchema.statics.PLAN_LIMITS = PLAN_LIMITS;
 
-// Generate unique organization code
-organizationSchema.statics.generateOrgCode = async function() {
-  let code;
-  let exists = true;
-  
+organizationSchema.statics.generateOrgCode = async function () {
+  let code, exists = true;
   while (exists) {
-    // Generate 6-8 character alphanumeric code
-    code = 'ORG' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    code   = 'ORG' + Math.random().toString(36).substring(2, 8).toUpperCase();
     exists = await this.findOne({ code });
   }
-  
   return code;
 };
 
-// Update statistics
-organizationSchema.methods.updateStats = async function() {
+// ─── Instance methods ─────────────────────────────────────────────────────────
+organizationSchema.methods.updateStats = async function () {
   const User = mongoose.model('User');
   const Room = mongoose.model('Room');
-  // const Task = mongoose.model('Task');
-  
-  const employees = await User.countDocuments({ 
-    organization: this._id, 
-    role: 'employee',
-    // isActive: true 
-  });
-  
-  const managers = await User.countDocuments({ 
-    organization: this._id, 
-    role: { $in: ['manager', 'supervisor', 'admin', 'super_admin'] },
-    // isActive: true
-  });
-  
-  const rooms = await Room.countDocuments({ 
-    organization: this._id,
-    isArchived: false
-  });
-  
-  // const tasks = await Task.countDocuments({ organization: this._id });
-  // const completedTasks = await Task.countDocuments({ 
-  //   organization: this._id, 
-  //   status: 'completed' 
-  // });
-  
+
+  const [employees, managers, rooms] = await Promise.all([
+    User.countDocuments({ organization: this._id, role: 'employee' }),
+    User.countDocuments({ organization: this._id, role: { $in: ['manager'] } }),
+    Room.countDocuments({ organization: this._id, isArchived: false }),
+  ]);
+
   this.stats = {
-    totalEmployees: employees,
-    totalManagers: managers,
-    totalRooms: rooms,
-    totalTasks: 0,
-    totalTasksCompleted: 0
+    totalEmployees:      employees,
+    totalManagers:       managers,
+    totalRooms:          rooms,
+    totalTasks:          0,
+    totalTasksCompleted: 0,
   };
-  
+  this.billableSeats = employees + managers;
   return await this.save();
 };
 
-// Check if organization can add more resources
-organizationSchema.methods.canAddRoom = function() {
-  return this.stats.totalRooms < this.settings.maxRooms;
+organizationSchema.methods.canAddRoom = function () {
+  return this.stats.totalRooms < this.limits.maxRooms;
 };
 
-organizationSchema.methods.canAddEmployee = function() {
-  return this.stats.totalEmployees < this.settings.maxEmployees;
+organizationSchema.methods.canAddEmployee = function () {
+  return this.stats.totalEmployees < this.limits.maxEmployees;
+};
+
+/** Upgrade to a paid plan and sync settings limits */
+organizationSchema.methods.upgradePlan = async function (newPlan, expiresAt) {
+  const limits = PLAN_LIMITS[newPlan];
+  if (!limits) throw new Error(`Unknown plan: ${newPlan}`);
+
+  this.plan          = newPlan;
+  this.planExpiresAt = expiresAt || null;
+  this.isTrialActive = false; // paid plan cancels trial
+
+  this.settings.maxEmployees = limits.maxEmployees === Infinity ? 99999 : limits.maxEmployees;
+  this.settings.maxRooms     = limits.maxRooms     === Infinity ? 99999 : limits.maxRooms;
+  return await this.save();
+};
+
+/** Call from a daily cron to expire trials */
+organizationSchema.methods.expireTrial = async function () {
+  if (this.isTrialActive && this.trialEndsAt && new Date() > this.trialEndsAt) {
+    this.isTrialActive = false;
+    await this.save();
+  }
+};
+
+/** Feature gate check — use in planGate middleware */
+organizationSchema.methods.hasFeature = function (feature) {
+  return !!this.limits[feature];
 };
 
 module.exports = mongoose.model('Organization', organizationSchema);
+module.exports.PLAN_LIMITS = PLAN_LIMITS;

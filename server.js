@@ -1,3 +1,4 @@
+'use strict';
 const express    = require('express');
 const http       = require('http');
 const { Server } = require('socket.io');
@@ -15,6 +16,11 @@ const fcmTokenRoutes     = require('./routes/fcmToken');
 const uploadRoutes       = require('./routes/upload');
 const attendanceRoutes   = require('./routes/attendance');
 
+// ── NEW PRODUCTION ROUTES ──────────────────────────────────────────────────────
+const billingRoutes      = require('./routes/billing');      // Razorpay payments
+const exportRoutes       = require('./routes/export');       // PDF / Excel reports
+const analyticsRoutes    = require('./routes/analytics');    // Productivity scores
+
 // ── Services ───────────────────────────────────────────────────────────────
 const { registerSocketHandlers }      = require('./socket/locationSocket');
 const { verifyCloudinaryConnection }  = require('./services/cloudinaryService');
@@ -30,6 +36,8 @@ const io = new Server(server, {
 app.set('io', io);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
+// NOTE: /api/billing/webhook needs raw body — mount BEFORE express.json()
+app.use('/api/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -38,14 +46,12 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    verifyCloudinaryConnection();   // ping Cloudinary after DB is ready
+    verifyCloudinaryConnection();
   })
   .catch((err) => console.error('❌ Mongo error:', err.message));
 
 // ── REST routes ────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/user',         userRoutes);
@@ -55,6 +61,22 @@ app.use('/api/tasks',        taskRoutes);
 app.use('/api/fcm',          fcmTokenRoutes);
 app.use('/api/upload',       uploadRoutes);
 app.use('/api/attendance',   attendanceRoutes);
+
+// ── Production routes ──────────────────────────────────────────────────────────
+app.use('/api/billing',      billingRoutes);
+app.use('/api/export',       exportRoutes);
+app.use('/api/analytics',    analyticsRoutes);
+
+// ── 404 handler ────────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found` });
+});
+
+// ── Global error handler ────────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ success: false, message: 'Internal server error' });
+});
 
 // ── Socket.IO handlers ─────────────────────────────────────────────────────
 registerSocketHandlers(io);

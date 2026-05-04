@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Organization = require('../models/Organization');
 const authMiddleware = require('../middleware/auth');
 const { isManager } = require('../middleware/roleCheck');
+const { enforceRoomLimit } = require('../middleware/planGate');
 const Attendance = require('../models/Attendance');
 
 const router = express.Router();
@@ -11,7 +12,7 @@ const router = express.Router();
 // @route   POST /api/rooms
 // @desc    Create new room
 // @access  Private (Manager or above)
-router.post('/', authMiddleware, isManager, async (req, res) => {
+router.post('/', authMiddleware, isManager, enforceRoomLimit, async (req, res) => {
   try {
     const { name, description, category, settings, maxMembers } = req.body;
 
@@ -26,13 +27,8 @@ router.post('/', authMiddleware, isManager, async (req, res) => {
     const user = await User.findById(req.userId);
     const organization = await Organization.findById(user.organization);
 
-    // Check if organization can add more rooms
-    if (!organization.canAddRoom()) {
-      return res.status(400).json({
-        success: false,
-        message: `Room limit reached. Your plan allows ${organization.settings.maxRooms} rooms.`
-      });
-    }
+    // Note: enforceRoomLimit middleware already blocked if limit reached.
+    // No need to call canAddRoom() again here.
 
     // Generate unique room code for this organization
     const roomCode = await Room.generateRoomCode(organization._id);
@@ -388,7 +384,7 @@ router.post('/join', authMiddleware, async (req, res) => {
     const { roomCode } = req.body;
 
     if (!roomCode) {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: 'Room code is required'
       });

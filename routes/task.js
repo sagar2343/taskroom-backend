@@ -10,6 +10,7 @@ const Attendance = require('../models/Attendance');
 const Room = require('../models/Room');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
+const { requireFeature } = require('../middleware/planGate');
 const { isManager } = require('../middleware/roleCheck');
 const { getDistanceMeters } = require('../models/Task');
 
@@ -621,7 +622,7 @@ router.patch('/cancel', isManager, async (req, res) => {
 
 // ─── POST /api/tasks/live-location ── Manager: Live location ──────────
 //  Body: { taskId }
-router.post('/live-location', isManager, async (req, res) => {
+router.post('/live-location', isManager, requireFeature('gpsTrace'), async (req, res) => {
   try {
     const { taskId } = req.body;
 
@@ -679,7 +680,7 @@ router.post('/live-location', isManager, async (req, res) => {
 
 // ─── POST /api/tasks/location-trace ── Manager: Full route ────────────
 //  Body: { taskId, stepId? }
-router.post('/location-trace', isManager, async (req, res) => {
+router.post('/location-trace', isManager, requireFeature('gpsTrace'), async (req, res) => {
   try {
     const { taskId, stepId } = req.body;
 
@@ -1334,6 +1335,19 @@ router.post('/steps/complete', async (req, res) => {
     }
  
     await task.save();
+
+    // Keep today's attendance tasksCompleted counter current so productivity scores
+    // reflect task completions immediately (not only after the employee goes offline).
+    if (allDone) {
+      try {
+        const empId = Array.isArray(task.assignedTo) ? task.assignedTo[0] : task.assignedTo;
+        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+        await Attendance.findOneAndUpdate(
+          { employee: empId, organization: task.organization, workDate: { $gte: todayStart } },
+          { $inc: { tasksCompleted: 1 } }
+        );
+      } catch (_) { /* non-fatal — don't let attendance update fail the task response */ }
+    }
 
     // ── 🔔 Notify the manager ─────────────────────────────────────────────
     const manager      = await User.findById(task.createdBy).select('fcmToken');

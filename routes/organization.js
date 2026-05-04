@@ -72,9 +72,17 @@ router.post('/check', async (req, res) => {
 
 //  @route   POST /api/organization/create
 //  @desc    Create organization (Platform Owner only)
-//  @access  Public (for now)
+//  @access  Protected — requires x-admin-secret header matching ADMIN_SECRET env var
 router.post('/create', async (req, res)=> {
-    try {
+    // Verify admin secret to prevent unauthorized org creation
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Valid x-admin-secret header required to create organizations.',
+      });
+    }
+    try { 
     const {
       name,
     //code,
