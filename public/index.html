@@ -1287,8 +1287,8 @@ function loadStorage(){try{const d=JSON.parse(localStorage.getItem(SK)||'{}');_u
 function clearStorage(){_user=null;_token=null;_org=null;try{localStorage.removeItem(SK);}catch(e){}}
 
 /* ── HTTP ───────────────────────────────────────────────────────────── */
-async function api(method,path,body,token){
-  const opts={method,headers:{'Content-Type':'application/json'}};
+async function api(method,path,body,token,extraHeaders={}){
+  const opts={method,headers:{'Content-Type':'application/json',...extraHeaders}};
   if(token||_token)opts.headers['Authorization']='Bearer '+(token||_token);
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(BASE+path,opts);
@@ -2187,7 +2187,7 @@ async function submitCreate(e){
   clearA('alert-create');
   const body={name,contactEmail:email,contactPhone:$('in-phone').value.trim()||undefined,domain:$('in-domain').value.trim()||undefined,address:{city:$('in-city')?.value.trim()||undefined,state:$('in-state')?.value.trim()||undefined,pincode:$('in-pin')?.value.trim()||undefined,country:$('in-country')?.value.trim()||'India'}};
   try{
-    const d=await api('POST','/organization/create',body,null);
+    const d=await api('POST','/organization/create',body,null,{'x-admin-secret':'TaskRoom@123'});
     if(d.success){
       _org=d.data?.organization||d.data;
       const code=_org.code||'—';

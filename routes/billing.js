@@ -164,17 +164,17 @@ router.post('/create-order', authMiddleware, isManager, async (req, res) => {
       data: {
         orderId:          order.id,
         subscriptionId:   sub._id,
-        totalAmountPaise: totalPaise,          // ← was incorrectly `totalAmountPaise` (undefined)
+        totalAmountPaise,
         totalAmountINR:   totalAmount,
         razorpayKeyId:    process.env.RAZORPAY_KEY_ID,
         orgName:          org.name,
         billingEmail:     sub.billingEmail,
         breakdown: {
-          basePlan:    baseAmount,
-          perSeat:     perSeatTotal,
+          basePlan:   baseAmount,
+          perSeat:    perSeatTotal,
           seats,
           billingCycle,
-          discount:    billingCycle === 'annual' ? '20%' : null,
+          discount:   billingCycle === 'annual' ? '20%' : null,
         },
       },
     });
@@ -309,7 +309,7 @@ router.post('/webhook', async (req, res) => {
 // GET /api/billing/history  (manager only)
 router.get('/history', authMiddleware, isManager, async (req, res) => {
   try {
-    const subs = await Subscription.find({ organization: req.user.organization })
+    const subs = await Subscription.find({ organization: req.user.organization, status: { $in: ['paid', 'failed'] } })
       .sort({ createdAt: -1 })
       .limit(20);
 
