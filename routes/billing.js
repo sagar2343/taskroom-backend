@@ -164,17 +164,17 @@ router.post('/create-order', authMiddleware, isManager, async (req, res) => {
       data: {
         orderId:          order.id,
         subscriptionId:   sub._id,
-        totalAmountPaise,
+        totalAmountPaise: totalPaise,          // ← was incorrectly `totalAmountPaise` (undefined)
         totalAmountINR:   totalAmount,
         razorpayKeyId:    process.env.RAZORPAY_KEY_ID,
         orgName:          org.name,
         billingEmail:     sub.billingEmail,
         breakdown: {
-          basePlan:   baseAmount,
-          perSeat:    perSeatTotal,
+          basePlan:    baseAmount,
+          perSeat:     perSeatTotal,
           seats,
           billingCycle,
-          discount:   billingCycle === 'annual' ? '20%' : null,
+          discount:    billingCycle === 'annual' ? '20%' : null,
         },
       },
     });
