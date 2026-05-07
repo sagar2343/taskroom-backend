@@ -1433,6 +1433,8 @@ select option{background:var(--surface);color:var(--text)}
         <div class="sc c-blue"><div class="sc-icon">👥</div><div class="sc-label">Employees</div><div class="sc-value" id="s-emp">—</div><div class="sc-sub">Total members</div></div>
         <div class="sc c-green"><div class="sc-icon">📁</div><div class="sc-label">Active Rooms</div><div class="sc-value" id="s-rooms">—</div><div class="sc-sub">Rooms in org</div></div>
         <div class="sc c-amber"><div class="sc-icon">⏳</div><div class="sc-label">In Progress</div><div class="sc-value" id="s-inprog">—</div><div class="sc-sub">Active tasks</div></div>
+      <!-- onboarding banner for new orgs -->
+      <div id="ov-onboard-banner" style="grid-column:1/-1"></div>
         <div class="sc c-red"><div class="sc-icon">⚠️</div><div class="sc-label">Overdue</div><div class="sc-value" id="s-missed">—</div><div class="sc-sub">Need attention</div></div>
         <div class="sc c-purple"><div class="sc-icon">✅</div><div class="sc-label">Completed</div><div class="sc-value" id="s-comp">—</div><div class="sc-sub">Total done</div></div>
       </div>
@@ -1701,7 +1703,7 @@ select option{background:var(--surface);color:var(--text)}
   <div class="code-display" style="margin:16px 0" onclick="copyCode()"><div class="big-code" id="post-create-code">—</div><p>📋 Click to copy · Share with your team</p></div>
   <div id="post-create-plan-offer"></div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
-    <button class="btn btn-primary w-full btn-lg" onclick="closeM('modal-post-create');showDash()">Open Dashboard →</button>
+    <button class="btn btn-primary w-full btn-lg" onclick="closeM('modal-post-create');postCreateGoDash()">Open Dashboard →</button>
     <button class="btn btn-ghost w-full" onclick="closeM('modal-post-create')">Close</button>
   </div>
 </div></div>
@@ -2007,6 +2009,16 @@ function showLanding(){
 }
 
 function showDash(){
+  // Guard: if no token/user, don't show dashboard — redirect to landing + show login
+  if(!_token||!_user){
+    clearStorage();
+    showLanding();
+    setTimeout(()=>{
+      showLogin();
+      toast('Session expired or incomplete. Please sign in.','error');
+    },200);
+    return;
+  }
   $('landing-view').style.display='none';
   $('dashboard-view').style.display='block';
   const ln=$('land-nav');if(ln)ln.style.display='none';
@@ -2063,7 +2075,39 @@ async function loadDashData(){
   $('ov-greeting').textContent=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+(_user?.fullName||'').split(' ')[0]+'  👋';
   $('ov-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   fillOrgStats();
-  if(_user?.role==='manager')loadTaskDashboard();
+  // Show onboarding guide for brand-new orgs (no employees, no rooms)
+  if(_user?.role==='manager'){
+    const isNewOrg=(_org?.stats?.totalEmployees||0)===0&&(_org?.stats?.totalRooms||0)===0;
+    const bannerEl=$('ov-onboard-banner');
+    if(bannerEl){
+      if(isNewOrg){
+        bannerEl.innerHTML=`
+          <div style="background:linear-gradient(135deg,rgba(19,127,236,.12),rgba(19,127,236,.04));border:1px solid rgba(19,127,236,.2);border-radius:12px;padding:22px 24px;margin-bottom:20px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--text)">🚀 Welcome to TaskRoom! Here's how to get started:</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);border-radius:8px;cursor:pointer" onclick="openCreateRoom()">
+                <div style="width:30px;height:30px;border-radius:6px;background:rgba(19,127,236,.15);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🏠</div>
+                <div style="flex:1"><div style="font-size:13.5px;font-weight:600">Step 1 — Create a Room</div><div style="font-size:12px;color:var(--text2)">Rooms organise your team by project or region</div></div>
+                <div style="color:var(--primary-light);font-size:13px">→</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);border-radius:8px;cursor:pointer" onclick="openInviteHelper()">
+                <div style="width:30px;height:30px;border-radius:6px;background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">👥</div>
+                <div style="flex:1"><div style="font-size:13.5px;font-weight:600">Step 2 — Invite Employees</div><div style="font-size:12px;color:var(--text2)">Share your org code <strong style="font-family:monospace;color:var(--primary-light)">${_org?.code||''}</strong> — employees register with this on the app</div></div>
+                <div style="color:var(--primary-light);font-size:13px">→</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface2);border-radius:8px;cursor:pointer" onclick="showPage('tasks',document.getElementById('nav-tasks'))">
+                <div style="width:30px;height:30px;border-radius:6px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✅</div>
+                <div style="flex:1"><div style="font-size:13.5px;font-weight:600">Step 3 — Assign Your First Task</div><div style="font-size:12px;color:var(--text2)">Once employees join, assign tasks with proof requirements</div></div>
+                <div style="color:var(--primary-light);font-size:13px">→</div>
+              </div>
+            </div>
+          </div>`;
+      }else{
+        bannerEl.innerHTML='';
+      }
+    }
+    loadTaskDashboard();
+  }
 }
 
 function fillOrgStats(){
@@ -2091,7 +2135,15 @@ async function loadTaskDashboard(){
 
 function renderTodayTasks(tasks){
   const el=$('today-tasks-list');
-  if(!tasks.length){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No tasks scheduled for today</div>`;return;}
+  if(!tasks.length){
+    el.innerHTML=`<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">
+      <div style="font-size:28px;margin-bottom:8px">✅</div>
+      <div style="font-weight:600;color:var(--text2);margin-bottom:4px">No tasks yet</div>
+      <div style="font-size:12px">Create a room first, then assign tasks to your team.</div>
+      ${_user?.role==='manager'?`<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="openCreateRoom()">+ Create Your First Room</button>`:''}
+    </div>`;
+    return;
+  }
   el.innerHTML=tasks.slice(0,6).map(t=>{
     const pct=t.totalSteps>0?Math.round((t.completedSteps||0)/t.totalSteps*100):0;
     const scls={'pending':'badge-pending','in_progress':'badge-in-progress','completed':'badge-completed','cancelled':'badge-cancelled'}[t.status]||'badge-pending';
@@ -2106,7 +2158,15 @@ function renderEmpActivity(activity){
   const el=$('emp-activity-grid');
   const onlineCnt=activity.filter(a=>a.employee?.isOnline).length;
   const oc=$('ov-online-count');if(oc)oc.textContent=onlineCnt>0?`${onlineCnt} online now`:'';
-  if(!activity.length){el.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;grid-column:1/-1">No employee activity today</div>`;return;}
+  if(!activity.length){
+    el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;grid-column:1/-1">
+      <div style="font-size:26px;margin-bottom:8px">👥</div>
+      <div style="font-weight:600;color:var(--text2);margin-bottom:4px">No employees yet</div>
+      <div style="font-size:12px">Share your org code <strong style="color:var(--primary-light);font-family:monospace">${_org?.code||''}</strong> with your team to get started.</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="openInviteHelper()">📤 Invite Employees</button>
+    </div>`;
+    return;
+  }
   el.innerHTML=activity.map(a=>{
     const u=a.employee;
     const init=(u?.fullName||u?.username||'?')[0].toUpperCase();
@@ -2340,7 +2400,11 @@ async function loadRooms(pg=1){
   if(cat)url+='&category='+cat;
   try{
     const d=await api('GET',url);
-    if(!d.success){el.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Failed to load</h3><p>${esc(d.message)}</p></div>`;return;}
+    if(!d.success){
+      const isAuthErr=d.message?.toLowerCase().includes('token')||d.message?.toLowerCase().includes('auth');
+      el.innerHTML=`<div class="empty-state"><div class="empty-icon">${isAuthErr?'🔐':'❌'}</div><h3>${isAuthErr?'Session Error':'Failed to load rooms'}</h3><p>${isAuthErr?'Your session may have expired. Please sign out and sign back in.':esc(d.message)}</p>${isAuthErr?`<button class="btn btn-primary btn-sm" onclick="logout()">Sign Out</button>`:''}</div>`;
+      return;
+    }
     const rooms=d.data?.rooms||[];
     const pag=d.data?.pagination||{};
     if(!rooms.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏠</div><h3>No Rooms Found</h3><p>${search?'No rooms match your search.':'Create your first room to get started.'}</p>${_user?.role==='manager'?'<button class="btn btn-primary btn-sm" onclick="openCreateRoom()">+ Create Room</button>':''}</div>`;renderPg('rooms-pg',pag,pg,'loadRooms');return;}
@@ -2441,7 +2505,11 @@ async function loadTasks(pg=1){
   if(search)url+='&search='+encodeURIComponent(search);
   try{
     const d=await api('GET',url);
-    if(!d.success){body.innerHTML=`<div class="tbl-empty">${esc(d.message)}</div>`;return;}
+    if(!d.success){
+      const isAuthErr=d.message?.toLowerCase().includes('token')||d.message?.toLowerCase().includes('auth');
+      body.innerHTML=`<div class="tbl-empty">${isAuthErr?'🔐 Session error — please sign out and sign back in.':esc(d.message)}</div>`;
+      return;
+    }
     const tasks=d.data?.tasks||[],pag=d.data?.pagination||{};
     $('tasks-count-label').textContent=`Tasks (${pag.total||tasks.length})`;
     if(!tasks.length){body.innerHTML=`<div class="tbl-empty">No tasks found</div>`;renderPg('tasks-pg',pag,pg,'loadTasks');return;}
@@ -2552,7 +2620,10 @@ function renderTaskPanel(t){
     // Media
     infoHtml+='<div class="step-media">';
     if(s.submittedPhotoUrl)infoHtml+=`<img class="step-photo-thumb" src="${esc(s.submittedPhotoUrl)}" alt="Photo proof" onclick="openLightbox('${esc(s.submittedPhotoUrl)}','Step ${i+1} — Photo Proof')"/>`;
-    if(s.signatureData)infoHtml+=`<div class="step-sig-thumb" onclick="openSigViewer('${esc(s.signatureData)}','Signed by ${esc(s.signatureSignedBy||'customer')}')"><img src="${esc(s.signatureData)}" alt="Signature"/></div>`;
+    if(s.signatureData){
+      const sigSrc=s.signatureData.startsWith('data:')?s.signatureData:'data:image/png;base64,'+s.signatureData;
+      infoHtml+=`<div class="step-sig-thumb" onclick="openSigViewer('${esc(s.signatureData)}','Signed by ${esc(s.signatureSignedBy||'customer')} — Step ${i+1}')" title="Click to view signature" style="cursor:pointer;background:#fff;border-radius:6px;padding:4px;border:1px solid var(--border)"><img src="${sigSrc}" alt="Signature" style="max-width:100%;max-height:60px;object-fit:contain;display:block"/><div style="font-size:9px;color:var(--text3);text-align:center;margin-top:2px">✍️ Tap to expand</div></div>`;
+    }
     infoHtml+='</div>';
     if(s.isOverdue)infoHtml+=`<div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:700">⚠️ Completed after deadline</div>`;
     infoHtml+=`</div></div>`;
@@ -2663,7 +2734,11 @@ async function loadAttendance(pg=1){
   if(to)url+='&to='+to;
   try{
     const d=await api('GET',url);
-    if(!d.success){body.innerHTML=`<div class="tbl-empty">${esc(d.message)}</div>`;return;}
+    if(!d.success){
+      const isAuthErr=d.message?.toLowerCase().includes('token')||d.message?.toLowerCase().includes('auth');
+      body.innerHTML=`<div class="tbl-empty">${isAuthErr?'🔐 Session error — please sign out and sign back in.':esc(d.message)}</div>`;
+      return;
+    }
     const records=d.data?.attendance||d.data?.records||[],pag=d.data?.pagination||{};
     $('att-count-label').textContent=`Attendance (${pag.total||records.length})`;
     // Populate employee filter
@@ -2732,9 +2807,13 @@ async function loadMembers(pg=1){
   if(role)url+='&role='+role;
   try{
     const d=await api('GET',url);
-    if(!d.success){body.innerHTML=`<div class="tbl-empty">${esc(d.message)}</div>`;return;}
+    if(!d.success){
+      const isAuthErr=d.message?.toLowerCase().includes('token')||d.message?.toLowerCase().includes('auth');
+      body.innerHTML=`<div class="tbl-empty">${isAuthErr?'🔐 Session error — please sign out and sign back in.':esc(d.message)}</div>`;
+      return;
+    }
     const mbs=d.data?.members||[],pag=d.data?.pagination||{};
-    if(!mbs.length){body.innerHTML='<div class="tbl-empty">No members found.</div>';renderPg('m-pg',pag,pg,'loadMembers');return;}
+    if(!mbs.length){body.innerHTML=`<div class="tbl-empty">No members yet. <a href="#" onclick="openInviteHelper();return false" style="color:var(--primary-light)">Invite your first employee →</a></div>`;renderPg('m-pg',pag,pg,'loadMembers');return;}
     body.innerHTML=`<div style="overflow-x:auto"><table><thead><tr><th>Member</th><th>Username</th><th>Role</th><th>Status</th><th>Department</th><th>Joined</th></tr></thead><tbody>
     ${mbs.map(m=>{
       const init=(m.fullName||m.username||'?')[0].toUpperCase();
@@ -2959,6 +3038,33 @@ async function submitCreate(e){
     showA('alert-create','error','Network error. Please check your connection and try again.');
   }finally{
     btn.innerHTML='🚀 Create Organization &amp; Account';btn.disabled=false;
+  }
+}
+
+/* ── POST-CREATE GOTO DASHBOARD ─────────────────────────────────────── */
+function postCreateGoDash(){
+  if(_token && _user){
+    showDash();
+    return;
+  }
+  const code=($('post-create-code')?.textContent||'').trim();
+  showLogin();
+  if(code && code!=='—'){
+    const lcode=$('in-lcode');
+    if(lcode)lcode.value=code;
+    toast('Please sign in with your new manager credentials.','info');
+  }
+}
+
+/* ── INVITE HELPER ──────────────────────────────────────────────────── */
+function openInviteHelper(){
+  if(!_org?.code)return;
+  const code=_org.code;
+  const msg=`Hi! Join our TaskRoom workspace.\n\n1. Download the TaskRoom app\n2. Register with org code: ${code}\n3. Your manager will assign tasks\n\nCode: ${code}`;
+  if(navigator.share){navigator.share({title:'Join TaskRoom',text:msg}).catch(()=>{});}
+  else{
+    navigator.clipboard?.writeText(msg).then(()=>toast('Invite message copied to clipboard!','success')).catch(()=>{});
+    toast(`Share org code ${code} with your employees to invite them.`,'info');
   }
 }
 
