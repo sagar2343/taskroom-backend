@@ -235,7 +235,8 @@ router.get('/history', async (req, res) => {
           totalDays:       { $sum: 1 },
         //   presentDays:     { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
           // BUG-FIX: also count today if session is still open (isOnline=true, totalMinutes=0)
-          presentDays: { $sum: { $cond: [{ $or: [{ $gt: ['$totalMinutes', 0] }, { $eq: ['$isOnline', true] }] }, 1, 0] } },
+          // presentDays: { $sum: { $cond: [{ $or: [{ $gt: ['$totalMinutes', 0] }, { $eq: ['$isOnline', true] }] }, 1, 0] } },
+          presentDays: { $sum: { $cond: [ { $gt: ['$tasksCompleted', 0] }, 1, 0] } },
           tasksCompleted:  { $sum: '$tasksCompleted' },
       }},
     ]);
