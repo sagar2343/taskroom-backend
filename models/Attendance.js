@@ -181,19 +181,52 @@ attendanceSchema.statics.getOrCreateToday = async function(employeeId, organizat
 /** Snapshot task counts onto today's record. */
 attendanceSchema.statics.refreshTaskStats = async function(employeeId, organizationId) {
   const Task   = mongoose.model('Task');
-  const start  = new Date(); start.setHours(0, 0, 0, 0);
-  const record = await this.findOne({ employee: employeeId, workDate: { $gte: start } });
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  const record = await this.findOne({
+    employee: employeeId,
+    workDate: { $gte: start }
+  });
+
   if (!record) return;
 
   const [completed, inProgress, assigned] = await Promise.all([
-    Task.countDocuments({ assignedTo: employeeId, organization: organizationId, status: 'completed' }),
-    Task.countDocuments({ assignedTo: employeeId, organization: organizationId, status: 'in_progress' }),
-    Task.countDocuments({ assignedTo: employeeId, organization: organizationId, status: { $nin: ['cancelled'] } }),
+    Task.countDocuments({
+      assignedTo: employeeId,
+      organization: organizationId,
+      status: 'completed',
+      completedAt: {
+        $gte: start,
+        $lt: end
+      }
+    }),
+
+    Task.countDocuments({
+      assignedTo: employeeId,
+      organization: organizationId,
+      status: 'in_progress'
+    }),
+
+    Task.countDocuments({
+      assignedTo: employeeId,
+      organization: organizationId,
+      startDatetime: {
+        $gte: start,
+        $lt: end
+      },
+      status: { $nin: ['cancelled'] }
+    }),
   ]);
 
   record.tasksCompleted  = completed;
   record.tasksInProgress = inProgress;
   record.tasksAssigned   = assigned;
+
   await record.save();
 };
 
