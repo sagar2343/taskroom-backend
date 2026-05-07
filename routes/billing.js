@@ -70,6 +70,13 @@ router.get('/status', authMiddleware, isManager, async (req, res) => {
       ? Math.max(0, Math.ceil((org.trialEndsAt - new Date()) / 86400000))
       : 0;
 
+    const subscriptionDaysLeft = org.planExpiresAt
+    ? Math.max(
+        0,
+        Math.ceil((org.planExpiresAt - new Date()) / 86400000)
+      )
+    : 0;
+
     res.json({
       success: true,
       data: {
@@ -77,6 +84,7 @@ router.get('/status', authMiddleware, isManager, async (req, res) => {
         effectivePlan: org.effectivePlan,
         isTrialActive: org.isTrialActive,
         trialDaysLeft,
+        subscriptionDaysLeft,
         trialEndsAt:   org.trialEndsAt,
         planExpiresAt: org.planExpiresAt,
         billableSeats: org.billableSeats,
