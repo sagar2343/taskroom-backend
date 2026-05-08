@@ -18,9 +18,9 @@ const PLAN_ORDER   = ['starter', 'pro', 'business', 'enterprise'];
  * Called by every gate — not used standalone.
  */
 async function attachOrg(req, res) {
-  if (req.org) return req.org; // already attached
+  if (req.org) return req.org;
 
-  if (!req.user || !req.user.organization) {
+  if (!req.user?.organization) {
     res.status(401).json({ success: false, message: 'Authentication required.' });
     return null;
   }
@@ -31,8 +31,21 @@ async function attachOrg(req, res) {
     return null;
   }
 
-  // Expire trial if needed
   await org.expireTrial();
+
+  // ── Sync planLimits to effectivePlan so hasFeature() is accurate ──────────
+  const Plan = require('../models/Plan');
+  const effectivePlanDoc = await Plan.getBySlug(org.effectivePlan);
+  if (effectivePlanDoc) {
+    // Patch in-memory only (no save) — just for this request
+    org.planLimits = {
+      maxEmployees: effectivePlanDoc.maxEmployees,
+      maxManagers:  effectivePlanDoc.maxManagers,
+      maxRooms:     effectivePlanDoc.maxRooms,
+      historyDays:  effectivePlanDoc.historyDays,
+      features:     effectivePlanDoc.features,
+    };
+  }
 
   req.org = org;
   return org;

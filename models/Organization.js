@@ -1,54 +1,54 @@
 'use strict';
 const mongoose = require('mongoose');
 
-// ─── Plan Limits Configuration ────────────────────────────────────────────────
-// Single source of truth. Import this anywhere you need to check limits.
-const PLAN_LIMITS = {
-  starter: {
-    label:              'Starter',
-    price:              0,
-    maxEmployees:       20,
-    maxRooms:           5,
-    historyDays:        7,
-    gpsTrace:           false,
-    exportReports:      false,
-    productivityScores: false,
-    perSeatPrice:       0,
-  },
-  pro: {
-    label:              'Pro',
-    price:              1499,
-    maxEmployees:       100,
-    maxRooms:           30,
-    historyDays:        90,
-    gpsTrace:           true,
-    exportReports:      true,
-    productivityScores: true,
-    perSeatPrice:       25,
-  },
-  business: {
-    label:              'Business',
-    price:              3999,
-    maxEmployees:       500,
-    maxRooms:           100,
-    historyDays:        365,
-    gpsTrace:           true,
-    exportReports:      true,
-    productivityScores: true,
-    perSeatPrice:       20,   // ₹20/seat (cheaper than Pro to reward volume)
-  },
-  enterprise: {
-    label:              'Enterprise',
-    price:              null,          // contact sales
-    maxEmployees:       Infinity,
-    maxRooms:           Infinity,
-    historyDays:        Infinity,
-    gpsTrace:           true,
-    exportReports:      true,
-    productivityScores: true,
-    perSeatPrice:       20,
-  },
-};
+// // ─── Plan Limits Configuration ────────────────────────────────────────────────
+// // Single source of truth. Import this anywhere you need to check limits.
+// const PLAN_LIMITS = {
+//   starter: {
+//     label:              'Starter',
+//     price:              0,
+//     maxEmployees:       20,
+//     maxRooms:           5,
+//     historyDays:        7,
+//     gpsTrace:           false,
+//     exportReports:      false,
+//     productivityScores: false,
+//     perSeatPrice:       0,
+//   },
+//   pro: {
+//     label:              'Pro',
+//     price:              1499,
+//     maxEmployees:       100,
+//     maxRooms:           30,
+//     historyDays:        90,
+//     gpsTrace:           true,
+//     exportReports:      true,
+//     productivityScores: true,
+//     perSeatPrice:       25,
+//   },
+//   business: {
+//     label:              'Business',
+//     price:              3999,
+//     maxEmployees:       500,
+//     maxRooms:           100,
+//     historyDays:        365,
+//     gpsTrace:           true,
+//     exportReports:      true,
+//     productivityScores: true,
+//     perSeatPrice:       20,   // ₹20/seat (cheaper than Pro to reward volume)
+//   },
+//   enterprise: {
+//     label:              'Enterprise',
+//     price:              null,          // contact sales
+//     maxEmployees:       Infinity,
+//     maxRooms:           Infinity,
+//     historyDays:        Infinity,
+//     gpsTrace:           true,
+//     exportReports:      true,
+//     productivityScores: true,
+//     perSeatPrice:       20,
+//   },
+// };
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const organizationSchema = new mongoose.Schema({
@@ -119,41 +119,48 @@ const organizationSchema = new mongoose.Schema({
   // ─── BILLING / PLAN FIELDS ────────────────────────────────────────────────
   plan: {
     type:    String,
-    enum:    ['starter', 'pro', 'business', 'enterprise'],
+    enum:    ['starter', 'growth', 'business', 'enterprise'],
     default: 'starter',
   },
-  planExpiresAt: {
-    type:    Date,
-    default: null,   // null = free/starter never expires
-  },
+  planExpiresAt:  { type: Date,    default: null },
   trialEndsAt: {
     type:    Date,
-    default: () => {
-      const d = new Date();
-      d.setDate(d.getDate() + 14); // 14-day Pro trial on signup
-      return d;
-    },
+    default: () => { const d = new Date(); d.setDate(d.getDate() + 14); return d; },
   },
-  isTrialActive: {
-    type:    Boolean,
-    default: true,
-  },
-  billingEmail: {
-    type:    String,
-    default: null,
-  },
+  isTrialActive:  { type: Boolean, default: true },
+  billingEmail:   { type: String,  default: null },
   razorpayCustomerId: {
     type:    String,
     default: null,
   },
   // Cached billable seats (synced on member change)
-  billableSeats: {
-    type:    Number,
-    default: 0,
-  },
+  billableSeats:  { type: Number,  default: 0    },
+  
   // ─────────────────────────────────────────────────────────────────────────
 
   // Settings & Limits (synced from plan on upgrade)
+  planLimits: {
+    maxEmployees:  { type: Number, default: 5  },
+    maxManagers:   { type: Number, default: 1  },
+    maxRooms:      { type: Number, default: 2  },
+    historyDays:   { type: Number, default: 30 },
+    features: {
+      taskManagement:       { type: Boolean, default: true  },
+      attendance:           { type: Boolean, default: true  },
+      taskProofUpload:      { type: Boolean, default: true  },
+      liveTracking:         { type: Boolean, default: false },
+      attendanceAnalytics:  { type: Boolean, default: false },
+      taskHistory:          { type: Boolean, default: false },
+      notifications:        { type: Boolean, default: false },
+      performanceDashboard: { type: Boolean, default: false },
+      routeHistory:         { type: Boolean, default: false },
+      advancedReports:      { type: Boolean, default: false },
+      exportReports:        { type: Boolean, default: false },
+      prioritySupport:      { type: Boolean, default: false },
+      premiumAnalytics:     { type: Boolean, default: false },
+    },
+  },
+
   settings: {
     maxRooms:               { type: Number,  default: 5 },
     maxEmployees:           { type: Number,  default: 20 },
@@ -182,19 +189,18 @@ organizationSchema.index({ plan:     1 });
 
 // ─── Virtual: effective plan (active trial counts as Pro) ─────────────────────
 organizationSchema.virtual('effectivePlan').get(function () {
-  if (this.isTrialActive && this.trialEndsAt && new Date() < this.trialEndsAt) {
-    return 'pro';
-  }
+  if (this.isTrialActive && this.trialEndsAt && new Date() < this.trialEndsAt)
+    return 'growth';
   return this.plan;
 });
 
 // ─── Virtual: current plan limits object ──────────────────────────────────────
 organizationSchema.virtual('limits').get(function () {
-  return PLAN_LIMITS[this.effectivePlan] || PLAN_LIMITS.starter;
+  return this.planLimits;
 });
 
 // ─── Statics ──────────────────────────────────────────────────────────────────
-organizationSchema.statics.PLAN_LIMITS = PLAN_LIMITS;
+// organizationSchema.statics.PLAN_LIMITS = PLAN_LIMITS;
 
 organizationSchema.statics.generateOrgCode = async function () {
   let code, exists = true;
@@ -228,25 +234,43 @@ organizationSchema.methods.updateStats = async function () {
 };
 
 organizationSchema.methods.canAddRoom = function () {
-  return this.stats.totalRooms < this.limits.maxRooms;
+  const max = this.planLimits?.maxRooms ?? 2;
+  return max === -1 || this.stats.totalRooms < max;
 };
 
 organizationSchema.methods.canAddEmployee = function () {
-  return this.stats.totalEmployees < this.limits.maxEmployees;
+  const max = this.planLimits?.maxEmployees ?? 5;
+  return max === -1 || this.stats.totalEmployees < max;
+};
+
+organizationSchema.methods.canAddManager = function () {
+  const max = this.planLimits?.maxManagers ?? 1;
+  return max === -1 || this.stats.totalManagers < max;
 };
 
 /** Upgrade to a paid plan and sync settings limits */
 organizationSchema.methods.upgradePlan = async function (newPlan, expiresAt) {
-  const limits = PLAN_LIMITS[newPlan];
-  if (!limits) throw new Error(`Unknown plan: ${newPlan}`);
+  const PlanModel = mongoose.model('Plan');
+  const plan = await PlanModel.getBySlug(newPlan);
+  if (!plan) throw new Error(`Unknown plan: ${newPlan}`);
 
   this.plan          = newPlan;
   this.planExpiresAt = expiresAt || null;
-  this.isTrialActive = false; // paid plan cancels trial
+  this.isTrialActive = false;
 
-  this.settings.maxEmployees = limits.maxEmployees === Infinity ? 99999 : limits.maxEmployees;
-  this.settings.maxRooms     = limits.maxRooms     === Infinity ? 99999 : limits.maxRooms;
-  return await this.save();
+  // Cache limits so virtuals/middleware work sync
+  this.planLimits = {
+    maxEmployees: plan.maxEmployees,
+    maxManagers:  plan.maxManagers,
+    maxRooms:     plan.maxRooms,
+    historyDays:  plan.historyDays,
+    features:     plan.features,
+  };
+
+  this.settings.maxEmployees = plan.maxEmployees === -1 ? 999999 : plan.maxEmployees;
+  this.settings.maxRooms     = plan.maxRooms === -1     ? 999999 : plan.maxRooms;
+
+  return this.save();
 };
 
 /** Call from a daily cron to expire trials */
@@ -259,8 +283,8 @@ organizationSchema.methods.expireTrial = async function () {
 
 /** Feature gate check — use in planGate middleware */
 organizationSchema.methods.hasFeature = function (feature) {
-  return !!this.limits[feature];
+  return !!this.planLimits?.features?.[feature];
 };
 
 module.exports = mongoose.model('Organization', organizationSchema);
-module.exports.PLAN_LIMITS = PLAN_LIMITS;
+// module.exports.PLAN_LIMITS = PLAN_LIMITS;
