@@ -172,6 +172,47 @@
 [data-theme="light"] .l-footer-copy{color:#a0aec0;}
 [data-theme="light"] .l-footer-links a{color:#718096;}
 [data-theme="light"] .l-footer-links a:hover{color:#4a5568;}
+[data-theme="light"] .l-footer-grid{border-top:none;}
+[data-theme="light"] .l-footer-tagline{color:#4a5568;}
+[data-theme="light"] .l-footer-contact-item{color:#4a5568;}
+[data-theme="light"] .l-footer-contact-item:hover{color:#0d1b2a;}
+[data-theme="light"] .l-footer-col a{color:#718096;}
+[data-theme="light"] .l-footer-col a:hover{color:#0d1b2a;}
+[data-theme="light"] .l-footer-col-title{color:#a0aec0;}
+[data-theme="light"] .l-footer-bottom{border-top:1px solid rgba(0,0,0,.08);}
+
+/* ── FOOTER NEW LAYOUT ── */
+#land-footer{padding:52px 0 0;border-top:1px solid var(--lborder);background:var(--lbg);}
+.l-footer-grid{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;
+  padding-bottom:40px;
+}
+.l-footer-brand{}
+.l-footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text);margin-bottom:12px;}
+.l-footer-logo span{color:var(--primary-light);}
+.l-footer-tagline{color:var(--text3);font-size:13px;line-height:1.7;max-width:260px;margin-bottom:18px;}
+.l-footer-contact{display:flex;flex-direction:column;gap:8px;}
+.l-footer-contact-item{
+  display:flex;align-items:center;gap:7px;
+  color:var(--text3);font-size:12.5px;text-decoration:none;
+  transition:color .18s;font-family:'IBM Plex Mono',monospace;
+}
+.l-footer-contact-item:hover{color:var(--text2);}
+.l-footer-col{display:flex;flex-direction:column;gap:10px;}
+.l-footer-col-title{font-size:11px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;}
+.l-footer-col a{color:var(--text3);font-size:13px;text-decoration:none;transition:color .18s;}
+.l-footer-col a:hover{color:var(--text2);}
+.l-footer-app-link{
+  display:flex;align-items:center;gap:6px;
+  color:var(--text3);font-size:13px;text-decoration:none;transition:color .18s;
+}
+.l-footer-app-link:hover{color:var(--primary-light);}
+.l-footer-bottom{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 0;border-top:1px solid var(--lborder);flex-wrap:wrap;gap:10px;
+}
+.l-footer-copy{color:var(--text4);font-size:12px;font-family:'IBM Plex Mono',monospace;}
+.l-footer-bottom-right{display:flex;align-items:center;gap:12px;}
 
 /* ─── THEME TOGGLE BUTTON ────────────────────────────────────────────────── */
 .theme-toggle{position:fixed;bottom:24px;right:24px;z-index:9000;width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border2);color:var(--text2);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:all var(--transition)}
@@ -321,6 +362,7 @@ footer{padding:48px 24px 32px;max-width:1200px;margin:0 auto;border-top:1px soli
 .sb-sec{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1.1px;text-transform:uppercase;padding:12px 18px 5px}
 .sb-divider{height:1px;background:var(--border);margin:8px 12px}
 .dash-main{flex:1;padding:24px 28px;overflow-x:hidden;min-width:0}
+#dash-trial-banner:empty{display:none;}
 .dash-page{display:none}
 .dash-page.active{display:block;animation:fadeUp .2s ease}
 
@@ -366,7 +408,7 @@ footer{padding:48px 24px 32px;max-width:1200px;margin:0 auto;border-top:1px soli
 .badge-missed{background:var(--amber-g);color:var(--amber)}.badge-high{background:var(--red-g);color:var(--red)}
 .badge-medium{background:var(--amber-g);color:var(--amber)}.badge-low{background:var(--green-g);color:var(--green)}
 .badge-manager{background:var(--primary-subtle);color:var(--primary-light)}.badge-employee{background:var(--green-g);color:var(--green)}
-.badge-starter{background:var(--surface3);color:var(--text2)}.badge-pro{background:var(--primary-subtle);color:var(--primary-light)}
+.badge-starter{background:var(--surface3);color:var(--text2)}.badge-pro{background:var(--primary-subtle);color:var(--primary-light)}.badge-growth{background:var(--primary-subtle);color:var(--primary-light)}
 .badge-business{background:var(--purple-g);color:var(--purple)}.badge-enterprise{background:var(--teal-g);color:var(--teal)}
 .badge-paid{background:var(--green-g);color:var(--green)}.badge-trial{background:var(--amber-g);color:var(--amber)}
 .badge-failed{background:var(--red-g);color:var(--red)}.badge-created{background:var(--surface3);color:var(--text2)}
@@ -653,6 +695,51 @@ select option{background:var(--surface);color:var(--text)}
 #sb-toggle{display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px;cursor:pointer;color:var(--text2)}
 
 /* ─── RESPONSIVE ─────────────────────────────────────────────────────── */
+/* Sidebar overlay backdrop */
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;z-index:149;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(2px);
+}
+.sidebar-overlay.show{display:block;}
+
+/* Mobile bottom navigation */
+.mobile-bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;
+  background:rgba(8,13,18,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.07);
+  padding:8px 0 max(8px,env(safe-area-inset-bottom));
+  flex-direction:row;align-items:stretch;
+}
+.mob-nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:4px 2px;cursor:pointer;
+  color:var(--text3);font-size:9.5px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.04em;
+  border:none;background:none;font-family:'Sora',sans-serif;
+  transition:color .15s;-webkit-tap-highlight-color:transparent;
+  min-width:0;
+}
+.mob-nav-item .mob-ico{font-size:18px;line-height:1;transition:transform .15s;}
+.mob-nav-item.active{color:var(--primary-light);}
+.mob-nav-item.active .mob-ico{transform:scale(1.12);}
+.mob-nav-item:active .mob-ico{transform:scale(.9);}
+/* Back button for detail views */
+.mob-back-bar{
+  display:none;position:fixed;top:60px;left:0;right:0;z-index:399;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:10px 14px;flex-direction:row;align-items:center;gap:10px;
+}
+.mob-back-bar.show{display:flex;}
+.mob-back-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);font-size:13px;font-weight:600;
+  padding:6px 14px;border-radius:8px;cursor:pointer;
+  font-family:'Sora',sans-serif;transition:all .15s;
+}
+.mob-back-btn:hover{color:var(--text);background:var(--surface3);}
+.mob-back-title{font-size:14px;font-weight:700;color:var(--text);flex:1;}
+
 @media(max-width:960px){
   .sidebar{position:fixed;left:0;top:60px;z-index:150;transform:translateX(-100%);transition:transform .25s}
   .sidebar.open{transform:translateX(0);box-shadow:8px 0 40px rgba(0,0,0,.5)}
@@ -660,6 +747,32 @@ select option{background:var(--surface);color:var(--text)}
   #sb-toggle{display:flex}
   .detail-panel{width:100%}
   .form-row,.form-row3{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  /* Show bottom nav on mobile */
+  .mobile-bottom-nav{display:flex;}
+  /* Extra padding so content isn't behind bottom nav */
+  .dash-main{padding:14px 12px 84px;}
+  /* Hide desktop sidebar toggle — use bottom nav instead */
+  #sb-toggle{display:none!important;}
+  /* Compact page headers */
+  .page-hdr{margin-bottom:14px;gap:8px;}
+  .page-hdr-left h1{font-size:18px;}
+  .page-hdr-actions{gap:6px;}
+  .page-hdr-actions .btn{padding:7px 12px;font-size:12px;}
+  /* Stat grid 2 cols */
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  /* Tables scroll */
+  .tbl-wrap{overflow-x:auto;}
+  table{min-width:600px;}
+  /* Rooms 1 col */
+  .rooms-grid{grid-template-columns:1fr;}
+  /* Detail panel full screen */
+  .detail-panel{width:100%;top:0;height:100vh;border-radius:0;}
+  /* Hide theme toggle on small screens */
+  .theme-toggle{bottom:76px;}
+  /* Modal full width */
+  .modal{padding:20px 16px;border-radius:16px;}
 }
 @media(max-width:640px){
   .rooms-grid{grid-template-columns:1fr}
@@ -688,31 +801,74 @@ select option{background:var(--surface);color:var(--text)}
 /* Landing NAV */
 #land-nav{
   position:fixed;top:0;left:0;right:0;z-index:200;
-  padding:16px 0;
-  border-bottom:1px solid rgba(255,255,255,.05);
-  background:rgba(8,13,18,.88);
-  backdrop-filter:blur(14px);
+  padding:0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(8,13,18,.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  transition:box-shadow .3s;
 }
 .land-nav-inner{
-  max-width:1180px;margin:0 auto;padding:0 24px;
+  max-width:1200px;margin:0 auto;padding:0 28px;
   display:flex;align-items:center;justify-content:space-between;
+  height:64px;overflow:visible;
 }
+.land-hamburger{flex-shrink:0;}
 .land-logo{
-  font-family:'Syne',sans-serif;font-weight:800;font-size:20px;
-  color:var(--text);text-decoration:none;letter-spacing:-.03em;
-  display:flex;align-items:center;gap:8px;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:19px;
+  color:var(--text);text-decoration:none;letter-spacing:-.04em;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
 }
 .land-logo span{color:var(--primary-light);}
-.land-logo img{width:28px;height:28px;border-radius:6px;}
-.land-nav-links{display:flex;gap:28px;list-style:none;}
-.land-nav-links a{color:var(--text2);font-size:14px;text-decoration:none;transition:color .2s;}
-.land-nav-links a:hover{color:var(--text);}
-.land-nav-cta{display:flex;gap:10px;align-items:center;}
+.land-logo-icon{
+  width:34px;height:34px;border-radius:8px;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.15),0 4px 12px rgba(19,127,236,.25);
+  flex-shrink:0;
+}
+.land-logo-icon img{width:30px;height:30px;object-fit:cover;}
+.land-nav-center{display:flex;align-items:center;gap:4px;list-style:none;}
+.land-nav-center li a{
+  color:var(--text3);font-size:13.5px;font-weight:500;
+  text-decoration:none;padding:6px 13px;border-radius:8px;
+  transition:all .18s;display:flex;align-items:center;gap:5px;
+  letter-spacing:-.01em;
+}
+.land-nav-center li a:hover{color:var(--text);background:rgba(255,255,255,.06);}
+.land-nav-center li a.active-link{color:var(--primary-light);}
+.land-nav-right{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.land-nav-sign-in{
+  background:transparent;border:1px solid rgba(255,255,255,.1);
+  color:var(--text2);padding:7px 16px;font-size:13.5px;font-weight:500;
+  border-radius:8px;cursor:pointer;font-family:'Sora',sans-serif;
+  transition:all .18s;white-space:nowrap;
+}
+.land-nav-sign-in:hover{border-color:rgba(255,255,255,.2);color:var(--text);background:rgba(255,255,255,.05);}
+.land-nav-app-btn{
+  background:rgba(19,127,236,.12);border:1px solid rgba(19,127,236,.25);
+  color:var(--primary-light);padding:7px 14px;font-size:13px;font-weight:600;
+  border-radius:8px;cursor:pointer;font-family:'Sora',sans-serif;
+  transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:6px;
+}
+.land-nav-app-btn:hover{background:rgba(19,127,236,.2);border-color:rgba(19,127,236,.4);}
+.land-nav-cta-btn{
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  border:none;color:#fff;padding:8px 18px;font-size:13.5px;font-weight:600;
+  border-radius:8px;cursor:pointer;font-family:'Sora',sans-serif;
+  box-shadow:0 2px 12px rgba(19,127,236,.3);
+  transition:all .18s;white-space:nowrap;
+}
+.land-nav-cta-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(19,127,236,.4);}
+/* Legacy compat */
+.land-nav-links{display:flex;gap:4px;list-style:none;}
+.land-nav-links a{color:var(--text3);font-size:13.5px;font-weight:500;text-decoration:none;padding:6px 13px;border-radius:8px;transition:all .18s;}
+.land-nav-links a:hover{color:var(--text);background:rgba(255,255,255,.06);}
+.land-nav-cta{display:flex;gap:8px;align-items:center;}
 
 /* Hamburger for mobile */
 .land-hamburger{
   display:none;flex-direction:column;gap:5px;cursor:pointer;
-  background:none;border:none;padding:6px;
+  background:none;border:none;padding:8px;z-index:10;position:relative;
 }
 .land-hamburger span{display:block;width:22px;height:2px;background:var(--text2);border-radius:2px;transition:all .3s;}
 .land-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
@@ -1042,7 +1198,120 @@ select option{background:var(--surface);color:var(--text)}
 .l-fade-up{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease;}
 .l-fade-up.visible{opacity:1;transform:translateY(0);}
 
+/* ── MOBILE APP SECTION ── */
+.l-app-split{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:28px;align-items:start;
+  margin-top:56px;
+}
+.l-app-card{
+  background:var(--lbg2);border:1px solid var(--lborder);border-radius:14px;
+  padding:28px 24px;
+}
+.l-app-card-badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  text-transform:uppercase;letter-spacing:.12em;
+  background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.22);
+  color:var(--primary-light);padding:3px 10px;border-radius:100px;margin-bottom:14px;
+}
+.l-app-card-icon{
+  width:48px;height:48px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:22px;margin-bottom:14px;
+}
+.l-app-card-title{
+  font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
+  margin-bottom:8px;color:var(--text);line-height:1.25;
+}
+.l-app-card-desc{color:var(--text2);font-size:13.5px;line-height:1.7;margin-bottom:18px;}
+.l-app-feat-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.l-app-feat-list li{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--text2);
+}
+.l-app-feat-icon{
+  width:26px;height:26px;border-radius:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+}
+/* Phone mockup */
+.l-app-phone-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;}
+.l-app-phone{
+  width:180px;height:360px;
+  background:linear-gradient(170deg,var(--lbg3),var(--lbg2));
+  border:2px solid rgba(255,255,255,.1);border-radius:28px;
+  position:relative;overflow:hidden;
+  box-shadow:0 32px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04),inset 0 0 0 1px rgba(255,255,255,.04);
+  flex-shrink:0;
+}
+.l-app-phone-notch{
+  width:60px;height:16px;background:var(--lbg);border-radius:0 0 10px 10px;
+  margin:0 auto;position:relative;z-index:2;
+}
+.l-app-phone-screen{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;}
+.l-app-screen-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;margin-bottom:4px;
+}
+.l-app-task-card{
+  background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.2);
+  border-radius:8px;padding:9px 10px;
+}
+.l-app-steps{display:flex;flex-direction:column;gap:5px;}
+.l-app-step{
+  font-size:9px;padding:5px 8px;border-radius:6px;display:flex;align-items:center;gap:5px;
+}
+.l-app-step.done{background:rgba(16,185,129,.12);color:var(--green);}
+.l-app-step.active{background:rgba(19,127,236,.15);color:var(--primary-light);font-weight:700;}
+.l-app-step.pend{background:rgba(255,255,255,.04);color:var(--text3);}
+.l-app-actions{display:flex;flex-direction:column;gap:5px;margin-top:4px;}
+.l-app-action-btn{
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;font-size:9px;font-weight:700;padding:6px 10px;
+  border-radius:7px;text-align:center;
+}
+.l-app-phone-btn{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:44px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;
+}
+.l-app-badge{
+  display:flex;align-items:center;gap:8px;
+  background:var(--lbg2);border:1px solid var(--lborder2);
+  padding:9px 16px;border-radius:10px;cursor:not-allowed;
+  opacity:.65;transition:opacity .2s;position:relative;
+}
+.l-app-badge-soon{opacity:.65;}
+.l-badge-soon-tag{
+  font-size:9px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+  background:rgba(245,158,11,.15);color:var(--amber);
+  border:1px solid rgba(245,158,11,.25);
+  padding:2px 6px;border-radius:4px;white-space:nowrap;margin-left:auto;
+}
+/* Stats row */
+.l-app-stats{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin-top:52px;
+  background:var(--lbg2);border:1px solid var(--lborder);border-radius:12px;
+  padding:20px;flex-wrap:wrap;
+}
+.l-app-stat{text-align:center;padding:8px 24px;}
+.l-app-stat-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);}
+.l-app-stat-lbl{font-size:11.5px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.l-app-stat-div{width:1px;height:36px;background:var(--lborder);}
+
+/* Light theme app section */
+[data-theme="light"] .l-app-card{background:#fff;border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .l-app-phone{background:linear-gradient(170deg,#e8edf3,#f0f4f8);border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .l-app-phone-notch{background:#f0f4f8;}
+[data-theme="light"] .l-app-step.pend{background:rgba(0,0,0,.04);color:#a0aec0;}
+[data-theme="light"] .l-app-badge{background:#fff;border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .l-app-badge:hover{background:#f5f7fa;border-color:rgba(0,0,0,.18);}
+[data-theme="light"] .l-app-stats{background:#fff;border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .l-app-stat-div{background:rgba(0,0,0,.08);}
+
 /* ── LANDING RESPONSIVE ── */
+@media(max-width:1024px){
+  .l-app-split{grid-template-columns:1fr 1fr;gap:20px;}
+  .l-app-phone-wrap{display:none;}
+  .l-footer-grid{grid-template-columns:1fr 1fr;gap:28px;}
+}
 @media(max-width:900px){
   .l-features-grid,.l-problems-grid{grid-template-columns:1fr 1fr;}
   .l-pricing-grid{grid-template-columns:1fr 1fr;}
@@ -1050,18 +1319,127 @@ select option{background:var(--surface);color:var(--text)}
   .l-diff-block{grid-template-columns:1fr;padding:32px 24px;}
   .l-demo-stats{grid-template-columns:repeat(2,1fr);}
   .l-calc-grid{grid-template-columns:1fr;}
+  .l-app-split{grid-template-columns:1fr;gap:16px;}
+  .l-app-phone-wrap{display:none;}
 }
 @media(max-width:640px){
+  .land-nav-center{display:none;}
   .land-nav-links{display:none;}
-  .land-hamburger{display:flex;}
-  .land-nav-cta{display:none;}
-  .l-h1{font-size:32px;}
-  .l-hero{padding:100px 0 60px;}
-  .l-section{padding:64px 0;}
+  .land-hamburger{display:flex;order:3;}
+  .land-nav-right .land-nav-sign-in{display:none;}
+  .land-nav-right .land-nav-app-btn{display:none;}
+  .land-nav-cta .btn-ghost{display:none;}
+  .land-nav-cta .land-nav-app-btn{display:none;}
+  .land-nav-cta{gap:6px;}
+  .land-nav-cta-btn{padding:7px 12px;font-size:12.5px;white-space:nowrap;}
+  .land-nav-right{gap:4px;}
+  .land-nav-inner{padding:0 14px;}
+  .l-h1{font-size:30px;}
+  .l-hero{padding:90px 0 52px;}
+  .l-section{padding:56px 0;}
   .l-features-grid,.l-problems-grid,.l-pricing-grid{grid-template-columns:1fr;}
-  .l-footer-inner{flex-direction:column;text-align:center;}
-  .l-footer-links{flex-wrap:wrap;justify-content:center;}
-  .l-diff-block{padding:24px 18px;}
+  .l-footer-grid{grid-template-columns:1fr;}
+  .l-footer-bottom{flex-direction:column;align-items:flex-start;gap:8px;}
+  .l-footer-bottom-right{flex-wrap:wrap;gap:8px;}
+  .l-diff-block{padding:22px 16px;}
+  .l-app-stats{gap:0;flex-wrap:wrap;}
+  .l-app-stat{padding:10px 16px;flex:1;min-width:calc(50% - 1px);}
+  .l-app-stat-div{display:none;}
+  .l-demo-stats{grid-template-columns:repeat(2,1fr);}
+  .l-hero-demo{margin-top:40px;}
+  .land-nav-inner{padding:0 16px;}
+}
+
+/* ── BILLING PAGE — NEW STYLES ──────────────────────────────────────── */
+/* Status Banners */
+.bill-banner{
+  display:flex;align-items:flex-start;gap:14px;padding:16px 20px;
+  border-radius:var(--r);margin-bottom:20px;border:1px solid transparent;
+}
+.bill-banner-blue{background:rgba(19,127,236,.1);border-color:rgba(19,127,236,.25);}
+.bill-banner-green{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);}
+.bill-banner-amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);}
+.bill-banner-grey{background:var(--surface2);border-color:var(--border);}
+.bill-banner-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.bill-banner-body{flex:1;min-width:0;}
+.bill-banner-title{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.bill-banner-sub{font-size:13px;color:var(--text2);line-height:1.5;}
+
+/* Cycle toggle */
+.bill-cycle-toggle{
+  display:inline-flex;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:4px;gap:4px;
+}
+.bill-cycle-btn{
+  padding:8px 20px;border-radius:7px;font-size:13.5px;font-weight:600;
+  border:none;background:transparent;color:var(--text2);cursor:pointer;
+  font-family:'Sora',sans-serif;transition:all .18s;white-space:nowrap;
+}
+.bill-cycle-btn.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px var(--primary-glow);}
+.bill-cycle-save{
+  font-size:10px;font-weight:700;background:rgba(16,185,129,.2);
+  color:var(--green);padding:1px 6px;border-radius:4px;margin-left:4px;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+/* Plan cards grid */
+.bill-plans-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:14px;margin-bottom:0;
+}
+
+/* Limit chips */
+.bill-plan-limits{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;}
+.bill-limit-chip{
+  font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+  white-space:nowrap;
+}
+
+/* Feature chips */
+.bill-plan-feats{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.bill-feat-chip{
+  font-size:11px;padding:2px 8px;border-radius:4px;
+  background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);
+  color:var(--green);
+}
+
+/* Price display */
+.bill-plan-price{
+  font-family:'Syne',sans-serif;font-size:38px;font-weight:800;
+  letter-spacing:-1.5px;line-height:1;margin:6px 0 2px;color:var(--text);
+}
+.bill-plan-price sup{font-size:18px;vertical-align:super;margin-right:1px;}
+.bill-plan-cycle{font-size:12px;color:var(--text3);margin-bottom:2px;}
+.bill-plan-save{font-size:11.5px;color:var(--green);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
+.bill-plan-yearly{font-size:11.5px;color:var(--text3);margin-bottom:2px;}
+.bill-plan-badge-wrap{margin-bottom:6px;}
+
+/* Dashboard-wide trial strip */
+.dash-alert-strip{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:10px 18px;border-radius:8px;margin-bottom:16px;
+  font-size:13.5px;flex-wrap:wrap;
+}
+.dash-alert-strip.dash-alert-blue{background:rgba(19,127,236,.1);border:1px solid rgba(19,127,236,.22);color:var(--primary-light);}
+.dash-alert-strip.dash-alert-amber{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.22);color:var(--amber);}
+.dash-alert-btn{
+  background:var(--primary);color:#fff;border:none;padding:6px 14px;
+  border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;
+  font-family:'Sora',sans-serif;white-space:nowrap;transition:opacity .18s;flex-shrink:0;
+}
+.dash-alert-btn:hover{opacity:.88;}
+
+/* Light theme billing */
+[data-theme="light"] .bill-banner-grey{background:var(--surface2);}
+[data-theme="light"] .bill-cycle-toggle{background:var(--surface2);}
+[data-theme="light"] .bill-limit-chip{background:var(--surface2);}
+[data-theme="light"] .bill-feat-chip{background:rgba(16,185,129,.06);}
+
+@media(max-width:640px){
+  .bill-plans-grid{grid-template-columns:1fr;}
+  .bill-cycle-toggle{width:100%;}
+  .bill-cycle-btn{flex:1;text-align:center;}
 }
 </style>
 </head>
@@ -1071,18 +1449,20 @@ select option{background:var(--surface);color:var(--text)}
 <nav id="land-nav">
   <div class="land-nav-inner">
     <a href="/" class="land-logo">
-      <img src="./app_icon.png" alt="TaskRoom">
+      <div class="land-logo-icon"><img src="./app_icon.png" alt="TaskRoom"></div>
       Task<span>Room</span>
     </a>
-    <ul class="land-nav-links">
+    <ul class="land-nav-center land-nav-links">
       <li><a href="#l-features">Features</a></li>
+      <li><a href="#l-app">Mobile App</a></li>
       <li><a href="#l-industries">Industries</a></li>
       <li><a href="#l-pricing">Pricing</a></li>
       <li><a href="#l-faq">FAQ</a></li>
     </ul>
-    <div class="land-nav-cta">
-      <button class="btn btn-ghost btn-sm" onclick="showLogin()">Sign In</button>
-      <button class="l-btn-primary" style="padding:9px 18px;font-size:14px" onclick="openPlanChooser()">Start Free &#8594;</button>
+    <div class="land-nav-right land-nav-cta">
+      <button class="land-nav-app-btn" onclick="document.getElementById('l-app').scrollIntoView({behavior:'smooth'})">&#128247; Get App</button>
+      <button class="land-nav-sign-in" onclick="showLogin()">Sign In</button>
+      <button class="land-nav-cta-btn" onclick="openPlanChooser()">Start Free &#8594;</button>
     </div>
     <button class="land-hamburger" id="land-ham" onclick="toggleLandMenu()" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -1092,12 +1472,14 @@ select option{background:var(--surface);color:var(--text)}
 
 <!-- Mobile Menu -->
 <div class="land-mobile-menu" id="land-mob-menu">
-  <a href="#l-features" onclick="toggleLandMenu()">Features</a>
-  <a href="#l-industries" onclick="toggleLandMenu()">Industries</a>
-  <a href="#l-pricing" onclick="toggleLandMenu()">Pricing</a>
-  <a href="#l-faq" onclick="toggleLandMenu()">FAQ</a>
-  <button onclick="showLogin();toggleLandMenu()">Sign In</button>
-  <button onclick="openPlanChooser();toggleLandMenu()" style="color:var(--primary-light);font-weight:700">Start Free &#8594;</button>
+  <a href="#l-features" onclick="toggleLandMenu()">&#9989; Features</a>
+  <a href="#l-app" onclick="toggleLandMenu()">&#128247; Mobile App</a>
+  <a href="#l-industries" onclick="toggleLandMenu()">&#127970; Industries</a>
+  <a href="#l-pricing" onclick="toggleLandMenu()">&#128176; Pricing</a>
+  <a href="#l-faq" onclick="toggleLandMenu()">&#10067; FAQ</a>
+  <a href="mailto:sagar.yadav.connect@gmail.com" onclick="toggleLandMenu()">&#128231; Contact</a>
+  <button onclick="showLogin();toggleLandMenu()">Sign In to Dashboard</button>
+  <button onclick="openPlanChooser();toggleLandMenu()" style="color:var(--primary-light);font-weight:700;background:rgba(19,127,236,.08)">Start Free &#8594;</button>
 </div>
 
 <!-- ═══════════════════════ LANDING VIEW ════════════════════════════════ -->
@@ -1193,6 +1575,108 @@ select option{background:var(--surface);color:var(--text)}
         <div class="l-proof-step"><div class="l-step-icon sig">&#10000;&#65039;</div><div class="l-step-text"><strong>Customer signature collected</strong> &#8212; On-screen signature tied to step and timestamp</div></div>
         <div class="l-proof-step"><div class="l-step-icon lock">&#128274;</div><div class="l-step-text"><strong>Tamper-proof audit trail</strong> &#8212; Every action timestamped, GPS-stamped, stored permanently</div></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE APP SECTION -->
+<section class="l-section" id="l-app">
+  <div class="l-container">
+    <div class="l-section-center l-fade-up">
+      <div class="l-section-label">The Mobile App</div>
+      <h2 class="l-h2">One app. Two roles.<br>Total accountability.</h2>
+      <p class="l-section-sub">Managers control everything from the web dashboard. Employees work from their phones. The app is where the real work happens.</p>
+    </div>
+    <!-- Dual app showcase -->
+    <div class="l-app-split l-fade-up">
+      <!-- MANAGER side -->
+      <div class="l-app-card l-app-card-mgr">
+        <div class="l-app-card-badge">For Managers</div>
+        <div class="l-app-card-icon" style="background:linear-gradient(135deg,rgba(19,127,236,.15),rgba(19,127,236,.05));border:1px solid rgba(19,127,236,.2)">&#128202;</div>
+        <h3 class="l-app-card-title">Full team oversight, anywhere</h3>
+        <p class="l-app-card-desc">Create rooms, assign tasks, monitor live GPS, and check proof-of-work from your phone. The dashboard on the go.</p>
+        <ul class="l-app-feat-list">
+          <li><span class="l-app-feat-icon" style="background:rgba(19,127,236,.12);color:var(--primary-light)">&#128205;</span>Live GPS map of all employees</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(16,185,129,.12);color:var(--green)">&#9989;</span>Assign &amp; manage multi-step tasks</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">&#128276;</span>Push alerts on overdue or completion</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">&#128202;</span>Productivity scores &amp; analytics</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">&#128336;</span>Attendance overview &amp; reports</li>
+        </ul>
+      </div>
+      <!-- App mockup center -->
+      <div class="l-app-phone-wrap">
+        <div class="l-app-phone">
+          <div class="l-app-phone-notch"></div>
+          <div class="l-app-phone-screen">
+            <!-- Simulated app UI -->
+            <div class="l-app-screen-hdr">
+              <div style="font-size:11px;font-weight:700;color:var(--text)">TaskRoom</div>
+              <div style="display:flex;gap:5px;align-items:center"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green)"></div><div style="font-size:9px;color:var(--green)">Live</div></div>
+            </div>
+            <div class="l-app-task-card">
+              <div style="font-size:10px;font-weight:700;margin-bottom:4px;color:var(--text)">Client Visit — Andheri</div>
+              <div style="font-size:9px;color:var(--text2);margin-bottom:6px">Step 2 of 4 · Due 3:00 PM</div>
+              <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden"><div style="width:50%;height:100%;background:var(--primary);border-radius:2px"></div></div>
+            </div>
+            <div class="l-app-steps">
+              <div class="l-app-step done">&#10003; Reached Location</div>
+              <div class="l-app-step active">&#9654; Upload Photo Proof</div>
+              <div class="l-app-step pend">&#9675; Collect Signature</div>
+              <div class="l-app-step pend">&#9675; Mark Complete</div>
+            </div>
+            <div class="l-app-actions">
+              <div class="l-app-action-btn">&#128247; Upload Photo</div>
+              <div class="l-app-action-btn">&#10000;&#65039; Get Signature</div>
+            </div>
+          </div>
+          <div class="l-app-phone-btn"></div>
+        </div>
+        <!-- Download badges -->
+        <div class="l-app-badges">
+          <div class="l-app-badge l-app-badge-soon" title="Coming Soon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--text);opacity:.5"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.39.07 2.36.75 3.17.8 1.22-.25 2.39-.96 3.7-.84 1.57.12 2.75.72 3.52 1.82-3.26 1.95-2.73 6.03.61 7.2-.44 1.2-.99 2.38-2 3.9M13 3.5c.04 2.4-2.2 4.4-4.47 4.2C8.2 5.32 10.5 3 13 3.5"/></svg>
+            <div>
+              <div style="font-size:9px;color:var(--text3);line-height:1">Coming Soon</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">App Store</div>
+            </div>
+            <span class="l-badge-soon-tag">Soon</span>
+          </div>
+          <div class="l-app-badge l-app-badge-soon" title="Coming Soon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--text);opacity:.5"><path d="M3.18 23.76a2 2 0 0 0 2.73.75l10.49-6.07-2.9-2.9-10.32 8.22zm17.29-13.53L17.03 8l-3.06 3.06 3.06 3.06 3.5-2.01a1.5 1.5 0 0 0-.06-2.88zM2.12.46A1.5 1.5 0 0 0 2 1.12V22.9a1.5 1.5 0 0 0 .12.65l.07.07L13.5 12 2.19.39l-.07.07zM15.97 5.03l-10.06-5.8A2 2 0 0 0 3.18.22L13.5 12l2.47-6.97z"/></svg>
+            <div>
+              <div style="font-size:9px;color:var(--text3);line-height:1">Coming Soon</div>
+              <div style="font-size:12px;font-weight:700;color:var(--text)">Google Play</div>
+            </div>
+            <span class="l-badge-soon-tag">Soon</span>
+          </div>
+        </div>
+      </div>
+      <!-- EMPLOYEE side -->
+      <div class="l-app-card l-app-card-emp">
+        <div class="l-app-card-badge" style="background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.25);color:var(--green)">For Employees</div>
+        <div class="l-app-card-icon" style="background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.05));border:1px solid rgba(16,185,129,.2)">&#128100;</div>
+        <h3 class="l-app-card-title">Work smart. Prove every step.</h3>
+        <p class="l-app-card-desc">Receive tasks, follow step-by-step instructions, upload photos, collect signatures, and mark work done — all from one app.</p>
+        <ul class="l-app-feat-list">
+          <li><span class="l-app-feat-icon" style="background:rgba(16,185,129,.12);color:var(--green)">&#128204;</span>View assigned tasks &amp; deadlines</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(19,127,236,.12);color:var(--primary-light)">&#128247;</span>Upload photo proof at each step</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">&#10000;&#65039;</span>Collect digital customer signature</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(139,92,246,.12);color:var(--purple)">&#128205;</span>GPS auto-tracked during field tasks</li>
+          <li><span class="l-app-feat-icon" style="background:rgba(20,184,166,.12);color:var(--teal)">&#128336;</span>Attendance punch-in/out</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Bottom stat row -->
+    <div class="l-app-stats l-fade-up">
+      <div class="l-app-stat"><div class="l-app-stat-val">Android</div><div class="l-app-stat-lbl">6.0+ supported</div></div>
+      <div class="l-app-stat-div"></div>
+      <div class="l-app-stat"><div class="l-app-stat-val">iOS</div><div class="l-app-stat-lbl">13+ supported</div></div>
+      <div class="l-app-stat-div"></div>
+      <div class="l-app-stat"><div class="l-app-stat-val">Real-time</div><div class="l-app-stat-lbl">Live GPS tracking</div></div>
+      <div class="l-app-stat-div"></div>
+      <div class="l-app-stat"><div class="l-app-stat-val">Proof</div><div class="l-app-stat-lbl">Photo + Signature</div></div>
+      <div class="l-app-stat-div"></div>
+      <div class="l-app-stat"><div class="l-app-stat-val">Free</div><div class="l-app-stat-lbl">No employee cost</div></div>
     </div>
   </div>
 </section>
@@ -1342,7 +1826,10 @@ select option{background:var(--surface);color:var(--text)}
     <h2 class="l-h2" style="margin-bottom:16px">Start your 14-day trial<br>&#8212; completely free</h2>
     <p style="color:var(--text2);font-size:16px;max-width:460px;margin:0 auto 36px;font-weight:300">No credit card. No setup fees. Your full team can be up and running in under 30 minutes.</p>
     <button class="l-btn-primary" style="padding:16px 36px;font-size:16px" onclick="openPlanChooser()">Create your organization &#8594;</button>
-    <div style="margin-top:18px;font-size:12.5px;color:var(--text3);font-family:'IBM Plex Mono',monospace">Questions? Email hello@taskroom.in or WhatsApp +91 98765 00000</div>
+    <div style="margin-top:18px;font-size:12.5px;color:var(--text3);font-family:'IBM Plex Mono',monospace">
+      Questions? <a href="mailto:sagar.yadav.connect@gmail.com" style="color:var(--primary-light);text-decoration:none">sagar.yadav.connect@gmail.com</a>
+      &nbsp;·&nbsp; <a href="tel:+919987603256" style="color:var(--primary-light);text-decoration:none">+91 99876 03256</a>
+    </div>
   </div>
 </section>
 
@@ -1364,15 +1851,60 @@ select option{background:var(--surface);color:var(--text)}
 <!-- FOOTER -->
 <footer id="land-footer">
   <div class="l-container">
-    <div class="l-footer-inner">
-      <div class="l-footer-logo">Task<span>Room</span></div>
-      <div class="l-footer-links">
+    <div class="l-footer-grid">
+      <!-- Brand col -->
+      <div class="l-footer-brand">
+        <div class="l-footer-logo">Task<span>Room</span></div>
+        <p class="l-footer-tagline">Field workforce management built for India. GPS tracking, proof of work, and attendance — in one app.</p>
+        <div class="l-footer-contact">
+          <a href="tel:+919987603256" class="l-footer-contact-item">
+            <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.6 17.6 0 0 0 4.168 6.608 17.6 17.6 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.68.68 0 0 0-.58-.122l-2.19.547a1.75 1.75 0 0 1-1.657-.459L5.482 8.062a1.75 1.75 0 0 1-.46-1.657l.548-2.19a.68.68 0 0 0-.122-.58L3.654 1.328z"/></svg>
+            +91 99876 03256
+          </a>
+          <a href="mailto:sagar.yadav.connect@gmail.com" class="l-footer-contact-item">
+            <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.708 2.825L15 11.105V5.383zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741zM1 11.105l4.708-2.897L1 5.383v5.722z"/></svg>
+            sagar.yadav.connect@gmail.com
+          </a>
+        </div>
+      </div>
+      <!-- Product links -->
+      <div class="l-footer-col">
+        <div class="l-footer-col-title">Product</div>
+        <a href="#l-features">Features</a>
+        <a href="#l-app">Mobile App</a>
+        <a href="#l-pricing">Pricing</a>
+        <a href="#l-industries">Industries</a>
+        <a href="#l-faq">FAQ</a>
+      </div>
+      <!-- App download -->
+      <div class="l-footer-col">
+        <div class="l-footer-col-title">Download App</div>
+        <span class="l-footer-app-link" style="opacity:.55;cursor:default">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.39.07 2.36.75 3.17.8 1.22-.25 2.39-.96 3.7-.84 1.57.12 2.75.72 3.52 1.82-3.26 1.95-2.73 6.03.61 7.2-.44 1.2-.99 2.38-2 3.9M13 3.5c.04 2.4-2.2 4.4-4.47 4.2C8.2 5.32 10.5 3 13 3.5"/></svg>
+          iOS — Coming Soon
+        </span>
+        <span class="l-footer-app-link" style="opacity:.55;cursor:default">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76a2 2 0 0 0 2.73.75l10.49-6.07-2.9-2.9-10.32 8.22zm17.29-13.53L17.03 8l-3.06 3.06 3.06 3.06 3.5-2.01a1.5 1.5 0 0 0-.06-2.88zM2.12.46A1.5 1.5 0 0 0 2 1.12V22.9a1.5 1.5 0 0 0 .12.65l.07.07L13.5 12 2.19.39l-.07.07zM15.97 5.03l-10.06-5.8A2 2 0 0 0 3.18.22L13.5 12l2.47-6.97z"/></svg>
+          Android — Coming Soon
+        </span>
+        <a href="mailto:sagar.yadav.connect@gmail.com" class="l-footer-app-link" style="margin-top:8px">&#128172; Enterprise inquiry</a>
+      </div>
+      <!-- Legal -->
+      <div class="l-footer-col">
+        <div class="l-footer-col-title">Company</div>
         <a href="#">Privacy Policy</a>
         <a href="#">Terms of Service</a>
-        <a href="mailto:hello@taskroom.in">Contact</a>
         <a href="#" onclick="showLogin();return false">Sign In</a>
+        <a href="#" onclick="openPlanChooser();return false">Create Account</a>
       </div>
+    </div>
+    <div class="l-footer-bottom">
       <div class="l-footer-copy">&#169; 2025 TaskRoom. Made in India &#127470;&#127475;</div>
+      <div class="l-footer-bottom-right">
+        <a href="tel:+919987603256" style="color:var(--text3);font-size:12px;text-decoration:none">+91 99876 03256</a>
+        <span style="color:var(--text4)">·</span>
+        <a href="mailto:sagar.yadav.connect@gmail.com" style="color:var(--text3);font-size:12px;text-decoration:none">sagar.yadav.connect@gmail.com</a>
+      </div>
     </div>
   </div>
 </footer>
@@ -1622,6 +2154,46 @@ select option{background:var(--surface);color:var(--text)}
   </div>
   <div class="panel-body" id="atp-body"><div class="loading"><div class="spinner"></div></div></div>
 </div>
+
+<!-- Mobile bottom navigation bar -->
+<nav class="mobile-bottom-nav" id="mob-bottom-nav">
+  <button class="mob-nav-item active" id="mob-nav-overview" onclick="mobNavGo('overview','Dashboard',this)">
+    <span class="mob-ico">&#128202;</span>Home
+  </button>
+  <button class="mob-nav-item" id="mob-nav-rooms" onclick="mobNavGo('rooms','Rooms',this)">
+    <span class="mob-ico">&#127968;</span>Rooms
+  </button>
+  <button class="mob-nav-item" id="mob-nav-tasks" onclick="mobNavGo('tasks','Tasks',this)">
+    <span class="mob-ico">&#9989;</span>Tasks
+  </button>
+  <button class="mob-nav-item" id="mob-nav-attendance" onclick="mobNavGo('attendance','Attendance',this)">
+    <span class="mob-ico">&#128197;</span>Attend
+  </button>
+  <button class="mob-nav-item" id="mob-nav-more" onclick="toggleMobMenu()">
+    <span class="mob-ico">&#8942;</span>More
+  </button>
+</nav>
+
+<!-- Mobile "More" drawer -->
+<div id="mob-more-drawer" style="display:none;position:fixed;bottom:64px;left:0;right:0;z-index:401;background:var(--surface);border-top:1px solid var(--border);border-radius:16px 16px 0 0;padding:16px 8px;box-shadow:0 -8px 32px rgba(0,0,0,.4)">
+  <div style="width:36px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 16px;"></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <button onclick="mobDrawerGo('members','Members')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">&#128101;<span>Members</span></button>
+    <button onclick="mobDrawerGo('analytics','Analytics')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">&#128200;<span>Analytics</span></button>
+    <button onclick="mobDrawerGo('org','Organization')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">&#127970;<span>Org</span></button>
+    <button onclick="mobDrawerGo('billing','Billing')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">&#128179;<span>Billing</span></button>
+  </div>
+  <button onclick="logout()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:12px;padding:13px;border-radius:10px;background:var(--red-g);border:1px solid rgba(239,68,68,.2);color:var(--red);font-size:14px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">&#128682; Sign Out</button>
+</div>
+
+<!-- Mobile back bar (shown when detail panel active) -->
+<div class="mob-back-bar" id="mob-back-bar">
+  <button class="mob-back-btn" onclick="mobGoBack()">&#8592; Back</button>
+  <div class="mob-back-title" id="mob-back-title">Detail</div>
+</div>
+
+<!-- Sidebar overlay backdrop -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
 </div><!-- /dashboard -->
 
@@ -1947,6 +2519,8 @@ function toggleTheme(){
   localStorage.setItem('taskroom_theme',next);
   const btn=document.getElementById('theme-toggle-btn');
   if(btn)btn.textContent=next==='light'?'🌙':'☀️';
+  // Sync mobile nav colours
+  if(typeof applyMobNavTheme==='function')applyMobNavTheme();
 }
 
 /* ── UTILS ──────────────────────────────────────────────────────────── */
@@ -2032,9 +2606,19 @@ function showDash(){
   showPage('overview',$('nav-overview'));
   loadDashData();
   loadBillingStatus();
+  // Reset mobile bottom nav
+  document.querySelectorAll('.mob-nav-item').forEach(b=>b.classList.remove('active'));
+  const mobOv=document.getElementById('mob-nav-overview');
+  if(mobOv)mobOv.classList.add('active');
 }
 
-function toggleSidebar(){$('sidebar')?.classList.toggle('open');}
+function toggleSidebar(){
+  const sb=$('sidebar');if(!sb)return;
+  const willOpen=!sb.classList.contains('open');
+  sb.classList.toggle('open');
+  const overlay=$('sidebar-overlay');
+  if(overlay){if(willOpen)overlay.classList.add('show');else overlay.classList.remove('show');}
+}
 
 function applyRoleUI(){
   const isManager=_user?.role==='manager';
@@ -2064,6 +2648,14 @@ function showPage(id,el){
   closeTaskPanel();
   $('att-panel')?.classList.remove('open');
   $('sidebar')?.classList.remove('open');
+  // close mobile sidebar overlay
+  $('sidebar-overlay')?.classList.remove('show');
+  // sync mobile bottom nav
+  _mobCurrentPage=id;
+  document.querySelectorAll('.mob-nav-item').forEach(b=>b.classList.remove('active'));
+  const mobBtn=$('mob-nav-'+id);if(mobBtn)mobBtn.classList.add('active');
+  if(typeof hideMobBackBar==='function')hideMobBackBar();
+  if(typeof closeMobDrawer==='function')closeMobDrawer();
   const loaders={members:()=>loadMembers(1),rooms:()=>loadRooms(1),tasks:()=>loadTasks(1),attendance:()=>loadAttendance(1),analytics:()=>loadAnalytics(),billing:()=>loadBilling()};
   if(loaders[id])loaders[id]();
 }
@@ -2195,113 +2787,305 @@ function fillOrgPage(){
   if(og)og.innerHTML=`<div class="org-di"><label>Phone</label><div class="val">${esc(_org.contactPhone||'—')}</div></div><div class="org-di"><label>Domain</label><div class="val">${esc(_org.domain||'—')}</div></div><div class="org-di"><label>Address</label><div class="val">${esc(addr)}</div></div><div class="org-di"><label>Employees</label><div class="val">${_org.stats?.totalEmployees||0}</div></div><div class="org-di"><label>Managers</label><div class="val">${_org.stats?.totalManagers||0}</div></div><div class="org-di"><label>Rooms</label><div class="val">${_org.stats?.totalRooms||0}</div></div><div class="org-di"><label>Created</label><div class="val">${fmtDate(_org.createdAt)}</div></div>`;
   const limits=_org.limits||{maxEmployees:20,maxRooms:5,historyDays:7,gpsTrace:false,exportReports:false,productivityScores:false};
   const os=$('org-settings');
-  if(os)os.innerHTML=`<div class="sc c-blue"><div class="sc-icon">🏠</div><div class="sc-label">Max Rooms</div><div class="sc-value">${limits.maxRooms===99999?'∞':limits.maxRooms}</div></div><div class="sc c-green"><div class="sc-icon">👥</div><div class="sc-label">Max Employees</div><div class="sc-value">${limits.maxEmployees===99999?'∞':limits.maxEmployees}</div></div><div class="sc c-amber"><div class="sc-icon">📅</div><div class="sc-label">History Days</div><div class="sc-value">${limits.historyDays===99999?'∞':limits.historyDays}</div></div><div class="sc c-${limits.gpsTrace?'purple':'red'}"><div class="sc-icon">📍</div><div class="sc-label">GPS Trace</div><div class="sc-value" style="font-size:18px">${limits.gpsTrace?'✅':'❌'}</div></div><div class="sc c-${limits.exportReports?'teal':'red'}"><div class="sc-icon">📄</div><div class="sc-label">Exports</div><div class="sc-value" style="font-size:18px">${limits.exportReports?'✅':'❌'}</div></div><div class="sc c-${limits.productivityScores?'green':'red'}"><div class="sc-icon">📊</div><div class="sc-label">Analytics</div><div class="sc-value" style="font-size:18px">${limits.productivityScores?'✅':'❌'}</div></div><div class="sc c-purple" onclick="copyCode()" style="cursor:pointer"><div class="sc-icon">🔑</div><div class="sc-label">Org Code</div><div class="sc-value" style="font-size:16px;letter-spacing:2px">${_org.code||'—'}</div><div class="sc-sub">Click to copy</div></div>`;
+  const lv=v=>(v===-1||v===99999)?'∞':v;
+  const lf=limits.features||limits;
+  if(os)os.innerHTML=`<div class="sc c-blue"><div class="sc-icon">🏠</div><div class="sc-label">Max Rooms</div><div class="sc-value">${lv(limits.maxRooms)}</div></div><div class="sc c-green"><div class="sc-icon">👥</div><div class="sc-label">Max Employees</div><div class="sc-value">${lv(limits.maxEmployees)}</div></div><div class="sc c-teal"><div class="sc-icon">🧑‍💼</div><div class="sc-label">Max Managers</div><div class="sc-value">${lv(limits.maxManagers??1)}</div></div><div class="sc c-amber"><div class="sc-icon">📅</div><div class="sc-label">History Days</div><div class="sc-value">${lv(limits.historyDays)}</div></div><div class="sc c-${(lf.liveTracking||lf.gpsTrace)?'purple':'red'}"><div class="sc-icon">📍</div><div class="sc-label">GPS Trace</div><div class="sc-value" style="font-size:18px">${(lf.liveTracking||lf.gpsTrace)?'✅':'❌'}</div></div><div class="sc c-${(lf.exportReports)?'teal':'red'}"><div class="sc-icon">📄</div><div class="sc-label">Exports</div><div class="sc-value" style="font-size:18px">${(lf.exportReports)?'✅':'❌'}</div></div><div class="sc c-${(lf.performanceDashboard||lf.productivityScores)?'green':'red'}"><div class="sc-icon">📊</div><div class="sc-label">Analytics</div><div class="sc-value" style="font-size:18px">${(lf.performanceDashboard||lf.productivityScores)?'✅':'❌'}</div></div><div class="sc c-purple" onclick="copyCode()" style="cursor:pointer"><div class="sc-icon">🔑</div><div class="sc-label">Org Code</div><div class="sc-value" style="font-size:16px;letter-spacing:2px">${_org.code||'—'}</div><div class="sc-sub">Click to copy</div></div>`;
   const trial=$('org-trial-block');
   if(trial){
     if(_org.isTrialActive&&_org.trialEndsAt&&new Date()<new Date(_org.trialEndsAt)){
       const days=Math.max(0,Math.ceil((new Date(_org.trialEndsAt)-new Date())/86400000));
-      trial.innerHTML=`<div class="plan-trial-banner"><div class="trial-days-ring">${days}</div><div><div style="font-size:14px;font-weight:700;color:var(--amber)">Pro Trial Active — ${days} days remaining</div><div style="font-size:12.5px;color:var(--text2);margin-top:4px">Your organization has full access to Pro features. Upgrade before the trial ends to keep them.</div><button class="btn btn-amber btn-sm" style="margin-top:10px" onclick="showPage('billing',$('nav-billing'))">Upgrade to Pro →</button></div></div>`;
+      const trialPlan=(_org.effectivePlan||'growth').charAt(0).toUpperCase()+(_org.effectivePlan||'growth').slice(1);
+      trial.innerHTML=`<div class="plan-trial-banner"><div class="trial-days-ring">${days}</div><div><div style="font-size:14px;font-weight:700;color:var(--amber)">${trialPlan} Trial Active — ${days} day${days!==1?'s':''} remaining</div><div style="font-size:12.5px;color:var(--text2);margin-top:4px">Your organization has full ${trialPlan} plan access. Upgrade before the trial ends to keep all features.</div><button class="btn btn-amber btn-sm" style="margin-top:10px" onclick="showPage('billing',$('nav-billing'))">Upgrade Plan →</button></div></div>`;
     }else trial.innerHTML='';
   }
 }
 
 /* ── BILLING STATUS ──────────────────────────────────────────────────── */
+/* ─── PLAN RANK HELPER ──────────────────────────────────────────────── */
+const PLAN_RANK={starter:0,growth:1,business:2,enterprise:3};
+function planRank(slug){return PLAN_RANK[slug]??-1;}
+function fmtLimit(v){return v===-1||v===99999?'∞':v;}
+
 async function loadBillingStatus(){
   if(!_token||_user?.role!=='manager')return;
   try{
     const d=await api('GET','/billing/status');
     if(!d.success)return;
     const s=d.data;
+    // Sidebar trial badge
     const tb=$('sb-trial-badge');
-    if(tb){tb.style.display=(s.isTrialActive&&s.trialDaysLeft>0)?'':'none';if(s.isTrialActive)tb.textContent=`${s.trialDaysLeft}d`;}
+    if(tb){
+      tb.style.display=(s.isTrialActive&&s.trialDaysLeft>0)?'':'none';
+      if(s.isTrialActive)tb.textContent=`${s.trialDaysLeft}d`;
+    }
+    // Sidebar pro badge (growth+ = pro-tier)
     const pb=$('sb-pro-badge');
-    if(pb)pb.style.display=(s.effectivePlan==='pro'||s.effectivePlan==='business'||s.effectivePlan==='enterprise')?'':'none';
-    // Merge into org
-    if(_org){_org.plan=s.plan;_org.effectivePlan=s.effectivePlan;_org.isTrialActive=s.isTrialActive;_org.trialEndsAt=s.trialEndsAt;_org.planExpiresAt=s.planExpiresAt;_org.limits=s.limits;_org.billableSeats=s.billableSeats;save();}
+    if(pb)pb.style.display=(planRank(s.effectivePlan)>=1)?'':'none';
+    // Merge into cached org
+    if(_org){
+      _org.plan=s.plan;_org.effectivePlan=s.effectivePlan;
+      _org.isTrialActive=s.isTrialActive;_org.trialEndsAt=s.trialEndsAt;
+      _org.planExpiresAt=s.planExpiresAt;_org.limits=s.limits;
+      _org.billableSeats=s.billableSeats;save();
+    }
+    // Render dashboard trial banner
+    renderDashTrialBanner(s);
     fillOrgPage();
   }catch(e){}
 }
 
+/* ─── DASHBOARD-WIDE TRIAL / EXPIRY BANNER ──────────────────────────── */
+function renderDashTrialBanner(s){
+  let el=$('dash-trial-banner');
+  if(!el){
+    el=document.createElement('div');
+    el.id='dash-trial-banner';
+    const main=$('dash-main');
+    if(main)main.prepend(el);
+  }
+  if(!s){el.innerHTML='';return;}
+  const {isTrialActive,trialDaysLeft,plan,effectivePlan,subscriptionDaysLeft,trialEndsAt,planExpiresAt}=s;
+  let content='';
+  if(isTrialActive&&trialDaysLeft>0){
+    const label=(effectivePlan||'growth');
+    const cap=label.charAt(0).toUpperCase()+label.slice(1);
+    content=`<div class="dash-alert-strip dash-alert-blue">
+      <span>&#9203; <strong>${trialDaysLeft} days left</strong> on your free ${cap} trial</span>
+      <button class="dash-alert-btn" onclick="showPage('billing',$('nav-billing'))">Upgrade Now</button>
+    </div>`;
+  } else if(subscriptionDaysLeft>0&&subscriptionDaysLeft<=7){
+    content=`<div class="dash-alert-strip dash-alert-amber">
+      <span>&#9888;&#65039; Your ${(effectivePlan||plan||'').charAt(0).toUpperCase()+(effectivePlan||plan||'').slice(1)} plan <strong>expires in ${subscriptionDaysLeft} days</strong></span>
+      <button class="dash-alert-btn" onclick="showPage('billing',$('nav-billing'))">Renew Now</button>
+    </div>`;
+  } else if(!isTrialActive&&plan==='starter'&&effectivePlan==='starter'){
+    content=''; // no banner for plain starter
+  }
+  el.innerHTML=content;
+}
+
 /* ── BILLING PAGE ────────────────────────────────────────────────────── */
+/* Global billing cycle state */
+let _billingCycle='monthly'; // 'monthly' | 'annual'
+
 async function loadBilling(){
   const body=$('billing-body');
   body.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try{
-    const [statusR,plansR,histR]=await Promise.all([api('GET','/billing/status'),api('GET','/billing/plans'),api('GET','/billing/history')]);
-    const status=statusR.data||{};
-    const plans=(plansR.data||[]);
-    const history=(histR.data||[]);
-    const trialActive=status.isTrialActive&&status.trialDaysLeft>0;
-    let html='';
-    // Trial banner
-    if(trialActive)html+=`<div class="plan-trial-banner" style="margin-bottom:20px"><div class="trial-days-ring">${status.trialDaysLeft}</div><div><div style="font-size:14px;font-weight:700;color:var(--amber)">Pro Trial Active — ${status.trialDaysLeft} days remaining</div><div style="font-size:12.5px;color:var(--text2);margin-top:3px">Expires ${fmtDate(status.trialEndsAt)}. Upgrade now to keep all Pro features.</div></div></div>`;
-    // Current plan info
-    html+=`<div class="card" style="margin-bottom:20px"><div class="card-hdr"><div class="card-title"><span class="ico">💎</span> Current Plan</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px"><div class="sc c-blue"><div class="sc-label">Plan</div><div class="sc-value" style="font-size:22px">${(status.effectivePlan||'starter').charAt(0).toUpperCase()+(status.effectivePlan||'starter').slice(1)}</div></div><div class="sc c-green"><div class="sc-label">Billable Seats</div><div class="sc-value">${status.billableSeats||0}</div></div><div class="sc c-amber"><div class="sc-label">Expires</div><div class="sc-value" style="font-size:15px">${status.planExpiresAt?fmtDate(status.planExpiresAt):'—'}</div></div></div></div>`;
-    // Plan cards
-    html+='<h3 style="font-size:16px;font-weight:700;margin-bottom:14px">Choose a Plan</h3>';
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:28px">';
-    plans.forEach(p=>{
-      // FIX: use actual stored plan (not trial-inflated effectivePlan) for upgrade logic
-      const actualPlan = status.plan || 'starter';
-      const isCurrent = !status.isTrialActive && actualPlan === p.id;
-      const isTrialOnThisPlan = status.isTrialActive && status.effectivePlan === p.id;
-      const planOrder = ['starter','pro','business','enterprise'];
-      // Allow upgrade if plan tier is higher than actual stored plan (not effectivePlan)
-      const isUpgrade = p.priceMonthly > 0 && planOrder.indexOf(p.id) > planOrder.indexOf(actualPlan);
-      const monthlyTotal=(p.priceMonthly||0)+(status.billableSeats||0)*p.perSeatPrice;
-      html+=`<div class="plan-card ${isCurrent?'current':isTrialOnThisPlan?'recommended':''}">`;
-      if(isCurrent)html+=`<div class="plan-badge-wrap"><span class="badge badge-active">Current Plan</span></div>`;
-      else if(isTrialOnThisPlan)html+=`<div class="plan-badge-wrap"><span class="badge badge-trial">Trial Active — ${status.trialDaysLeft}d left</span></div>`;
-      else if(p.id==='pro')html+=`<div class="plan-badge-wrap"><span class="badge badge-trial">Most Popular</span></div>`;
-      html+=`<div class="p-name" style="margin-top:${isCurrent||isTrialOnThisPlan||p.id==='pro'?'16':'0'}px">${p.label}</div>`;
-      html+=`<div class="p-price">${p.priceMonthly?fmtINR(p.priceMonthly):'Free'}<span>/mo</span></div>`;
-      if(p.perSeatPrice>0)html+=`<div class="p-seats">+ ${fmtINR(p.perSeatPrice)}/employee · ${p.maxEmployees} employees max</div>`;
-      if(p.priceMonthly>0&&status.billableSeats>0)html+=`<div style="font-size:12px;color:var(--text3);margin-bottom:14px">Your bill: ${fmtINR(monthlyTotal)}/mo (${status.billableSeats} seats × ${fmtINR(p.perSeatPrice)} + base)</div>`;
-      html+=`<div style="font-size:12.5px;color:var(--text3);margin-bottom:16px">${p.historyDays}-day history · ${p.gpsTrace?'GPS ✓':'No GPS'} · ${p.exportReports?'Exports ✓':'No exports'}</div>`;
-      if(p.isFree||p.priceMonthly===0){html+=`<button class="btn btn-ghost w-full" disabled>Free Plan</button>`;}
-      else if(isCurrent){html+=`<button class="btn btn-ghost w-full" disabled>Current Plan</button>`;}
-      else if(isTrialOnThisPlan){html+=`<button class="btn btn-primary w-full" onclick="startUpgrade('${p.id}','${p.label}',${monthlyTotal})">Convert Trial → Paid ${p.label}</button><div style='font-size:11.5px;color:var(--amber);margin-top:7px;text-align:center'>Your trial expires ${fmtDate(status.trialEndsAt)}</div>`;}
-      else if(isUpgrade){html+=`<button class="btn btn-primary w-full" onclick="startUpgrade('${p.id}','${p.label}',${monthlyTotal})">Upgrade to ${p.label} →</button>`;}
-      else{html+=`<button class="btn btn-ghost w-full" disabled>Downgrade</button>`;}
-      html+=`</div>`;
-    });
-    html+='</div>';
-    // Payment history
-    if(history.length){
-      html+='<h3 style="font-size:15px;font-weight:700;margin-bottom:12px">Payment History</h3>';
-      html+='<div class="tbl-wrap"><table><thead><tr><th>Plan</th><th>Cycle</th><th>Amount</th><th>Status</th><th>Valid Until</th><th>Paid At</th></tr></thead><tbody>';
-      history.forEach(r=>{
-        html+=`<tr><td><div class="badge badge-${r.plan}">${r.plan}</div></td><td style="color:var(--text2);font-size:12.5px">${r.billingCycle}</td><td style="font-weight:700">${fmtINR(r.amountINR)}</td><td><div class="badge badge-${r.status}">${r.status}</div></td><td style="color:var(--text2);font-size:12.5px">${r.validUntil?fmtDate(r.validUntil):'—'}</td><td style="color:var(--text3);font-size:12.5px">${r.paidAt?fmtDate(r.paidAt):'—'}</td></tr>`;
-      });
-      html+='</tbody></table></div>';
+    const [statusR,plansR,histR]=await Promise.all([
+      api('GET','/billing/status'),
+      api('GET','/billing/plans'),
+      api('GET','/billing/history')
+    ]);
+    if(!statusR.success){
+      body.innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Failed to load billing</h3><p>${esc(statusR.message||'Unknown error')}</p></div>`;
+      return;
     }
-    body.innerHTML=html;
-  }catch(e){body.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Failed to load billing</h3><p>${esc(e.message)}</p></div>`;}
+    const status=statusR.data||{};
+    const plans=(plansR.success?plansR.data:[])||[];
+    const history=(histR.success?histR.data:[])||[];
+    renderDashTrialBanner(status);
+    body.innerHTML=buildBillingHTML(status,plans,history);
+  }catch(e){
+    body.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Failed to load billing</h3><p>${esc(e.message)}</p></div>`;
+  }
 }
 
+function buildBillingHTML(status,plans,history){
+  const {isTrialActive,trialDaysLeft,plan,effectivePlan,billableSeats,
+         trialEndsAt,planExpiresAt,subscriptionDaysLeft,lastPayment}=status;
+  let html='';
+
+  /* ── STATUS BANNER ─────────────────────────────────────────────────── */
+  if(isTrialActive&&trialDaysLeft>0){
+    const cap=(effectivePlan||'growth').charAt(0).toUpperCase()+(effectivePlan||'growth').slice(1);
+    html+=`<div class="bill-banner bill-banner-blue">
+      <div class="bill-banner-icon">&#9203;</div>
+      <div class="bill-banner-body">
+        <div class="bill-banner-title">14-day Trial — ${trialDaysLeft} day${trialDaysLeft!==1?'s':''} left</div>
+        <div class="bill-banner-sub">You're on the ${cap} plan trial. Upgrade before ${fmtDate(trialEndsAt)} to keep access.</div>
+      </div>
+    </div>`;
+  } else if(subscriptionDaysLeft>0&&subscriptionDaysLeft<=7){
+    const cap=(effectivePlan||plan||'').charAt(0).toUpperCase()+(effectivePlan||plan||'').slice(1);
+    html+=`<div class="bill-banner bill-banner-amber">
+      <div class="bill-banner-icon">&#9888;&#65039;</div>
+      <div class="bill-banner-body">
+        <div class="bill-banner-title">Expires in ${subscriptionDaysLeft} day${subscriptionDaysLeft!==1?'s':''}</div>
+        <div class="bill-banner-sub">Renew your ${cap} plan now to avoid losing access. Valid until ${fmtDate(planExpiresAt)}.</div>
+      </div>
+    </div>`;
+  } else if(!isTrialActive&&planRank(effectivePlan)>0){
+    const cap=(effectivePlan||'').charAt(0).toUpperCase()+(effectivePlan||'').slice(1);
+    html+=`<div class="bill-banner bill-banner-green">
+      <div class="bill-banner-icon">&#10003;</div>
+      <div class="bill-banner-body">
+        <div class="bill-banner-title">${cap} Plan — Active</div>
+        <div class="bill-banner-sub">${planExpiresAt?`Valid until ${fmtDate(planExpiresAt)} · `:''}${billableSeats||0} billable seat${(billableSeats||0)!==1?'s':''}</div>
+      </div>
+    </div>`;
+  } else {
+    html+=`<div class="bill-banner bill-banner-grey">
+      <div class="bill-banner-icon">ℹ️</div>
+      <div class="bill-banner-body">
+        <div class="bill-banner-title">Starter Plan</div>
+        <div class="bill-banner-sub">Upgrade to unlock live GPS, attendance analytics, exports, and more.</div>
+      </div>
+    </div>`;
+  }
+
+  /* ── CURRENT STATUS ROW ─────────────────────────────────────────────── */
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px">
+    <div class="sc c-blue"><div class="sc-icon">💎</div><div class="sc-label">Effective Plan</div><div class="sc-value" style="font-size:20px;text-transform:capitalize">${effectivePlan||'starter'}</div></div>
+    <div class="sc c-green"><div class="sc-icon">👥</div><div class="sc-label">Billable Seats</div><div class="sc-value">${billableSeats||0}</div><div class="sc-sub">emp + managers</div></div>
+    <div class="sc c-amber"><div class="sc-icon">📅</div><div class="sc-label">${isTrialActive?'Trial Ends':'Plan Expires'}</div><div class="sc-value" style="font-size:15px">${(isTrialActive?trialEndsAt:planExpiresAt)?fmtDate(isTrialActive?trialEndsAt:planExpiresAt):'—'}</div></div>
+    ${lastPayment?`<div class="sc c-purple"><div class="sc-icon">💳</div><div class="sc-label">Last Payment</div><div class="sc-value" style="font-size:16px">${fmtINR(lastPayment.amountINR||0)}</div><div class="sc-sub">${fmtDate(lastPayment.paidAt)}</div></div>`:''}
+  </div>`;
+
+  /* ── BILLING CYCLE TOGGLE ────────────────────────────────────────────── */
+  html+=`<div class="bill-cycle-toggle">
+    <button class="bill-cycle-btn ${_billingCycle==='monthly'?'active':''}" onclick="setBillingCycle('monthly')">Monthly</button>
+    <button class="bill-cycle-btn ${_billingCycle==='annual'?'active':''}" onclick="setBillingCycle('annual')">
+      Annual <span class="bill-cycle-save">−16%</span>
+    </button>
+  </div>`;
+
+  /* ── PLAN CARDS ──────────────────────────────────────────────────────── */
+  html+='<h3 style="font-size:15px;font-weight:700;margin-bottom:14px;margin-top:20px">Choose a Plan</h3>';
+  html+='<div class="bill-plans-grid">';
+  plans.forEach(p=>{
+    const slug=p.slug||p.id||'';
+    const actualPlan=plan||'starter';
+    const isCurrentActual=!isTrialActive&&actualPlan===slug;
+    const isTrialPlan=isTrialActive&&effectivePlan===slug;
+    const isHigher=planRank(slug)>planRank(actualPlan);
+    const isContactSales=p.isContactSales||false;
+    const isFree=(p.monthlyPrice||p.priceMonthly||0)===0&&!isContactSales;
+    const monthly=p.monthlyPrice||p.priceMonthly||0;
+    const yearly=p.yearlyPrice||p.priceYearly||0;
+    const annualSaving=monthly>0?Math.round(monthly*12-yearly):0;
+    // Display price
+    let priceHtml='';
+    if(isContactSales){
+      priceHtml=`<div class="bill-plan-price">Custom</div><div class="bill-plan-cycle">Contact Sales</div>`;
+    } else if(isFree){
+      priceHtml=`<div class="bill-plan-price">Free</div><div class="bill-plan-cycle">forever</div>`;
+    } else if(_billingCycle==='annual'&&yearly>0){
+      const perMo=Math.round(yearly/12);
+      priceHtml=`<div class="bill-plan-price"><sup>₹</sup>${perMo.toLocaleString('en-IN')}</div>
+        <div class="bill-plan-cycle">per month · ₹${yearly.toLocaleString('en-IN')}/year</div>
+        <div class="bill-plan-save">Save ₹${annualSaving.toLocaleString('en-IN')} vs monthly</div>`;
+    } else {
+      priceHtml=`<div class="bill-plan-price"><sup>₹</sup>${monthly.toLocaleString('en-IN')}</div>
+        <div class="bill-plan-cycle">per month</div>
+        ${yearly>0?`<div class="bill-plan-yearly">₹${yearly.toLocaleString('en-IN')}/year if billed annually</div>`:''}`;
+    }
+    // Limit chips
+    const me=p.maxEmployees??p.max_employees??5;
+    const mm=p.maxManagers??p.max_managers??1;
+    const mr=p.maxRooms??p.max_rooms??2;
+    const hd=p.historyDays??p.history_days??30;
+    const limitsHtml=`<div class="bill-plan-limits">
+      <span class="bill-limit-chip">👥 ${fmtLimit(me)} emp</span>
+      <span class="bill-limit-chip">🧑‍💼 ${fmtLimit(mm)} mgr</span>
+      <span class="bill-limit-chip">🏠 ${fmtLimit(mr)} rooms</span>
+      <span class="bill-limit-chip">📅 ${hd===-1?'∞':hd+'-day'} history</span>
+    </div>`;
+    // Feature labels
+    const labels=p.featureLabels||[];
+    const featsHtml=labels.length?`<div class="bill-plan-feats">${labels.map(l=>`<span class="bill-feat-chip">✓ ${esc(l)}</span>`).join('')}</div>`:'';
+    // CTA
+    let ctaHtml='';
+    const amount=_billingCycle==='annual'&&yearly>0?yearly:monthly;
+    if(isContactSales){
+      ctaHtml=`<a href="mailto:sagar.yadav.connect@gmail.com?subject=Enterprise%20Inquiry%20—%20TaskRoom" class="btn btn-ghost w-full" style="text-align:center">Contact Sales →</a>`;
+    } else if(isFree||isCurrentActual){
+      ctaHtml=`<button class="btn btn-ghost w-full" disabled>${isCurrentActual?'Current Plan':'Free Plan'}</button>`;
+    } else if(isTrialPlan){
+      ctaHtml=`<button class="btn btn-primary w-full" onclick="startUpgrade('${slug}','${esc(p.label||slug)}',${amount})">Buy ${esc(p.label||slug)} — Keep Access</button>
+        <div style="font-size:11.5px;color:var(--amber);text-align:center;margin-top:7px">Trial expires ${fmtDate(trialEndsAt)}</div>`;
+    } else if(isHigher){
+      ctaHtml=`<button class="btn btn-primary w-full" onclick="startUpgrade('${slug}','${esc(p.label||slug)}',${amount})">Upgrade to ${esc(p.label||slug)} →</button>`;
+    } else {
+      ctaHtml=`<button class="btn btn-ghost w-full" disabled>Downgrade</button>`;
+    }
+    // Badges
+    let badgeHtml='';
+    if(isCurrentActual)badgeHtml=`<div class="bill-plan-badge-wrap"><span class="badge badge-active">Current Plan</span></div>`;
+    else if(isTrialPlan)badgeHtml=`<div class="bill-plan-badge-wrap"><span class="badge badge-trial">Trial Active — ${trialDaysLeft}d left</span></div>`;
+    else if(slug==='growth')badgeHtml=`<div class="bill-plan-badge-wrap"><span class="badge badge-pro" style="background:rgba(19,127,236,.15);color:var(--primary-light)">Most Popular</span></div>`;
+    const cardCls=isCurrentActual?'plan-card current':isTrialPlan?'plan-card recommended':'plan-card';
+    html+=`<div class="${cardCls}">
+      ${badgeHtml}
+      <div class="p-name" style="margin-top:${badgeHtml?'18px':'0'}">${esc(p.label||slug)}</div>
+      ${priceHtml}
+      ${limitsHtml}
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 12px"/>
+      ${featsHtml}
+      ${ctaHtml}
+    </div>`;
+  });
+  html+='</div>';
+
+  /* ── PAYMENT HISTORY ─────────────────────────────────────────────────── */
+  if(history.length){
+    html+='<h3 style="font-size:15px;font-weight:700;margin-bottom:12px;margin-top:28px">Payment History</h3>';
+    html+='<div class="tbl-wrap"><table><thead><tr><th></th><th>Plan</th><th>Cycle</th><th>Amount</th><th>Valid Until</th><th>Paid At</th></tr></thead><tbody>';
+    history.forEach(r=>{
+      const paid=r.status==='paid';
+      const slug=r.plan||'';
+      html+=`<tr>
+        <td style="width:28px;text-align:center">${paid?'<span style="color:var(--green);font-size:16px">✓</span>':'<span style="color:var(--red);font-size:16px">✗</span>'}</td>
+        <td><div class="badge badge-${slug}" style="text-transform:capitalize">${esc(slug)}</div></td>
+        <td style="color:var(--text2);font-size:12.5px;text-transform:capitalize">${esc(r.billingCycle||'—')}</td>
+        <td style="font-weight:700">${fmtINR(r.amountINR||r.amountPaid||0)}</td>
+        <td style="color:var(--text2);font-size:12.5px">${r.validUntil?fmtDate(r.validUntil):'—'}</td>
+        <td style="color:var(--text3);font-size:12.5px">${r.paidAt?fmtDate(r.paidAt):'—'}</td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+  } else {
+    html+=`<div style="margin-top:24px"><h3 style="font-size:15px;font-weight:700;margin-bottom:12px">Payment History</h3>
+    <div class="tbl-empty">No payments yet.</div></div>`;
+  }
+  return html;
+}
+
+/* Toggle billing cycle and re-render */
+function setBillingCycle(cycle){
+  _billingCycle=cycle;
+  // Re-render without re-fetching
+  if(_org){
+    // Just reload the billing page to apply new prices
+    loadBilling();
+  }
+}
+
+/* ── UPGRADE FLOW ───────────────────────────────────────────────────── */
 async function startUpgrade(plan,label,amount){
-  // Show a nicer dialog instead of browser prompt
-  const defaultEmail=_org?.billingEmail||_org?.contactEmail||'';
-  const userEmail = await showEmailDialog(label,amount,defaultEmail);
-  if(!userEmail){return;} // user cancelled
-  const billingCycle = await showCycleDialog(plan);
-  if(!billingCycle){return;}
+  const defaultEmail=_org?.billingEmail||_org?.contactEmail||_user?.email||'';
+  const userEmail=await showEmailDialog(label,amount,defaultEmail);
+  if(!userEmail)return;
   try{
     toast('Creating payment order…','info');
-    const d=await api('POST','/billing/create-order',{plan,billingCycle,billingEmail:userEmail});
+    const d=await api('POST','/billing/create-order',{
+      plan,
+      billingCycle:_billingCycle,
+      billingEmail:userEmail
+    });
     if(!d.success){toast(d.message||'Failed to create order','error');return;}
     const o=d.data;
-    if(!o.razorpayKeyId){toast('Razorpay not configured on server','error');return;}
+    if(!o.razorpayKeyId){toast('Payment gateway not configured on server','error');return;}
     if(!window.Razorpay){toast('Razorpay SDK not loaded — check your internet connection','error');return;}
     const rzp=new window.Razorpay({
       key:o.razorpayKeyId,
-      amount:o.totalAmountPaise,   // ← this is now correctly set by backend
+      amount:o.totalAmountPaise,
       currency:'INR',
-      name:'Task Room',
+      name:'TaskRoom',
       order_id:o.orderId,
-      description:`${label} Plan — ${billingCycle==='annual'?'Annual (20% off)':'Monthly'}`,
+      description:`${o.planLabel||label} — ${_billingCycle==='annual'?'Annual (Save 16%)':'Monthly'}`,
       prefill:{email:userEmail,contact:_user?.mobile||''},
-      notes:{plan,billingCycle,orgId:_org?._id||''},
+      notes:{plan,billingCycle:_billingCycle,orgId:_org?._id||''},
       theme:{color:'#137fec'},
       handler:async function(resp){
         toast('Verifying payment…','info');
@@ -2313,75 +3097,55 @@ async function startUpgrade(plan,label,amount){
             subscriptionId:o.subscriptionId
           });
           if(v.success){
-            toast(`🎉 Payment successful! You are now on ${label}.`,'success');
+            toast(`🎉 Payment successful! You are now on the ${label} plan.`,'success');
             await loadBillingStatus();
-            setTimeout(loadBilling,1200);
-          } else toast(v.message||'Payment verification failed','error');
+            setTimeout(loadBilling,800);
+          } else {
+            toast(v.message||'Payment verification failed','error');
+          }
         }catch(e){toast('Verification error: '+e.message,'error');}
       },
       modal:{ondismiss:()=>toast('Payment cancelled','amber')}
     });
     rzp.open();
-  }catch(e){toast(e.message||'Payment error — check console','error');console.error('startUpgrade error:',e);}
+  }catch(e){
+    toast(e.message||'Payment error — please try again','error');
+    console.error('[startUpgrade]',e);
+  }
 }
 
+/* ── EMAIL POPUP ─────────────────────────────────────────────────────── */
 function showEmailDialog(label,amount,defaultEmail){
   return new Promise(resolve=>{
+    const amtDisplay=_billingCycle==='annual'
+      ?`₹${amount.toLocaleString('en-IN')} for 12 months (billed now)`
+      :`₹${amount.toLocaleString('en-IN')}/month`;
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:28px;width:100%;max-width:400px;font-family:'Sora',sans-serif">
-      <div style="font-size:18px;font-weight:800;margin-bottom:6px">Upgrade to ${esc(label)}</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Enter the email address for your billing receipt.</div>
-      <label style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:6px">Billing Email</label>
-      <input id="upg-email" type="email" value="${esc(defaultEmail)}" placeholder="billing@yourcompany.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:14px;color:var(--text);font-family:'Sora',sans-serif"/>
-      <div style="display:flex;gap:10px;margin-top:18px">
+    overlay.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:28px;width:100%;max-width:420px;font-family:'Sora',sans-serif">
+      <div style="font-size:19px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px">Upgrade to ${esc(label)}</div>
+      <div style="font-size:13.5px;color:var(--text2);margin-bottom:20px">You'll be charged <strong style="color:var(--text)">${amtDisplay}</strong>. A receipt will be emailed to you.</div>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:7px">Billing Email</label>
+      <input id="upg-email" type="email" value="${esc(defaultEmail)}" placeholder="billing@yourcompany.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--text);font-family:'Sora',sans-serif;margin-bottom:18px;outline:none;transition:border .2s" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"/>
+      <div style="display:flex;gap:10px">
         <button id="upg-cancel" class="btn btn-ghost w-full">Cancel</button>
-        <button id="upg-confirm" class="btn btn-primary w-full">Continue →</button>
+        <button id="upg-confirm" class="btn btn-primary w-full">Continue to Payment →</button>
       </div>
     </div>`;
     document.body.appendChild(overlay);
-    document.getElementById('upg-confirm').onclick=()=>{
-      const e=document.getElementById('upg-email').value.trim();
-      if(!e||!/\S+@\S+\.\S+/.test(e)){document.getElementById('upg-email').style.borderColor='var(--red)';return;}
-      overlay.remove();resolve(e);
+    const confirm=overlay.querySelector('#upg-confirm');
+    const cancel=overlay.querySelector('#upg-cancel');
+    const emailInput=overlay.querySelector('#upg-email');
+    const done=(val)=>{overlay.remove();resolve(val);};
+    confirm.onclick=()=>{
+      const v=emailInput.value.trim();
+      if(!v||!/\S+@\S+\.\S+/.test(v)){emailInput.style.borderColor='var(--red)';emailInput.focus();return;}
+      done(v);
     };
-    document.getElementById('upg-cancel').onclick=()=>{overlay.remove();resolve(null);};
-    document.getElementById('upg-email').onkeydown=e=>{if(e.key==='Enter')document.getElementById('upg-confirm').click();};
-    setTimeout(()=>document.getElementById('upg-email')?.focus(),50);
-  });
-}
-
-function showCycleDialog(plan){
-  return new Promise(resolve=>{
-    const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r3);padding:28px;width:100%;max-width:380px;font-family:'Sora',sans-serif">
-      <div style="font-size:18px;font-weight:800;margin-bottom:6px">Choose Billing Cycle</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:18px">Annual billing saves you 20%.</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div id="cycle-monthly" onclick="selectCycle('monthly')" style="padding:14px;background:var(--surface2);border:2px solid var(--primary);border-radius:10px;cursor:pointer;transition:all .2s">
-          <div style="font-size:14px;font-weight:700">Monthly</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px">Pay month-by-month. Cancel anytime.</div>
-        </div>
-        <div id="cycle-annual" onclick="selectCycle('annual')" style="padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s">
-          <div style="font-size:14px;font-weight:700">Annual <span style="background:var(--green-g);color:var(--green);font-size:11px;padding:2px 7px;border-radius:5px;margin-left:6px">Save 20%</span></div>
-          <div style="font-size:12px;color:var(--text2);margin-top:3px">One payment for 12 months. Best value.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:18px">
-        <button id="cycle-cancel" class="btn btn-ghost w-full">Cancel</button>
-        <button id="cycle-confirm" class="btn btn-primary w-full">Proceed to Payment →</button>
-      </div>
-    </div>`;
-    document.body.appendChild(overlay);
-    let selected='monthly';
-    window.selectCycle=c=>{
-      selected=c;
-      document.getElementById('cycle-monthly').style.borderColor=c==='monthly'?'var(--primary)':'var(--border)';
-      document.getElementById('cycle-annual').style.borderColor=c==='annual'?'var(--primary)':'var(--border)';
-    };
-    document.getElementById('cycle-confirm').onclick=()=>{overlay.remove();resolve(selected);};
-    document.getElementById('cycle-cancel').onclick=()=>{overlay.remove();resolve(null);};
+    cancel.onclick=()=>done(null);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)done(null);});
+    emailInput.addEventListener('keydown',e=>{if(e.key==='Enter')confirm.click();});
+    setTimeout(()=>emailInput?.focus(),50);
   });
 }
 
@@ -2548,6 +3312,8 @@ async function openTaskPanel(taskId){
   $('tp-title').textContent='Loading…';$('tp-sub').innerHTML='';
   $('tp-body').innerHTML='<div class="loading"><div class="spinner"></div></div>';
   $('tp-cancel-btn').style.display='none';
+  // Show mobile back bar
+  if(window.innerWidth<=768&&typeof showMobBackBar==='function')showMobBackBar('Task Detail');
   $('tp-tabs').style.display='none';
   try{
     const d=await api('POST','/tasks/detail',{taskId});
@@ -2643,7 +3409,11 @@ function showTaskTab(tab,btn){
   ['info','steps','gps'].forEach(t=>{const el=$('tp-tab-'+t);if(el)el.classList.toggle('active',t===tab);});
 }
 
-function closeTaskPanel(){$('task-panel')?.classList.remove('open');_currentTaskId=null;}
+function closeTaskPanel(){
+  $('task-panel')?.classList.remove('open');
+  _currentTaskId=null;
+  if(typeof hideMobBackBar==='function')hideMobBackBar();
+}
 
 async function cancelCurrentTask(){
   if(!_currentTaskId)return;
@@ -2863,7 +3633,7 @@ async function loadAnalytics(){
     }
     // Productivity
     if(!productivityR.success&&(productivityR.needsUpgrade||productivityR.neededPlan)){
-      html+=`<div class="card"><div style="text-align:center;padding:28px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">Productivity Scores require Pro</div><p style="color:var(--text2);font-size:13.5px;max-width:340px;margin:0 auto 18px;line-height:1.6">Weekly A–D grades and performance rankings are available on Pro and Business plans.</p><button class="btn btn-primary" onclick="showPage('billing',$('nav-billing'))">Upgrade to Pro →</button></div></div>`;
+      html+=`<div class="card"><div style="text-align:center;padding:28px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">Productivity Scores require Growth plan or higher</div><p style="color:var(--text2);font-size:13.5px;max-width:340px;margin:0 auto 18px;line-height:1.6">Weekly A–D grades and performance rankings are available on Growth, Business and Enterprise plans.</p><button class="btn btn-primary" onclick="showPage('billing',$('nav-billing'))">Upgrade Plan →</button></div></div>`;
     } else if(productivityR.success){
       const prod=productivityR.data;html+=`<div class="card"><div class="card-hdr"><div class="card-title">🏆 Productivity Scores</div><div style="font-size:12.5px;color:var(--text2)">Avg: <strong style="color:var(--primary-light)">${prod.summary?.avgScore||0}/100</strong></div></div>`;
       (prod.scores||[]).forEach(e=>{
@@ -3024,9 +3794,9 @@ async function submitCreate(e){
     $('post-create-code').textContent=code;
     if($('success-code'))$('success-code').textContent=code;
     const planOffer=$('post-create-plan-offer');
-    const isTrial=['growth','business','pro'].includes(_selectedLandingPlan);
+    const isTrial=['growth','business','enterprise'].includes(_selectedLandingPlan);
     if(isTrial){
-      const label=({growth:'Growth',business:'Business',pro:'Pro'}[_selectedLandingPlan]||'Growth');
+      const label=({growth:'Growth',business:'Business',enterprise:'Enterprise'}[_selectedLandingPlan]||'Growth');
       planOffer.innerHTML=`<div class="alert alert-info" style="text-align:left;margin-bottom:0"><div><strong>✅ 14-day ${label} Trial Active!</strong><div style="font-size:12.5px;margin-top:4px;line-height:1.6">Your org has full ${label} features for 14 days. Upgrade before the trial ends to keep them.<br><br>Share your org code with employees: <strong style="font-family:monospace;color:var(--primary-light)">${code}</strong></div></div></div>`;
     }else{
       planOffer.innerHTML=`<div class="alert alert-success" style="text-align:left;margin-bottom:0"><div><strong>🎉 Organization Created!</strong><div style="font-size:12.5px;margin-top:4px;line-height:1.6">Share your org code with your team to get started. Upgrade anytime from <strong>Plans &amp; Billing</strong>.<br><br>Org Code: <strong style="font-family:monospace;color:var(--primary-light)">${code}</strong></div></div></div>`;
@@ -3436,6 +4206,93 @@ initLandingAnimations();
 updateLandCalc();
 
 if(_user&&_token&&_org){showDash();}else{showLanding();}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOBILE NAVIGATION JAVASCRIPT
+══════════════════════════════════════════════════════════════════════ */
+
+/* Track current mobile view for back button */
+let _mobHistory = [];
+let _mobCurrentPage = 'overview';
+
+/* Mobile bottom nav: go to page + update active state */
+function mobNavGo(pageId, title, btn) {
+  closeMobDrawer();
+  // Update active state on bottom nav
+  document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Navigate
+  const sbEl = document.getElementById('nav-' + pageId);
+  showPage(pageId, sbEl);
+  _mobCurrentPage = pageId;
+  hideMobBackBar();
+}
+
+/* Mobile "More" drawer items */
+function mobDrawerGo(pageId, title) {
+  closeMobDrawer();
+  document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+  const sbEl = document.getElementById('nav-' + pageId);
+  showPage(pageId, sbEl);
+  _mobCurrentPage = pageId;
+  hideMobBackBar();
+}
+
+/* Toggle the More drawer */
+function toggleMobMenu() {
+  const drawer = document.getElementById('mob-more-drawer');
+  if (!drawer) return;
+  if (drawer.style.display === 'none' || drawer.style.display === '') {
+    drawer.style.display = 'block';
+    // Close when tapping outside
+    setTimeout(() => {
+      document.addEventListener('click', closeMobDrawerOutside, {once: true});
+    }, 10);
+  } else {
+    closeMobDrawer();
+  }
+}
+function closeMobDrawer() {
+  const drawer = document.getElementById('mob-more-drawer');
+  if (drawer) drawer.style.display = 'none';
+}
+function closeMobDrawerOutside(e) {
+  const drawer = document.getElementById('mob-more-drawer');
+  if (drawer && !drawer.contains(e.target)) closeMobDrawer();
+}
+
+/* Sidebar overlay backdrop — close on tap */
+function closeSidebarMobile() {
+  $('sidebar')?.classList.remove('open');
+  $('sidebar-overlay')?.classList.remove('show');
+}
+
+/* Mobile back button */
+function showMobBackBar(title) {
+  const bar=$('mob-back-bar');const titleEl=$('mob-back-title');
+  if(bar)bar.classList.add('show');
+  if(titleEl)titleEl.textContent=title||'Detail';
+}
+function hideMobBackBar(){$('mob-back-bar')?.classList.remove('show');}
+function mobGoBack(){
+  closeTaskPanel();
+  $('att-panel')?.classList.remove('open');
+  document.querySelectorAll('.overlay.open').forEach(m=>m.classList.remove('open'));
+  hideMobBackBar();
+}
+
+/* Light theme for mobile nav */
+function applyMobNavTheme(){
+  const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+  const nav=$('mob-bottom-nav');if(!nav)return;
+  nav.style.background=isDark?'rgba(8,13,18,.96)':'rgba(255,255,255,.97)';
+  nav.style.borderTopColor=isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.08)';
+  // update drawer
+  const drawer=$('mob-more-drawer');
+  if(drawer)drawer.style.background=isDark?'var(--surface)':'#fff';
+}
+applyMobNavTheme();
+
 </script>
 </body>
 </html>
