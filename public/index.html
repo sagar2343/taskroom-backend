@@ -261,6 +261,134 @@ input,textarea,select{font-family:inherit;outline:none}
 .btn-icon:hover{background:var(--surface3);color:var(--text)}
 
 /* ─── NAV ────────────────────────────────────────────────────────────── */
+/* ─── DASHBOARD NAV ──────────────────────────────────────────────────── */
+#main-nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  height:60px;padding:0;backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+.dash-nav-inner{
+  height:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px 0 0;gap:12px;
+}
+/* Left: hamburger + logo */
+.dash-nav-left{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.dash-nav-ham{
+  width:60px;height:60px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;background:none;border:none;
+  cursor:pointer;flex-shrink:0;border-right:1px solid var(--border);
+  transition:background .15s;
+}
+.dash-nav-ham:hover{background:var(--surface2);}
+.dash-nav-ham span{
+  display:block;width:18px;height:1.5px;background:var(--text2);
+  border-radius:1px;transition:all .25s;
+}
+.sidebar.open ~ * .dash-nav-ham span:nth-child(1),
+#sidebar.open ~ #dashboard-view .dash-nav-ham span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+.dash-nav-logo{
+  display:flex;align-items:center;gap:9px;padding:0 16px;
+  text-decoration:none;
+}
+.dash-nav-logo .logo-icon{
+  width:30px;height:30px;border-radius:7px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(19,127,236,.2);
+  padding:2px;
+}
+.dash-nav-logo .logo-icon img{width:100%;height:100%;object-fit:cover;}
+.dash-nav-logo .logo-text{
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
+  letter-spacing:-.03em;color:var(--text);white-space:nowrap;
+}
+/* Center: page label */
+.dash-nav-center{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  min-width:0;
+}
+#dash-nav-page{
+  font-size:14px;font-weight:600;color:var(--text2);
+  font-family:'Sora',sans-serif;
+}
+/* Right cluster */
+.dash-nav-right{
+  display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+.dash-nav-org-code{
+  display:flex;align-items:center;gap:6px;
+  background:var(--primary-subtle);border:1px solid rgba(19,127,236,.2);
+  color:var(--primary-light);font-size:12px;font-weight:700;
+  padding:5px 11px;border-radius:7px;cursor:pointer;letter-spacing:.5px;
+  font-family:'JetBrains Mono',monospace;transition:all .15s;white-space:nowrap;
+}
+.dash-nav-org-code:hover{background:var(--primary-mid);border-color:rgba(19,127,236,.35);}
+.dash-nav-plan-badge{
+  font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;
+  text-transform:capitalize;letter-spacing:.3px;white-space:nowrap;
+}
+/* User info block */
+.dash-nav-user{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:9px;
+  border:1px solid var(--border);background:var(--surface2);
+  cursor:default;transition:background .15s;
+}
+.dash-nav-user:hover{background:var(--surface3);}
+.dash-nav-avatar{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;
+}
+.dash-nav-avatar img{width:100%;height:100%;object-fit:cover;}
+.dash-nav-userinfo{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.dash-nav-name{
+  font-size:12.5px;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;
+}
+.dash-nav-role{
+  font-size:10px;font-weight:600;text-transform:capitalize;
+  color:var(--primary-light);letter-spacing:.2px;
+}
+/* Icon buttons */
+.dash-nav-icon-btn{
+  width:34px;height:34px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;font-size:14px;
+  transition:all .15s;flex-shrink:0;
+}
+.dash-nav-icon-btn:hover{background:var(--surface3);color:var(--text);}
+/* Sign out */
+.dash-nav-signout{
+  display:flex;align-items:center;gap:6px;
+  background:transparent;border:1px solid rgba(239,68,68,.2);
+  color:var(--red);padding:6px 13px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:'Sora',sans-serif;transition:all .15s;white-space:nowrap;
+}
+.dash-nav-signout:hover{background:var(--red-g);border-color:rgba(239,68,68,.35);}
+/* Light theme overrides */
+[data-theme="light"] #main-nav{background:rgba(255,255,255,.97);border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .dash-nav-ham span{background:#4a5568;}
+[data-theme="light"] .dash-nav-user{background:#f5f7fa;border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .dash-nav-user:hover{background:#edf0f5;}
+[data-theme="light"] .dash-nav-org-code{background:rgba(19,127,236,.07);}
+[data-theme="light"] .dash-nav-icon-btn{background:#f5f7fa;border-color:rgba(0,0,0,.1);}
+[data-theme="light"] .dash-nav-icon-btn:hover{background:#edf0f5;}
+/* Responsive */
+@media(max-width:768px){
+  .dash-nav-center{display:none;}
+  .dash-nav-org-code{display:none;}
+  .dash-nav-plan-badge{display:none;}
+  .dash-nav-userinfo{display:none;}
+  .dash-nav-signout span,.dash-nav-signout svg+*{display:none;}
+  .dash-nav-signout{padding:7px;width:34px;height:34px;justify-content:center;border-radius:8px;}
+}
+@media(max-width:480px){
+  .dash-nav-logo .logo-text{display:none;}
+  .dash-nav-right{gap:4px;}
+}
+
 nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(8,13,18,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
 .nav-logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 4px 14px rgba(19,127,236,.25);background:#fff;padding:2px}
@@ -1912,6 +2040,55 @@ select option{background:var(--surface);color:var(--text)}
 </div><!-- /landing -->
 
 
+<!-- ═══════════════════════ DASHBOARD NAV ══════════════════════════════ -->
+<nav id="main-nav" style="display:none">
+  <div class="dash-nav-inner">
+    <!-- Left: hamburger + logo -->
+    <div class="dash-nav-left">
+      <button id="sb-toggle" onclick="toggleSidebar()" class="dash-nav-ham" aria-label="Toggle sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="dash-nav-logo">
+        <div class="logo-icon"><img src="./app_icon.png" alt="TaskRoom"></div>
+        <span class="logo-text">Task Room</span>
+      </div>
+    </div>
+    <!-- Center: current page breadcrumb -->
+    <div class="dash-nav-center" id="dash-nav-crumb">
+      <span id="dash-nav-page">Dashboard</span>
+    </div>
+    <!-- Right: org code + user info + actions -->
+    <div class="dash-nav-right">
+      <!-- Org code pill -->
+      <button class="dash-nav-org-code" id="dash-nav-code" onclick="copyCode()" title="Copy org code">
+        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2z"/></svg>
+        <span id="dash-nav-code-val">—</span>
+      </button>
+      <!-- Plan badge -->
+      <span class="dash-nav-plan-badge" id="dash-nav-plan">starter</span>
+      <!-- User avatar + name -->
+      <div class="dash-nav-user" id="dash-nav-user-wrap">
+        <div class="dash-nav-avatar" id="dash-nav-av">U</div>
+        <div class="dash-nav-userinfo">
+          <div class="dash-nav-name" id="dash-nav-name">User</div>
+          <div class="dash-nav-role" id="dash-nav-role">manager</div>
+        </div>
+      </div>
+      <!-- Notifications stub -->
+      <button class="dash-nav-icon-btn" title="Notifications" onclick="toast('No new notifications','info')">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
+      </button>
+      <!-- Theme toggle -->
+      <button class="dash-nav-icon-btn" id="dash-nav-theme" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      <!-- Sign out -->
+      <button class="dash-nav-signout" onclick="logout()">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </div>
+</nav>
+
 <!-- ═══════════════════════ DASHBOARD ═══════════════════════════════════ -->
 <div id="dashboard-view">
 <div class="dash-layout">
@@ -2517,9 +2694,10 @@ function toggleTheme(){
   const next=cur==='dark'?'light':'dark';
   document.documentElement.setAttribute('data-theme',next);
   localStorage.setItem('taskroom_theme',next);
-  const btn=document.getElementById('theme-toggle-btn');
-  if(btn)btn.textContent=next==='light'?'🌙':'☀️';
-  // Sync mobile nav colours
+  // Sync all theme buttons
+  const icon=next==='light'?'🌙':'☀️';
+  const b1=document.getElementById('theme-toggle-btn');if(b1)b1.textContent=icon;
+  const b2=document.getElementById('dash-nav-theme');if(b2)b2.textContent=icon;
   if(typeof applyMobNavTheme==='function')applyMobNavTheme();
 }
 
@@ -2599,7 +2777,18 @@ function showDash(){
   const mn=$('main-nav');
   if(mn){
     mn.style.display='flex';
-    mn.innerHTML=`<div class="nav-logo"><div class="logo-icon"><img src="./app_icon.png" alt=""></div><span class="logo-text">Task Room</span></div><div style="display:flex;align-items:center;gap:12px"><button id="sb-toggle" onclick="toggleSidebar()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px;cursor:pointer;color:var(--text2);display:flex">☰</button><div style="font-size:13px;color:var(--text2)">Signed in as <strong style="color:var(--text)">${esc(_user?.fullName||_user?.username||'User')}</strong></div><span class="badge badge-${_user?.role||'employee'}">${_user?.role||'employee'}</span><button class="btn btn-ghost btn-sm" onclick="logout()">Sign Out</button></div>`;
+    // Fill navbar fields
+    const init=(_user?.fullName||_user?.username||'U')[0].toUpperCase();
+    $('dash-nav-av').textContent=init;
+    $('dash-nav-name').textContent=_user?.fullName||_user?.username||'User';
+    $('dash-nav-role').textContent=_user?.role||'employee';
+    const role=_user?.role||'employee';
+    // Theme icon sync
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const themeBtn=$('dash-nav-theme');
+    if(themeBtn)themeBtn.textContent=cur==='light'?'🌙':'☀️';
+    // sb-toggle already exists in the static HTML
+    if($('sb-toggle'))$('sb-toggle').style.display='flex';
   }
   fillSidebar();
   applyRoleUI();
@@ -2637,9 +2826,27 @@ function fillSidebar(){
   $('sb-orgname').textContent=_org.name||'';
   $('sb-code-val').textContent=_org.code||'—';
   $('ov-code').textContent=_org.code||'—';
+  // Sync top navbar
+  const nc=$('dash-nav-code-val');if(nc)nc.textContent=_org.code||'—';
+  const plan=_org.effectivePlan||_org.plan||'starter';
+  const planEl=$('dash-nav-plan');
+  if(planEl){
+    planEl.textContent=plan.charAt(0).toUpperCase()+plan.slice(1);
+    planEl.className='dash-nav-plan-badge badge badge-'+plan;
+  }
+  // Update avatar if profile pic
+  const av2=$('dash-nav-av');
+  if(av2){
+    if(_user?.profilePicture){
+      av2.innerHTML=`<img src="${esc(_user.profilePicture)}" alt=""/>`;
+    } else {
+      av2.textContent=(_user?.fullName||_user?.username||'U')[0].toUpperCase();
+    }
+  }
 }
 
 /* ── PAGE NAVIGATION ────────────────────────────────────────────────── */
+const PAGE_LABELS={overview:'Dashboard',org:'Organization',billing:'Plans & Billing',rooms:'Rooms',tasks:'Tasks',attendance:'Attendance',members:'Members',analytics:'Analytics'};
 function showPage(id,el){
   document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
   $('page-'+id)?.classList.add('active');
@@ -2648,9 +2855,11 @@ function showPage(id,el){
   closeTaskPanel();
   $('att-panel')?.classList.remove('open');
   $('sidebar')?.classList.remove('open');
-  // close mobile sidebar overlay
   $('sidebar-overlay')?.classList.remove('show');
-  // sync mobile bottom nav
+  // Sync breadcrumb
+  const crumb=$('dash-nav-page');
+  if(crumb)crumb.textContent=PAGE_LABELS[id]||id.charAt(0).toUpperCase()+id.slice(1);
+  // Sync mobile bottom nav
   _mobCurrentPage=id;
   document.querySelectorAll('.mob-nav-item').forEach(b=>b.classList.remove('active'));
   const mobBtn=$('mob-nav-'+id);if(mobBtn)mobBtn.classList.add('active');
@@ -2827,6 +3036,10 @@ async function loadBillingStatus(){
       _org.isTrialActive=s.isTrialActive;_org.trialEndsAt=s.trialEndsAt;
       _org.planExpiresAt=s.planExpiresAt;_org.limits=s.limits;
       _org.billableSeats=s.billableSeats;save();
+      // Sync navbar plan badge
+      const plan=s.effectivePlan||s.plan||'starter';
+      const planEl=$('dash-nav-plan');
+      if(planEl){planEl.textContent=plan.charAt(0).toUpperCase()+plan.slice(1);planEl.className='dash-nav-plan-badge badge badge-'+plan;}
     }
     // Render dashboard trial banner
     renderDashTrialBanner(s);
