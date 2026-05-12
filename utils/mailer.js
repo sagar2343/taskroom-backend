@@ -79,8 +79,8 @@ async function sendPaymentReceipt({ to, orgName, plan, billingCycle, amountINR, 
             <div style="margin-top: 28px; padding: 16px; background: #f0f7ff;
                         border-radius: 8px; font-size: 13px; color: #555;">
               Questions? Reply to this email or contact
-              <a href="mailto:support@yourdomain.com" style="color: #137fec;">
-                support@yourdomain.com
+              <a href="mailto:support@taskroom.in" style="color: #137fec;">
+                support@taskroom.in
               </a>
             </div>
           </div>
