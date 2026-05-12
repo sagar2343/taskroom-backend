@@ -4,7 +4,6 @@ const http       = require('http');
 const { Server } = require('socket.io');
 const mongoose   = require('mongoose');
 const path       = require('path');
-const helmet     = require('helmet');
 require('dotenv').config();
 
 // ── Routes ─────────────────────────────────────────────────────────────────
@@ -30,57 +29,11 @@ const { verifyCloudinaryConnection }  = require('./services/cloudinaryService');
 const app    = express();
 const server = http.createServer(app);
 
-// ── Trust proxy (important for Render + HTTPS) ────────────────────────────
-app.enable('trust proxy');
-
 // ── Socket.IO ──────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 app.set('io', io);
-
-// ── Security Middleware ───────────────────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc:  ["'self'"],
-      scriptSrc:   [
-        "'self'",
-        "'unsafe-inline'",                          // needed for inline <script>
-        "https://checkout.razorpay.com",
-        "https://cdnjs.cloudflare.com",
-      ],
-      styleSrc:    [
-        "'self'",
-        "'unsafe-inline'",                          // needed for inline <style>
-        "https://fonts.googleapis.com",
-      ],
-      fontSrc:     ["'self'", "https://fonts.gstatic.com"],
-      imgSrc:      ["'self'", "data:", "blob:", "https:"],
-      connectSrc:  [
-        "'self'",
-        "https://taskroom-backend.onrender.com",
-        "https://server.arcgisonline.com",          // for satellite map tiles
-        "https://*.tile.openstreetmap.org",
-      ],
-      frameSrc:    ["'none'"],
-      objectSrc:   ["'none'"],
-    },
-  },
-}));
-
-// ── Force HTTPS in production ─────────────────────────────────────────────
-app.use((req, res, next) => {
-  if (
-    process.env.NODE_ENV === 'production' &&
-    req.headers['x-forwarded-proto'] !== 'https'
-  ) {
-    return res.redirect(`https://${req.headers.host}${req.url}`);
-  }
-
-  next();
-});
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 // NOTE: /api/billing/webhook needs raw body — mount BEFORE express.json()
