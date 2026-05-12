@@ -39,8 +39,36 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// ── Security Middleware ───────────────────────────────────────────────────
-app.use(helmet({ crossOriginResourcePolicy: false }));
+// ── Security Middleware ───────────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   [
+        "'self'",
+        "'unsafe-inline'",                          // needed for inline <script>
+        "https://checkout.razorpay.com",
+        "https://cdnjs.cloudflare.com",
+      ],
+      styleSrc:    [
+        "'self'",
+        "'unsafe-inline'",                          // needed for inline <style>
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc:     ["'self'", "https://fonts.gstatic.com"],
+      imgSrc:      ["'self'", "data:", "blob:", "https:"],
+      connectSrc:  [
+        "'self'",
+        "https://taskroom-backend.onrender.com",
+        "https://server.arcgisonline.com",          // for satellite map tiles
+        "https://*.tile.openstreetmap.org",
+      ],
+      frameSrc:    ["'none'"],
+      objectSrc:   ["'none'"],
+    },
+  },
+}));
 
 // ── Force HTTPS in production ─────────────────────────────────────────────
 app.use((req, res, next) => {
