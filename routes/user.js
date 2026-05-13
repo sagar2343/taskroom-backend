@@ -328,7 +328,7 @@ router.get('/', async (req, res) => {
           email: user.email,
           employeeId: user.employeeId,
           department: user.department,
-          designation: designation,
+          designation: user.designation,
           createdAt: user.createdAt
         })),
         pagination: {
