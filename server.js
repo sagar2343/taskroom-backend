@@ -134,12 +134,12 @@ app.get('/api/health', (req, res) => {
 });
 
 // // Root — API identity (no HTML)
-// app.get('/', (_req, res) => {
-//   res.json({ success: true, name: 'TaskRoom API', health: '/api/health', docs: 'https://taskroom.in' });
-// });
+app.get('/', (_req, res) => {
+  res.json({ success: true, name: 'TaskRoom API', health: '/api/health', docs: 'https://taskroom.in' });
+});
 
 // ── REST routes ────────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/user',         userRoutes);
