@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
+const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
@@ -66,6 +67,7 @@ router.post('/register', async (req, res) => {
 
     // Check if user already exists in this organization
     const existingUser = await User.findOne({
+      organization: organization._id,
       $or: [{ username }, { mobile }]
     });
 
@@ -247,12 +249,17 @@ router.post('/login', async (req, res) => {
 
     // Update online status and last seen
     // user.isOnline = true;
+    const sessionId = uuidv4();
     user.lastSeen = new Date(); 
+    user.sessionId = sessionId;
     await user.save();
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { 
+        userId: user._id,
+        sessionId: user.sessionId,
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );

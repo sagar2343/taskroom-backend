@@ -26,6 +26,14 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    if (decoded.sessionId != user.sessionId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Session expired. Please login again.',
+        code: 'SESSION_EXPIRED',
+      });
+    }
+    
     // Attach user to request
     req.user = user;
     req.userId = user._id;

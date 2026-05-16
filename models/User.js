@@ -117,6 +117,11 @@ const userSchema = new mongoose.Schema({
     index:   true,   // indexed so stale-token cleanup queries are fast
   },
 
+  sessionId: {
+    type: String,
+    default: null,
+  },
+
 }, {
   timestamps: true
 });
