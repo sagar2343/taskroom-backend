@@ -177,7 +177,7 @@ async function forwardInboundEmail({
 
           <!-- Body -->
           <div style="padding:28px;font-size:14px;color:#333;line-height:1.7">
-            ${html || `<pre style="font-family:inherit;white-space:pre-wrap">${text || '(empty)'}</pre>`}
+            ${html ? html : `<pre style="font-family:inherit;white-space:pre-wrap">${text || '(empty)'}</pre>`}
           </div>
 
           <!-- Reply tip -->

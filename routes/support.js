@@ -74,8 +74,8 @@ router.post('/inbound', async (req, res) => {
 
     const from    = mail.from    || mail.sender || 'unknown@unknown.com';
     const subject = mail.subject || '(no subject)';
-    const html    = mail.html    || null;
-    const text    = mail.text    || mail.plain_text || null;
+    const html    = mail.html    || mail.mail.htmlBody || mail.bodyHtml || null;
+    const text    = mail.text    || mail.plain_text || mail.mail.textBody || mail.bodyText || null;
     const to      = mail.to      || 'support@taskroom.in';
 
     console.log(`[support/inbound] Email from ${from} — "${subject}"`);
