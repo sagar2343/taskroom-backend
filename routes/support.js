@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
-const crypto  = require('crypto');
+// const crypto  = require('crypto');
+const { Webhook } = require('svix');
 const { forwardInboundEmail } = require('../utils/mailer');
 
 const router = express.Router();
@@ -11,37 +12,58 @@ router.post('/inbound', async (req, res) => {
 
     // ── 1. Verify webhook signature ──────────────────────────────────
     // Svix secrets are base64 after the "whsec_" prefix
-    const rawSecret = process.env.RESEND_WEBHOOK_SECRET || '';
-    const secret = rawSecret.startsWith('whsec_')
-    ? Buffer.from(rawSecret.replace('whsec_', ''), 'base64')
-    : rawSecret;
+    // const rawSecret = process.env.RESEND_WEBHOOK_SECRET || '';
+    // const secret = rawSecret.startsWith('whsec_')
+    // ? Buffer.from(rawSecret.replace('whsec_', ''), 'base64')
+    // : rawSecret;
 
-    if (secret) {
-      const signature = req.headers['svix-signature']
-                     || req.headers['resend-signature']
-                     || '';
-      const msgId        = req.headers['svix-id'] || '';
-      const msgTimestamp = req.headers['svix-timestamp'] || '';
-      const payload      = `${msgId}.${msgTimestamp}.${JSON.stringify(req.body)}`;
+    // if (secret) {
+    //   const signature = req.headers['svix-signature']
+    //                  || req.headers['resend-signature']
+    //                  || '';
+    //   const msgId        = req.headers['svix-id'] || '';
+    //   const msgTimestamp = req.headers['svix-timestamp'] || '';
+    //   const payload      = `${msgId}.${msgTimestamp}.${JSON.stringify(req.body)}`;
 
-      const expected = crypto
-        .createHmac('sha256', secret)   // secret is now a Buffer ✅
-        .update(payload)
-        .digest('hex');
+    //   const expected = crypto
+    //     .createHmac('sha256', secret)   // secret is now a Buffer ✅
+    //     .update(payload)
+    //     .digest('hex');
 
-      // Resend uses svix — signature is comma-separated list of "v1,<hash>"
-      const sigValid = signature
-        .split(' ')
-        .some(s => s.replace(/^v1,/, '') === expected);
+    //   // Resend uses svix — signature is comma-separated list of "v1,<hash>"
+    //   const sigValid = signature
+    //     .split(' ')
+    //     .some(s => s.replace(/^v1,/, '') === expected);
 
-      if (!sigValid) {
-        console.warn('[support/inbound] Invalid webhook signature');
-        return res.status(400).json({ success: false, message: 'Invalid signature' });
-      }
+    //   if (!sigValid) {
+    //     console.warn('[support/inbound] Invalid webhook signature');
+    //     return res.status(400).json({ success: false, message: 'Invalid signature' });
+    //   }
+    // }
+
+    const wh = new Webhook(process.env.RESEND_WEBHOOK_SECRET);
+
+    const body = req.body.toString();
+
+    try {
+      wh.verify(body, {
+        'svix-id': req.headers['svix-id'],
+        'svix-timestamp': req.headers['svix-timestamp'],
+        'svix-signature': req.headers['svix-signature'],
+      });
+    } catch (err) {
+      console.warn('[support/inbound] Invalid webhook signature');
+
+      return res.status(200).json({
+        success: false,
+        message: 'Invalid signature',
+      });
     }
 
+    const event = JSON.parse(body);
+
     // ── 2. Parse the inbound email event ────────────────────────────
-    const event = req.body;
+    // const event = req.body;
 
     // Resend wraps it as { type: 'email.received', data: { ... } }
     if (event.type !== 'email.received') {
