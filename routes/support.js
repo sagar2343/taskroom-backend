@@ -76,9 +76,11 @@ router.post('/inbound', async (req, res) => {
     const subject = mail.subject || '(no subject)';
     const html    = mail.html    || mail.bodyHtml    || null;
     const text    = mail.text    || mail.plain_text  || mail.bodyText   || null;
-    const to      = mail.to      || 'support@taskroom.in';
+    const to      = Array.isArray(mail.to) ? mail.to[0] : (mail.to || 'support@taskroom.in');
 
+    // Debug: log full mail object once to verify field names
     console.log(`[support/inbound] Email from ${from} — "${subject}"`);
+    console.log(`[support/inbound] html=${!!html} text=${!!text} keys=${Object.keys(mail).join(',')}`);
 
     // ── 3. Forward to your Gmail ─────────────────────────────────────
     await forwardInboundEmail({ from, subject, html, text, to });
