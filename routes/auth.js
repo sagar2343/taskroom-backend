@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const { v4: uuidv4 } = require('uuid');
+const { sendWelcomeEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -140,6 +141,13 @@ router.post('/register', async (req, res) => {
 
     // Update organization stats
     await organization.updateStats();
+
+    sendWelcomeEmail({
+      to:          user.email || req.body.email,
+      orgName:     organization.name,
+      orgCode:     organization.code,
+      managerName: user.fullName || user.username,
+    }).catch(err => console.error('[welcome email failed]', err));
 
     // Generate JWT token
     const token = jwt.sign(

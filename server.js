@@ -19,6 +19,7 @@ const billingRoutes      = require('./routes/billing');
 const exportRoutes       = require('./routes/export');
 const analyticsRoutes    = require('./routes/analytics');
 const adminPlanRoutes    = require('./routes/admin/plans');
+const supportRoutes      = require('./routes/support');
 
 // ── Services ───────────────────────────────────────────────────────────────
 const { registerSocketHandlers }      = require('./socket/locationSocket');
@@ -153,6 +154,7 @@ app.use('/api/billing',      billingRoutes);
 app.use('/api/export',       exportRoutes);
 app.use('/api/analytics',    analyticsRoutes);
 app.use('/api/admin/plans',  adminPlanRoutes);
+app.use('/api/support',      supportRoutes);
 
 // ── 404 handler ────────────────────────────────────────────────────────────
 app.use((req, res) => {
