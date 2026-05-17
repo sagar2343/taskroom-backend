@@ -177,7 +177,12 @@ async function forwardInboundEmail({
 
           <!-- Body -->
           <div style="padding:28px;font-size:14px;color:#333;line-height:1.7">
-            ${html ? html : `<pre style="font-family:inherit;white-space:pre-wrap">${text || '(empty)'}</pre>`}
+            ${html
+                ? html
+                : text
+                  ? `<pre style="font-family:inherit;white-space:pre-wrap;word-break:break-word">${text}</pre>`
+                  : `<p style="color:#999;font-style:italic">(No body content — sender may have sent a blank email)</p>`
+              }
           </div>
 
           <!-- Reply tip -->
