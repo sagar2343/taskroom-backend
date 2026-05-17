@@ -72,15 +72,41 @@ router.post('/inbound', async (req, res) => {
 
     const mail = event.data || event;
 
-    const from    = mail.from    || mail.sender || 'unknown@unknown.com';
-    const subject = mail.subject || '(no subject)';
-    const html    = mail.html    || mail.bodyHtml    || null;
-    const text    = mail.text    || mail.plain_text  || mail.bodyText   || null;
-    const to      = Array.isArray(mail.to) ? mail.to[0] : (mail.to || 'support@taskroom.in');
+  const from    = mail.from    || mail.sender || 'unknown@unknown.com';
+  const subject = mail.subject || '(no subject)';
+  const to      = Array.isArray(mail.to) ? mail.to[0] : (mail.to || 'support@taskroom.in');
 
-    // Debug: log full mail object once to verify field names
-    console.log(`[support/inbound] Email from ${from} — "${subject}"`);
-    console.log(`[support/inbound] html=${!!html} text=${!!text} keys=${Object.keys(mail).join(',')}`);
+  // ── Extract body from attachments (Resend sends body as MIME parts) ──
+  let html = mail.html || null;
+  let text = mail.text || null;
+
+  const attachments = mail.attachments || [];
+  for (const att of attachments) {
+    // Resend encodes body as base64 in attachments with content_type
+    const ct = (att.content_type || att.type || '').toLowerCase();
+    const content = att.content
+      ? Buffer.from(att.content, 'base64').toString('utf8')
+      : (att.body || att.data || null);
+
+    if (!html && ct.includes('text/html'))  html = content;
+    if (!text && ct.includes('text/plain')) text = content;
+  }
+
+  // ── Fallback: fetch full email via Resend API using email_id ─────────
+  if (!html && !text && mail.email_id) {
+    try {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const fetched = await resend.emails.get(mail.email_id);
+      html = fetched?.data?.html || null;
+      text = fetched?.data?.text || null;
+      console.log(`[support/inbound] Fetched body via API for email_id=${mail.email_id}`);
+    } catch (fetchErr) {
+      console.warn('[support/inbound] Could not fetch email body:', fetchErr.message);
+    }
+  }
+
+  console.log(`[support/inbound] from=${from} subject="${subject}" html=${!!html} text=${!!text} attachments=${attachments.length}`);
 
     // ── 3. Forward to your Gmail ─────────────────────────────────────
     await forwardInboundEmail({ from, subject, html, text, to });
