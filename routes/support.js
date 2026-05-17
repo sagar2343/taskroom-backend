@@ -98,13 +98,23 @@ router.post('/inbound', async (req, res) => {
       const { Resend } = require('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
       const fetched = await resend.emails.get(mail.email_id);
-      html = fetched?.data?.html || null;
-      text = fetched?.data?.text || null;
-      console.log(`[support/inbound] Fetched body via API for email_id=${mail.email_id}`);
+
+      // Log the FULL raw response so we can see the exact structure
+      console.log('[support/inbound] RAW fetched:', JSON.stringify(fetched, null, 2));
+
+      html = fetched?.data?.html || fetched?.html || null;
+      text = fetched?.data?.text || fetched?.text || null;
     } catch (fetchErr) {
       console.warn('[support/inbound] Could not fetch email body:', fetchErr.message);
     }
   }
+
+  // Log the full attachment object to see its exact fields
+  if (attachments.length > 0) {
+    console.log('[support/inbound] RAW attachment[0]:', JSON.stringify(attachments[0], null, 2));
+  }
+
+  console.log(`[support/inbound] from=${from} subject="${subject}" html=${!!html} text=${!!text} attachments=${attachments.length}`);
 
   console.log(`[support/inbound] from=${from} subject="${subject}" html=${!!html} text=${!!text} attachments=${attachments.length}`);
 
