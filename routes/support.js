@@ -1,131 +1,98 @@
 'use strict';
-const express = require('express');
-// const crypto  = require('crypto');
+const express  = require('express');
 const { Webhook } = require('svix');
+const { Resend } = require('resend');
 const { forwardInboundEmail } = require('../utils/mailer');
 
 const router = express.Router();
+const resend  = new Resend(process.env.RESEND_API_KEY);
 
-// ── POST /api/support/inbound  (Resend webhook) ───────────────────────
 router.post('/inbound', async (req, res) => {
   try {
 
     // ── 1. Verify webhook signature ──────────────────────────────────
-    // Svix secrets are base64 after the "whsec_" prefix
-    // const rawSecret = process.env.RESEND_WEBHOOK_SECRET || '';
-    // const secret = rawSecret.startsWith('whsec_')
-    // ? Buffer.from(rawSecret.replace('whsec_', ''), 'base64')
-    // : rawSecret;
-
-    // if (secret) {
-    //   const signature = req.headers['svix-signature']
-    //                  || req.headers['resend-signature']
-    //                  || '';
-    //   const msgId        = req.headers['svix-id'] || '';
-    //   const msgTimestamp = req.headers['svix-timestamp'] || '';
-    //   const payload      = `${msgId}.${msgTimestamp}.${JSON.stringify(req.body)}`;
-
-    //   const expected = crypto
-    //     .createHmac('sha256', secret)   // secret is now a Buffer ✅
-    //     .update(payload)
-    //     .digest('hex');
-
-    //   // Resend uses svix — signature is comma-separated list of "v1,<hash>"
-    //   const sigValid = signature
-    //     .split(' ')
-    //     .some(s => s.replace(/^v1,/, '') === expected);
-
-    //   if (!sigValid) {
-    //     console.warn('[support/inbound] Invalid webhook signature');
-    //     return res.status(400).json({ success: false, message: 'Invalid signature' });
-    //   }
-    // }
-
-    const wh = new Webhook(process.env.RESEND_WEBHOOK_SECRET);
-
+    const wh   = new Webhook(process.env.RESEND_WEBHOOK_SECRET);
     const body = req.body.toString();
 
     try {
       wh.verify(body, {
-        'svix-id': req.headers['svix-id'],
+        'svix-id':        req.headers['svix-id'],
         'svix-timestamp': req.headers['svix-timestamp'],
         'svix-signature': req.headers['svix-signature'],
       });
     } catch (err) {
       console.warn('[support/inbound] Invalid webhook signature');
-
-      return res.status(200).json({
-        success: false,
-        message: 'Invalid signature',
-      });
+      return res.status(200).json({ success: false, message: 'Invalid signature' });
     }
 
     const event = JSON.parse(body);
 
-    // ── 2. Parse the inbound email event ────────────────────────────
-    // const event = req.body;
-
-    // Resend wraps it as { type: 'email.received', data: { ... } }
+    // ── 2. Only handle inbound emails ────────────────────────────────
     if (event.type !== 'email.received') {
       return res.json({ success: true, message: 'Event ignored' });
     }
 
-    const mail = event.data || event;
+    const mail    = event.data || {};
+    const emailId = mail.email_id;
+    const from    = mail.from    || 'unknown@unknown.com';
+    const subject = mail.subject || '(no subject)';
+    const to      = Array.isArray(mail.to) ? mail.to[0] : (mail.to || 'support@taskroom.in');
 
-  const from    = mail.from    || mail.sender || 'unknown@unknown.com';
-  const subject = mail.subject || '(no subject)';
-  const to      = Array.isArray(mail.to) ? mail.to[0] : (mail.to || 'support@taskroom.in');
+    console.log(`[support/inbound] Received from=${from} subject="${subject}" email_id=${emailId}`);
 
-  // ── Extract body from attachments (Resend sends body as MIME parts) ──
-  let html = mail.html || null;
-  let text = mail.text || null;
+    // ── 3. Fetch full email body via Resend API ───────────────────────
+    // The email.received webhook never includes html/text — must fetch separately
+    let html = null;
+    let text = null;
 
-  const attachments = mail.attachments || [];
-  for (const att of attachments) {
-    // Resend encodes body as base64 in attachments with content_type
-    const ct = (att.content_type || att.type || '').toLowerCase();
-    const content = att.content
-      ? Buffer.from(att.content, 'base64').toString('utf8')
-      : (att.body || att.data || null);
+    if (emailId) {
+      try {
+        const { data: fullEmail, error } = await resend.emails.get(emailId);
 
-    if (!html && ct.includes('text/html'))  html = content;
-    if (!text && ct.includes('text/plain')) text = content;
-  }
+        if (error) {
+          console.warn('[support/inbound] API error:', error);
+        } else {
+          console.log('[support/inbound] fullEmail keys:', Object.keys(fullEmail || {}));
+          html = fullEmail?.html  || null;
+          text = fullEmail?.text  || null;
 
-  // ── Fallback: fetch full email via Resend API using email_id ─────────
-  if (!html && !text && mail.email_id) {
-    try {
-      const { Resend } = require('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const fetched = await resend.emails.get(mail.email_id);
+          // ── Fallback: download raw MIME if html/text still null ────
+          if (!html && !text && fullEmail?.raw?.download_url) {
+            try {
+              const rawRes  = await fetch(fullEmail.raw.download_url);
+              const rawMime = await rawRes.text();
 
-      // Log the FULL raw response so we can see the exact structure
-      console.log('[support/inbound] RAW fetched:', JSON.stringify(fetched, null, 2));
+              // Extract plain text from raw MIME (simple extraction)
+              const textMatch = rawMime.match(
+                /Content-Type: text\/plain[\s\S]*?\r\n\r\n([\s\S]*?)(?:\r\n--|\r\n\r\n--)/i
+              );
+              const htmlMatch = rawMime.match(
+                /Content-Type: text\/html[\s\S]*?\r\n\r\n([\s\S]*?)(?:\r\n--|\r\n\r\n--)/i
+              );
 
-      html = fetched?.data?.html || fetched?.html || null;
-      text = fetched?.data?.text || fetched?.text || null;
-    } catch (fetchErr) {
-      console.warn('[support/inbound] Could not fetch email body:', fetchErr.message);
+              if (textMatch) text = textMatch[1].trim();
+              if (htmlMatch) html = htmlMatch[1].trim();
+
+              console.log(`[support/inbound] Raw MIME parsed: html=${!!html} text=${!!text}`);
+            } catch (rawErr) {
+              console.warn('[support/inbound] Raw MIME fetch failed:', rawErr.message);
+            }
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('[support/inbound] Could not fetch email:', fetchErr.message);
+      }
     }
-  }
 
-  // Log the full attachment object to see its exact fields
-  if (attachments.length > 0) {
-    console.log('[support/inbound] RAW attachment[0]:', JSON.stringify(attachments[0], null, 2));
-  }
+    console.log(`[support/inbound] Final: html=${!!html} text=${!!text}`);
 
-  console.log(`[support/inbound] from=${from} subject="${subject}" html=${!!html} text=${!!text} attachments=${attachments.length}`);
-
-  console.log(`[support/inbound] from=${from} subject="${subject}" html=${!!html} text=${!!text} attachments=${attachments.length}`);
-
-    // ── 3. Forward to your Gmail ─────────────────────────────────────
+    // ── 4. Forward to Gmail ──────────────────────────────────────────
     await forwardInboundEmail({ from, subject, html, text, to });
 
     res.json({ success: true, message: 'Forwarded' });
 
   } catch (err) {
     console.error('[support/inbound] error:', err.message);
-    // Always return 200 to Resend so it doesn't retry endlessly
     res.status(200).json({ success: false, message: err.message });
   }
 });
