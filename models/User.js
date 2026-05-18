@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: [true, 'Username is required'],
-    unique: true,
+    // unique: true,
     trim: true,
     minlength: [3, 'Username must be at least 3 characters'],
     maxlength: [30, 'Username cannot exceed 30 characters']
@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   mobile: {
     type: String,
     required: [true, 'Mobile number is required'],
-    unique: true,
+    // unique: true,
     validate: {
       validator: function(v) {
         return /^[0-9]{10}$/.test(v);

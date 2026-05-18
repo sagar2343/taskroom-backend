@@ -75,10 +75,13 @@ const organizationSchema = new mongoose.Schema({
     lowercase: true,
     validate: {
       validator(v) {
-        if (!v) return true;
-        return /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(v);
+        if (!v || v.trim() === '') return true;
+        // Reject if it looks like an email
+        if (v.includes('@')) return false;
+        // Allow domain.com, sub.domain.com etc.
+        return /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(v);
       },
-      message: 'Please enter a valid domain (e.g., company.com)',
+      message: 'Please enter a valid domain (e.g., company.com) — not an email address',
     },
   },
 

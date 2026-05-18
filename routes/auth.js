@@ -7,6 +7,41 @@ const { sendWelcomeEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
+// @route   POST /api/auth/check-username
+// @desc    Check if username is available within an org (pre-validation)
+// @access  Public
+router.post('/check-username', async (req, res) => {
+  try {
+    const { username, organizationCode } = req.body;
+
+    if (!username) {
+      return res.json({ available: false, message: 'Username is required' });
+    }
+
+    // If org code provided, check within that org only
+    if (organizationCode) {
+      const org = await require('../models/Organization').findOne({
+        code: organizationCode.toUpperCase()
+      });
+      if (!org) return res.json({ available: true }); // org doesn't exist yet — fine
+
+      const exists = await User.findOne({
+        organization: org._id,
+        username: username.toLowerCase().trim()
+      });
+      return res.json({ available: !exists });
+    }
+
+    // No org code — just check globally (used during org creation
+    // before org exists, so always available at this point)
+    return res.json({ available: true });
+
+  } catch (err) {
+    // Non-fatal — if check fails, let the real register handle it
+    return res.json({ available: true });
+  }
+});
+
 // @route   POST /api/auth/register
 // @desc    Register new user (within an organization)
 // @access  Public (requires organization code)
@@ -76,13 +111,15 @@ router.post('/register', async (req, res) => {
       if (existingUser.username === username) {
         return res.status(400).json({
           success: false,
-          message: 'Username already exists in this organization'
+          message: 'Username already taken',
+          field: 'username',
         });
       }
       if (existingUser.mobile === mobile) {
         return res.status(400).json({
           success: false,
-          message: 'Mobile number already registered in this organization'
+          message: 'Mobile number already registered',
+          field: 'mobile',
         });
       }
     }
@@ -182,9 +219,22 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Handle MongoDB duplicate key — gives a clear field-level message
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      const fieldLabel = field === 'username' ? 'Username'
+                       : field === 'mobile'   ? 'Mobile number'
+                       : field;
+      return res.status(400).json({
+        success: false,
+        message: `${fieldLabel} already taken. Please choose a different one.`,
+        field,
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Server error during registration'
+      message: 'Registration failed. Please try again.'
     });
   }
 });
