@@ -110,7 +110,7 @@ async function sendPaymentReceipt({
 
 /* ── FORWARD INBOUND EMAIL TO GMAIL ────────────────────────────────── */
 async function forwardInboundEmail({
-  from, subject, text, html, to,
+  from, subject, html, text, to, attachments = [],
 }) {
   const forwardTo = process.env.SUPPORT_FORWARD_TO;
   if (!forwardTo) {
@@ -118,85 +118,88 @@ async function forwardInboundEmail({
     return;
   }
 
-  await sendEmail({
-    to:      forwardTo,
-    subject: `[TaskRoom Support] ${subject || '(no subject)'}`,
-    replyTo: from,
-    fromSupport: true,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <body style="font-family:Inter,sans-serif;
-                   background:#f5f5f5;padding:24px;margin:0">
-        <div style="max-width:600px;margin:0 auto;background:#fff;
-                    border-radius:12px;overflow:hidden;
-                    box-shadow:0 2px 8px rgba(0,0,0,.08)">
+  // Wrap the original body in our branded template
+  const wrappedHtml = `
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family:Inter,sans-serif;background:#f5f5f5;padding:24px;margin:0">
+      <div style="max-width:600px;margin:0 auto;background:#fff;
+                  border-radius:12px;overflow:hidden;
+                  box-shadow:0 2px 8px rgba(0,0,0,.08)">
 
-          <!-- Banner -->
-          <div style="background:#137fec;padding:18px 28px;
-                      display:flex;align-items:center;gap:12px">
-            <span style="font-size:22px">📩</span>
-            <div>
-              <div style="color:#fff;font-weight:700;font-size:15px">
-                New message to support@taskroom.in
-              </div>
-              <div style="color:rgba(255,255,255,.75);font-size:12px;
-                          margin-top:2px">
-                Forwarded by TaskRoom
-              </div>
+        <!-- Banner -->
+        <div style="background:#137fec;padding:18px 28px;
+                    display:flex;align-items:center;gap:12px">
+          <span style="font-size:22px">📩</span>
+          <div>
+            <div style="color:#fff;font-weight:700;font-size:15px">
+              New message to support@taskroom.in
+            </div>
+            <div style="color:rgba(255,255,255,.75);font-size:12px;margin-top:2px">
+              Forwarded by TaskRoom
             </div>
           </div>
-
-          <!-- Meta -->
-          <div style="padding:20px 28px;background:#f8f9fa;
-                      border-bottom:1px solid #eee">
-            <table style="font-size:13px;color:#555;
-                          border-collapse:collapse;width:100%">
-              <tr>
-                <td style="padding:4px 0;width:70px;
-                           color:#888;font-weight:600">FROM</td>
-                <td style="padding:4px 0">
-                  <a href="mailto:${from}" 
-                     style="color:#137fec">${from}</a>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:4px 0;color:#888;font-weight:600">TO</td>
-                <td style="padding:4px 0;color:#555">${to || 'support@taskroom.in'}</td>
-              </tr>
-              <tr>
-                <td style="padding:4px 0;color:#888;font-weight:600">
-                  SUBJECT
-                </td>
-                <td style="padding:4px 0;color:#222;font-weight:600">
-                  ${subject || '(no subject)'}
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Body -->
-          <div style="padding:28px;font-size:14px;color:#333;line-height:1.7">
-            ${html
-                ? html
-                : text
-                  ? `<pre style="font-family:inherit;white-space:pre-wrap;word-break:break-word">${text}</pre>`
-                  : `<p style="color:#999;font-style:italic">(No body content — sender may have sent a blank email)</p>`
-              }
-          </div>
-
-          <!-- Reply tip -->
-          <div style="padding:16px 28px;background:#fff8e1;
-                      border-top:1px solid #ffe082;
-                      font-size:12px;color:#888">
-            💡 Hit <strong>Reply</strong> in Gmail to respond directly 
-            to <strong>${from}</strong>
-          </div>
-
         </div>
-      </body>
-      </html>
-    `,
+
+        <!-- Meta -->
+        <div style="padding:20px 28px;background:#f8f9fa;border-bottom:1px solid #eee">
+          <table style="font-size:13px;color:#555;border-collapse:collapse;width:100%">
+            <tr>
+              <td style="padding:4px 0;width:70px;color:#888;font-weight:600">FROM</td>
+              <td style="padding:4px 0">
+                <a href="mailto:${from}" style="color:#137fec">${from}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#888;font-weight:600">TO</td>
+              <td style="padding:4px 0;color:#555">${to || 'support@taskroom.in'}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;color:#888;font-weight:600">SUBJECT</td>
+              <td style="padding:4px 0;color:#222;font-weight:600">
+                ${subject || '(no subject)'}
+              </td>
+            </tr>
+            ${attachments.length > 0 ? `
+            <tr>
+              <td style="padding:4px 0;color:#888;font-weight:600">FILES</td>
+              <td style="padding:4px 0;color:#555">
+                ${attachments.map(a => a.filename || 'unnamed').join(', ')}
+              </td>
+            </tr>` : ''}
+          </table>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:28px;font-size:14px;color:#333;line-height:1.7">
+          ${html
+            ? html
+            : text
+              ? `<pre style="font-family:inherit;white-space:pre-wrap;word-break:break-word">${text}</pre>`
+              : `<p style="color:#999;font-style:italic">(No body content — sender may have sent a blank email)</p>`
+          }
+        </div>
+
+        <!-- Reply tip -->
+        <div style="padding:16px 28px;background:#fff8e1;
+                    border-top:1px solid #ffe082;font-size:12px;color:#888">
+          💡 Hit <strong>Reply</strong> in Gmail to respond directly
+          to <strong>${from}</strong>
+        </div>
+
+      </div>
+    </body>
+    </html>
+  `;
+
+  // Use resend directly here — sendEmail() wrapper doesn't support attachments
+  return resend.emails.send({
+    from:      process.env.RESEND_FROM_SUPPORT || 'TaskRoom <support@taskroom.in>',
+    to:        [forwardTo],
+    reply_to:  from,
+    subject:   `[TaskRoom Support] ${subject || '(no subject)'}`,
+    html:      wrappedHtml,
+    ...(attachments.length > 0 ? { attachments } : {}),
   });
 }
 
