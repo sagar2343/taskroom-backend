@@ -24,6 +24,19 @@ function getRazorpay() {
   return _razorpay;
 }
 
+// @route   GET /api/billing/plans/public
+// @desc    Public plan listing for landing page — no auth required
+// @access  Public
+router.get('/plans/public', async (req, res) => {
+  try {
+    const Plan = require('../models/Plan');
+    const plans = await Plan.getActive(); // already sorted by sortOrder
+    res.json({ success: true, data: plans });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── GET /api/billing/plans  (public — from DB) ────────────────────────────────
 router.get('/plans', async (req, res) => {
   try {

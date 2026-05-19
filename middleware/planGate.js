@@ -1,14 +1,5 @@
 'use strict';
 // middleware/planGate.js
-//
-// Usage in any route file:
-//   const { requireFeature, requirePlan } = require('../middleware/planGate');
-//
-//   // Block if org doesn't have GPS trace on their plan:
-//   router.get('/trace', authMiddleware, requireFeature('gpsTrace'), handler);
-//
-//   // Block if org is below 'pro':
-//   router.get('/export', authMiddleware, requirePlan('pro'), handler);
 
 const Organization = require('../models/Organization');
 const PLAN_ORDER   = ['starter', 'pro', 'business', 'enterprise'];
