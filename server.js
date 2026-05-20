@@ -46,12 +46,26 @@ function isOriginAllowed(origin) {
 //   cors: { origin: '*', methods: ['GET', 'POST'] },
 // });
 // app.set('io', io);
+// const io = new Server(server, {
+//   cors: {
+//     origin:      (origin, cb) => cb(null, isOriginAllowed(origin)),
+//     methods:     ['GET', 'POST'],
+//     credentials: true,
+//   },
+// });
 const io = new Server(server, {
   cors: {
     origin:      (origin, cb) => cb(null, isOriginAllowed(origin)),
     methods:     ['GET', 'POST'],
     credentials: true,
   },
+  // ── Render production WebSocket compatibility ──────────────────────────
+  transports:      ['polling', 'websocket'],
+  allowUpgrades:   true,
+  upgradeTimeout:  30000,
+  pingTimeout:     60000,   // Render idles connections; give more time
+  pingInterval:    25000,
+  maxHttpBufferSize: 1e6,
 });
 app.set('io', io);
 

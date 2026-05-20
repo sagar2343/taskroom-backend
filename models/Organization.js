@@ -1,55 +1,6 @@
 'use strict';
 const mongoose = require('mongoose');
 
-// // ─── Plan Limits Configuration ────────────────────────────────────────────────
-// // Single source of truth. Import this anywhere you need to check limits.
-// const PLAN_LIMITS = {
-//   starter: {
-//     label:              'Starter',
-//     price:              0,
-//     maxEmployees:       20,
-//     maxRooms:           5,
-//     historyDays:        7,
-//     gpsTrace:           false,
-//     exportReports:      false,
-//     productivityScores: false,
-//     perSeatPrice:       0,
-//   },
-//   pro: {
-//     label:              'Pro',
-//     price:              1499,
-//     maxEmployees:       100,
-//     maxRooms:           30,
-//     historyDays:        90,
-//     gpsTrace:           true,
-//     exportReports:      true,
-//     productivityScores: true,
-//     perSeatPrice:       25,
-//   },
-//   business: {
-//     label:              'Business',
-//     price:              3999,
-//     maxEmployees:       500,
-//     maxRooms:           100,
-//     historyDays:        365,
-//     gpsTrace:           true,
-//     exportReports:      true,
-//     productivityScores: true,
-//     perSeatPrice:       20,   // ₹20/seat (cheaper than Pro to reward volume)
-//   },
-//   enterprise: {
-//     label:              'Enterprise',
-//     price:              null,          // contact sales
-//     maxEmployees:       Infinity,
-//     maxRooms:           Infinity,
-//     historyDays:        Infinity,
-//     gpsTrace:           true,
-//     exportReports:      true,
-//     productivityScores: true,
-//     perSeatPrice:       20,
-//   },
-// };
-
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const organizationSchema = new mongoose.Schema({
   // Basic Info
@@ -203,7 +154,6 @@ organizationSchema.virtual('limits').get(function () {
 });
 
 // ─── Statics ──────────────────────────────────────────────────────────────────
-// organizationSchema.statics.PLAN_LIMITS = PLAN_LIMITS;
 
 organizationSchema.statics.generateOrgCode = async function () {
   let code, exists = true;
@@ -290,4 +240,3 @@ organizationSchema.methods.hasFeature = function (feature) {
 };
 
 module.exports = mongoose.model('Organization', organizationSchema);
-// module.exports.PLAN_LIMITS = PLAN_LIMITS;
