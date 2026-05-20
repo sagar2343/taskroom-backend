@@ -60,6 +60,7 @@ const io = new Server(server, {
     credentials: true,
   },
   // ── Render production WebSocket compatibility ──────────────────────────
+  allowEIO3:       true, 
   transports:      ['polling', 'websocket'],
   allowUpgrades:   true,
   upgradeTimeout:  30000,
