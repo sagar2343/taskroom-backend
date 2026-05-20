@@ -1,169 +1,130 @@
-'use strict';
 // socket/locationSocket.js
+//
+// Room naming convention:  "task_location:{roomId}"
+//
+// ── Employee ────────────────────────────────────────────────────────────────
+//  • emit  "join_task_location"   { token, taskId }
+//    → server joins socket to "task_location:{roomId}" and stores employee meta
+//  • emit  "location_update"      { taskId, stepId, lat, lng, accuracy?, battery? }
+//    → server re-broadcasts to same room as "employee_location"
+//    → everyone in the room (manager) gets real-time position
+//  • emit  "leave_task_location"  { taskId }
+//    → cleanly leaves the room
+//
+// ── Manager ─────────────────────────────────────────────────────────────────
+//  • emit  "watch_task_location"  { token, taskId }
+//    → server joins socket to same "task_location:{roomId}"
+//    → starts receiving "employee_location" broadcasts
+//  • emit  "unwatch_task_location" { taskId }
+//    → leaves room
+//
+// ── Server → Client broadcasts ──────────────────────────────────────────────
+//  "employee_location"  { taskId, stepId, lat, lng, accuracy, battery, timestamp }
+//  "tracking_stopped"   { taskId, reason }   (on task complete / cancel)
 
-const jwt  = require('jsonwebtoken');
-const Task = require('../models/Task');
-const User = require('../models/User');
+const jwt      = require('jsonwebtoken');
+const Task     = require('../models/Task');
+const User     = require('../models/User');
 
-// ─── Token resolver ───────────────────────────────────────────────────────────
-// Priority: event payload → handshake.auth.token → handshake.query.token
-// Also strips "Bearer " prefix in case Flutter passes the full header value.
-function resolveToken(socket, eventToken) {
-  const raw =
-    eventToken                          ||
-    socket.handshake?.auth?.token       ||   // .setAuth({'token': t}) in Flutter
-    socket.handshake?.query?.token      ||   // ?token=... in URL
-    null;
-
-  if (!raw) throw new Error('No authentication token provided');
-  return raw.startsWith('Bearer ') ? raw.slice(7) : raw;
-}
-
-// ─── Token verifier ───────────────────────────────────────────────────────────
-async function verifyToken(socket, eventToken) {
-  const token   = resolveToken(socket, eventToken);
+// ── Helper: verify JWT and return { userId, user } or throw ──────────────────
+async function verifyToken(token) {
+  if (!token) throw new Error('No token');
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   const user    = await User.findById(decoded.userId).select('-password');
   if (!user) throw new Error('User not found');
   return { userId: user._id, user };
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+// ── Helper: resolve the Socket.IO room name from a taskId ───────────────────
+async function roomNameForTask(taskId, organizationId) {
+  const task = await Task.findOne({ _id: taskId, organization: organizationId })
+    .select('room');
+  if (!task) throw new Error('Task not found');
+  return `task_location:${task.room.toString()}:${taskId}`;
+}
+
+// ── Main export ──────────────────────────────────────────────────────────────
 function registerSocketHandlers(io) {
 
-  // ── Connection-level auth middleware ────────────────────────────────────────
-  // Resolves the user ONCE at connect time if token is in handshake.
-  // Events will still work even if this fails (falls back to per-event token).
-  io.use(async (socket, next) => {
-    try {
-      const { userId, user } = await verifyToken(socket, null);
-      socket.data.userId = userId.toString();
-      socket.data.user   = user;
-      console.log(`[WS] auth ok at connect — user=${userId}`);
-    } catch {
-      // No token in handshake — allowed. Per-event auth handles it.
-    }
-    next();
-  });
-
-  // ─────────────────────────────────────────────────────────────────────────────
   io.on('connection', (socket) => {
-    console.log(`[WS] connected sid=${socket.id} uid=${socket.data.userId ?? 'anon'}`);
+    console.log(`[WS] connected: ${socket.id}`);
 
-    // ─── EMPLOYEE: join tracking room ────────────────────────────────────────
-    // Payload: { taskId, token? }
-    socket.on('join_task_location', async (payload = {}) => {
-      const { taskId, token } = payload;
+    // ── EMPLOYEE: join real-time tracking room ──────────────────────────────
+    socket.on('join_task_location', async ({ token, taskId } = {}) => {
       try {
-        let userId, user;
-        if (socket.data.userId) {
-          userId = socket.data.userId;
-          user   = socket.data.user;
-        } else {
-          ({ userId, user } = await verifyToken(socket, token));
-          socket.data.userId = userId.toString();
-          socket.data.user   = user;
-        }
+        const { userId, user } = await verifyToken(token);
 
-        if (!taskId) {
-          socket.emit('socket_error', { message: 'taskId is required' });
-          return;
-        }
-
+        // Must be an employee and the task must be assigned to them
         const task = await Task.findOne({
-          _id:          taskId,
+          _id: taskId,
           organization: user.organization,
-          assignedTo:   userId,
-          status:       'in_progress',
+          assignedTo: userId,
+          status: 'in_progress'
         }).select('room isFieldWork status');
 
         if (!task) {
-          socket.emit('socket_error', { message: 'No active task found for this employee' });
+          socket.emit('error', { message: 'Active task not found' });
           return;
         }
 
         const room = `task_location:${task.room.toString()}:${taskId}`;
         socket.join(room);
 
+        // Stash on socket for later reference
         socket.data.role   = 'employee';
+        socket.data.userId = userId.toString();
         socket.data.taskId = taskId;
         socket.data.room   = room;
 
         socket.emit('joined_task_location', { room, taskId });
-        console.log(`[WS] employee ${userId} joined ${room}`);
+        console.log(`[WS] Employee ${userId} joined ${room}`);
 
       } catch (err) {
-        console.error(`[WS] join_task_location error: ${err.message}`);
-        socket.emit('socket_error', { message: err.message });
+        socket.emit('error', { message: err.message });
       }
     });
 
-    // ─── EMPLOYEE: GPS broadcast ─────────────────────────────────────────────
-    // Payload: { taskId, stepId, lat, lng, accuracy?, battery? }
-    socket.on('location_update', (payload = {}) => {
-      const { taskId, stepId, lat, lng, accuracy, battery } = payload;
+    // ── EMPLOYEE: broadcast current GPS position ────────────────────────────
+    socket.on('location_update', ({ taskId, stepId, lat, lng, accuracy, battery } = {}) => {
+      if (!socket.data.room || socket.data.taskId !== taskId) return;
 
-      if (!socket.data.room) {
-        socket.emit('socket_error', { message: 'You must join a tracking room first' });
-        return;
-      }
-      // Silently ignore if taskId doesn't match current room
-      if (socket.data.taskId !== taskId) return;
-
-      socket.to(socket.data.room).emit('employee_location', {
+      const payload = {
         taskId,
-        stepId:    stepId   ?? null,
+        stepId,
         lat,
         lng,
-        accuracy:  accuracy ?? null,
-        battery:   battery  ?? null,
+        accuracy: accuracy ?? null,
+        battery:  battery  ?? null,
         timestamp: new Date().toISOString(),
-      });
+      };
+
+      // Broadcast to every socket in the room (including manager, excluding sender)
+      socket.to(socket.data.room).emit('employee_location', payload);
     });
 
-    // ─── EMPLOYEE: leave room ────────────────────────────────────────────────
-    socket.on('leave_task_location', (payload = {}) => {
-      const { taskId } = payload;
+    // ── EMPLOYEE: leave room ────────────────────────────────────────────────
+    socket.on('leave_task_location', ({ taskId } = {}) => {
       if (socket.data.room) {
-        socket.to(socket.data.room).emit('tracking_stopped', {
-          taskId, reason: 'Employee ended tracking',
-        });
         socket.leave(socket.data.room);
-        console.log(`[WS] employee ${socket.data.userId} left ${socket.data.room}`);
+        console.log(`[WS] Employee ${socket.data.userId} left ${socket.data.room}`);
         socket.data.room = null;
       }
     });
 
-    // ─── MANAGER: start watching ─────────────────────────────────────────────
-    // Payload: { taskId, token? }
-    socket.on('watch_task_location', async (payload = {}) => {
-      const { taskId, token } = payload;
+    // ── MANAGER: watch an employee's location ──────────────────────────────
+    socket.on('watch_task_location', async ({ token, taskId } = {}) => {
       try {
-        let userId, user;
-        if (socket.data.userId) {
-          userId = socket.data.userId;
-          user   = socket.data.user;
-        } else {
-          ({ userId, user } = await verifyToken(socket, token));
-          socket.data.userId = userId.toString();
-          socket.data.user   = user;
-        }
+        const { userId, user } = await verifyToken(token);
 
-        if (!taskId) {
-          socket.emit('socket_error', { message: 'taskId is required' });
-          return;
-        }
-
+        // Must be manager and must own the task
         const task = await Task.findOne({
-          _id:          taskId,
+          _id: taskId,
           organization: user.organization,
-          createdBy:    userId,   // manager must own the task
+          createdBy: userId,
         }).select('room status assignedTo');
 
         if (!task) {
-          socket.emit('socket_error', {
-            message: 'Task not found. Make sure you created this task.',
-          });
+          socket.emit('error', { message: 'Task not found' });
           return;
         }
 
@@ -171,34 +132,31 @@ function registerSocketHandlers(io) {
         socket.join(room);
 
         socket.data.role   = 'manager';
+        socket.data.userId = userId.toString();
         socket.data.taskId = taskId;
         socket.data.room   = room;
 
-        socket.emit('watching_task_location', {
-          room,
-          taskId,
-          taskStatus: task.status,
-        });
-        console.log(`[WS] manager ${userId} watching ${room}`);
+        socket.emit('watching_task_location', { room, taskId, taskStatus: task.status });
+        console.log(`[WS] Manager ${userId} watching ${room}`);
 
       } catch (err) {
-        console.error(`[WS] watch_task_location error: ${err.message}`);
-        socket.emit('socket_error', { message: err.message });
+        socket.emit('error', { message: err.message });
       }
     });
 
-    // ─── MANAGER: stop watching ──────────────────────────────────────────────
-    socket.on('unwatch_task_location', (payload = {}) => {
+    // ── MANAGER: stop watching ──────────────────────────────────────────────
+    socket.on('unwatch_task_location', ({ taskId } = {}) => {
       if (socket.data.room) {
         socket.leave(socket.data.room);
-        console.log(`[WS] manager ${socket.data.userId} left ${socket.data.room}`);
+        console.log(`[WS] Manager ${socket.data.userId} stopped watching ${socket.data.room}`);
         socket.data.room = null;
       }
     });
 
-    // ─── Cleanup on disconnect ────────────────────────────────────────────────
-    socket.on('disconnect', (reason) => {
-      console.log(`[WS] disconnected sid=${socket.id} role=${socket.data.role ?? 'anon'} reason=${reason}`);
+    // ── Disconnect cleanup ──────────────────────────────────────────────────
+    socket.on('disconnect', () => {
+      console.log(`[WS] disconnected: ${socket.id} (${socket.data.role ?? 'unknown'})`);
+      // Socket.IO automatically removes it from all rooms — no action needed
     });
   });
 }

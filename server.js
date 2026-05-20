@@ -48,14 +48,10 @@ function isOriginAllowed(origin) {
 // app.set('io', io);
 const io = new Server(server, {
   cors: {
-    origin:         (origin, cb) => cb(null, isOriginAllowed(origin)),
-    methods:        ['GET', 'POST'],
-    credentials:    true,
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    origin:      (origin, cb) => cb(null, isOriginAllowed(origin)),
+    methods:     ['GET', 'POST'],
+    credentials: true,
   },
-  allowEIO3:    true,   // ← CRITICAL: accept socket_io_client v1/v2/v3 from Flutter
-  pingTimeout:  60000,  // ← 60 s before declaring dead (mobile networks need longer)
-  pingInterval: 25000,  // ← heartbeat every 25 s
 });
 app.set('io', io);
 
