@@ -100,7 +100,7 @@ router.get('/overview', async (req, res) => {
 //  GET /api/analytics/productivity
 //  Weekly productivity scores per employee (requires pro+)
 // ═══════════════════════════════════════════════════════════════════════════════
-router.get('/productivity', requireFeature('productivityScores'), async (req, res) => {
+router.get('/productivity', requireFeature('performanceDashboard'), async (req, res) => {
   try {
     const orgId = new mongoose.Types.ObjectId(req.user.organization);
 

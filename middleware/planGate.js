@@ -2,10 +2,12 @@
 // middleware/planGate.js
 
 const Organization = require('../models/Organization');
-const PLAN_ORDER   = ['starter', 'pro', 'business', 'enterprise'];
+
+// FIX: was ['starter', 'pro', 'business', 'enterprise'] — 'pro' does not exist
+const PLAN_ORDER = ['starter', 'growth', 'business', 'enterprise'];
 
 /**
- * Attach the org document (with limits virtual) to req.org.
+ * Attach the org document (with limits synced from DB Plan) to req.org.
  * Called by every gate — not used standalone.
  */
 async function attachOrg(req, res) {
@@ -24,7 +26,7 @@ async function attachOrg(req, res) {
 
   await org.expireTrial();
 
-  // ── Sync planLimits to effectivePlan so hasFeature() is accurate ──────────
+  // Always sync planLimits from the DB Plan document so hasFeature() is accurate
   const Plan = require('../models/Plan');
   const effectivePlanDoc = await Plan.getBySlug(org.effectivePlan);
   if (effectivePlanDoc) {
@@ -44,8 +46,9 @@ async function attachOrg(req, res) {
 
 /**
  * Gate: require a specific boolean feature flag.
+ * Feature keys must match exactly what is stored in Plan.features in MongoDB.
  *
- * @param {string} feature - key in PLAN_LIMITS (e.g. 'gpsTrace', 'exportReports')
+ * @param {string} feature - e.g. 'liveTracking', 'exportReports', 'performanceDashboard'
  */
 function requireFeature(feature) {
   return async (req, res, next) => {
@@ -54,7 +57,8 @@ function requireFeature(feature) {
       if (!org) return;
 
       if (!org.hasFeature(feature)) {
-        const neededPlan = findMinPlanForFeature(feature);
+        // FIX: findMinPlanForFeature is now async and queries MongoDB
+        const neededPlan = await findMinPlanForFeature(feature);
         return res.status(403).json({
           success:     false,
           message:     `This feature requires the ${neededPlan} plan or higher.`,
@@ -66,7 +70,7 @@ function requireFeature(feature) {
 
       next();
     } catch (err) {
-      console.error('planGate error:', err.message);
+      console.error('planGate requireFeature error:', err.message);
       res.status(500).json({ success: false, message: 'Plan check failed.' });
     }
   };
@@ -75,7 +79,7 @@ function requireFeature(feature) {
 /**
  * Gate: require at least a certain plan tier.
  *
- * @param {string} minPlan - 'starter' | 'pro' | 'business' | 'enterprise'
+ * @param {string} minPlan - 'starter' | 'growth' | 'business' | 'enterprise'
  */
 function requirePlan(minPlan) {
   return async (req, res, next) => {
@@ -83,7 +87,7 @@ function requirePlan(minPlan) {
       const org = await attachOrg(req, res);
       if (!org) return;
 
-      const currentIdx = PLAN_ORDER.indexOf(org.effectivePlan);
+      const currentIdx  = PLAN_ORDER.indexOf(org.effectivePlan);
       const requiredIdx = PLAN_ORDER.indexOf(minPlan);
 
       if (currentIdx < requiredIdx) {
@@ -98,7 +102,7 @@ function requirePlan(minPlan) {
 
       next();
     } catch (err) {
-      console.error('planGate error:', err.message);
+      console.error('planGate requirePlan error:', err.message);
       res.status(500).json({ success: false, message: 'Plan check failed.' });
     }
   };
@@ -106,7 +110,6 @@ function requirePlan(minPlan) {
 
 /**
  * Gate: enforce employee count limit before adding a new member.
- * Use on /api/auth/register or wherever employees are created.
  */
 async function enforceEmployeeLimit(req, res, next) {
   try {
@@ -157,10 +160,13 @@ async function enforceRoomLimit(req, res, next) {
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
-function findMinPlanForFeature(feature) {
-  const { PLAN_LIMITS } = require('../models/Organization');
-  for (const plan of PLAN_ORDER) {
-    if (PLAN_LIMITS[plan] && PLAN_LIMITS[plan][feature]) return plan;
+// FIX: Was using static PLAN_LIMITS (which is commented out in Organization.js
+//      and would crash). Now queries MongoDB Plan collection dynamically.
+async function findMinPlanForFeature(feature) {
+  const Plan = require('../models/Plan');
+  const plans = await Plan.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
+  for (const plan of plans) {
+    if (plan.features && plan.features[feature] === true) return plan.slug;
   }
   return 'enterprise';
 }

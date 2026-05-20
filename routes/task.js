@@ -622,7 +622,7 @@ router.patch('/cancel', isManager, async (req, res) => {
 
 // ─── POST /api/tasks/live-location ── Manager: Live location ──────────
 //  Body: { taskId }
-router.post('/live-location', isManager, requireFeature('gpsTrace'), async (req, res) => {
+router.post('/live-location', isManager, requireFeature('liveTracking'), async (req, res) => {
   try {
     const { taskId } = req.body;
 
@@ -680,7 +680,7 @@ router.post('/live-location', isManager, requireFeature('gpsTrace'), async (req,
 
 // ─── POST /api/tasks/location-trace ── Manager: Full route ────────────
 //  Body: { taskId, stepId? }
-router.post('/location-trace', isManager, requireFeature('gpsTrace'), async (req, res) => {
+router.post('/location-trace', isManager, requireFeature('liveTracking'), async (req, res) => {
   try {
     const { taskId, stepId } = req.body;
 
