@@ -48,7 +48,8 @@ function isOriginAllowed(origin) {
 // app.set('io', io);
 const io = new Server(server, {
   cors: {
-    origin:      (origin, cb) => cb(null, isOriginAllowed(origin)),
+    // origin:      (origin, cb) => cb(null, isOriginAllowed(origin)),
+    origin: ["*"],
     methods:     ['GET', 'POST'],
     credentials: true,
   },
