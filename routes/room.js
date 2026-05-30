@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/auth');
 const { isManager } = require('../middleware/roleCheck');
 const { enforceRoomLimit } = require('../middleware/planGate');
 const Attendance = require('../models/Attendance');
+const Task = require('../models/Task');
 
 const router = express.Router();
 
@@ -154,51 +155,146 @@ router.get('/', authMiddleware, async (req, res) => {
 // @access  Private
 router.get('/my-rooms', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const user     = await User.findById(req.userId);
+    const page     = parseInt(req.query.page)  || 1;
+    const limit    = parseInt(req.query.limit) || 10;
+    const skip     = (page - 1) * limit;
     const category = req.query.category;
-    const search = req.query.search || '';
-
+    const search   = req.query.search || '';
+ 
     let query = {
       organization: user.organization,
-      // isArchived: false,
       $or: [
         { createdBy: req.userId },
         { 'members.user': req.userId }
       ]
     };
-
-    if (category) {
-      query.category = category;
-    }
-
+ 
+    if (category) query.category = category;
+ 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
+        { name:     { $regex: search, $options: 'i' } },
         { roomCode: { $regex: search, $options: 'i' } },
         { category: { $regex: search, $options: 'i' } }
       ];
     }
-    
+ 
     const totalRooms = await Room.countDocuments(query);
-
+ 
     const rooms = await Room.find(query)
       .populate('createdBy', 'username fullName profilePicture')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip);
-
-    // Add user's role in each room
-    const roomsWithRole = rooms.map(room => {
-      const roomObj = room.toObject();
-      const member = room.members.find(m => m.user.toString() === req.userId.toString());
-      roomObj.myRole = member ? member.role : (room.createdBy._id.toString() === req.userId.toString() ? 'owner' : 'none');
+ 
+    // Decorate each room with the requesting user's role (unchanged)
+    let roomsWithRole = rooms.map(room => {
+      const roomObj    = room.toObject();
+      const member     = room.members.find(
+        m => m.user.toString() === req.userId.toString()
+      );
+      roomObj.myRole   = member
+        ? member.role
+        : (room.createdBy._id.toString() === req.userId.toString() ? 'owner' : 'none');
       roomObj.myStatus = member ? member.status : 'none';
       return roomObj;
     });
-
+ 
+    // ── Per-room task summary (single aggregate, mutually exclusive buckets) ─
+    try {
+      const now     = new Date();
+      const roomIds = rooms.map(r => r._id);
+ 
+      // Employees see only their own assigned tasks.
+      // Managers see tasks they created (team-level overview).
+      const matchQuery = user.role === 'employee'
+        ? {
+            organization: user.organization,
+            assignedTo:   user._id,
+            room:         { $in: roomIds },
+            status:       { $in: ['pending', 'in_progress'] }   // excludes completed/cancelled
+          }
+        : {
+            organization: user.organization,
+            createdBy:    user._id,
+            room:         { $in: roomIds },
+            status:       { $in: ['pending', 'in_progress'] }
+          };
+ 
+      const taskSummaries = await Task.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$room',
+ 
+            // ── MUTUALLY EXCLUSIVE buckets ─────────────────────────────────
+            //
+            // overdue:    deadline has passed  (regardless of status)
+            //             → highest priority, checked FIRST
+            overdue: {
+              $sum: {
+                $cond: [
+                  { $lt: ['$endDatetime', now] },   // deadline passed
+                  1, 0
+                ]
+              }
+            },
+ 
+            // inProgress: actively running AND deadline NOT yet passed
+            inProgress: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $eq:  ['$status', 'in_progress'] },
+                    { $gte: ['$endDatetime', now] }    // still within window
+                  ]},
+                  1, 0
+                ]
+              }
+            },
+ 
+            // pending:    not yet started AND deadline NOT yet passed
+            pending: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $eq:  ['$status', 'pending']  },
+                    { $gte: ['$endDatetime', now]   }
+                  ]},
+                  1, 0
+                ]
+              }
+            },
+ 
+            total: { $sum: 1 }
+          }
+        }
+      ]);
+ 
+      // roomId (string) → summary object
+      const summaryMap = {};
+      taskSummaries.forEach(s => {
+        summaryMap[s._id.toString()] = {
+          inProgress: s.inProgress,
+          pending:    s.pending,
+          overdue:    s.overdue,
+          total:      s.total
+        };
+      });
+ 
+      // Inject taskSummary into every room; null when no active tasks exist
+      roomsWithRole = roomsWithRole.map(room => ({
+        ...room,
+        taskSummary: summaryMap[room._id?.toString()] || null
+      }));
+ 
+    } catch (summaryErr) {
+      // Non-fatal — a failed aggregate still returns the full room list
+      console.error('Task summary aggregate failed (non-fatal):', summaryErr);
+    }
+    // ── End task summary ─────────────────────────────────────────────────────
+ 
     res.json({
       success: true,
       message: 'ok',
@@ -206,22 +302,18 @@ router.get('/my-rooms', authMiddleware, async (req, res) => {
         rooms: roomsWithRole,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalRooms / limit),
+          totalPages:  Math.ceil(totalRooms / limit),
           totalRooms,
           limit
         }
       }
     });
-
+ 
   } catch (error) {
     console.error('Get my rooms error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 // @route   GET /api/rooms/:id
 // @desc    Get room details
 // @access  Private
