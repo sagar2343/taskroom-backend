@@ -274,9 +274,9 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne(query).populate('organization');
     // const user = await User.findOne({ username });
     if (!user) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        message: 'User Not found'
+        message: 'User not found'
       });
     }
 
@@ -299,7 +299,7 @@ router.post('/login', async (req, res) => {
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: 'Invalid credentials'
       });
