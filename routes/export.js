@@ -527,4 +527,109 @@ router.get('/team-summary/pdf', async (req, res) => {
   }
 });
 
+
+// GET /api/export/team-summary/excel
+router.get('/team-summary/excel', async (req, res) => {
+  try {
+    const org  = req.org || await Organization.findById(req.user.organization);
+    const from = parseDate(req.query.from, 30);
+    const to   = parseDate(req.query.to);
+    to.setHours(23, 59, 59, 999);
+
+    const attendance = await Attendance.aggregate([
+      { $match: { organization: org._id, workDate: { $gte: from, $lte: to } } },
+      { $group: {
+          _id:            '$employee',
+          totalMinutes:   { $sum: '$totalMinutes' },
+          daysPresent:    { $sum: { $cond: [{ $gt: ['$totalMinutes', 0] }, 1, 0] } },
+          tasksCompleted: { $sum: '$tasksCompleted' },
+          tasksAssigned:  { $sum: '$tasksAssigned' },
+      }},
+    ]);
+
+    const empIds = attendance.map(a => a._id);
+    const users  = await User.find({ _id: { $in: empIds } })
+      .select('fullName username employeeId department');
+    const userMap = Object.fromEntries(users.map(u => [u._id.toString(), u]));
+
+    const rows = attendance
+      .map(a => {
+        const u    = userMap[a._id.toString()];
+        const rate = a.tasksAssigned
+          ? Math.round((a.tasksCompleted / a.tasksAssigned) * 100) : 0;
+        const avgHours = a.daysPresent
+          ? (a.totalMinutes / 60 / a.daysPresent).toFixed(1) : 0;
+        return {
+          name:      u?.fullName || u?.username || '—',
+          empId:     u?.employeeId || '—',
+          dept:      u?.department || '—',
+          days:      a.daysPresent,
+          totalHrs:  (a.totalMinutes / 60).toFixed(1) + 'h',
+          avgHrs:    avgHours + 'h',
+          completed: a.tasksCompleted,
+          assigned:  a.tasksAssigned,
+          rate:      rate + '%',
+          score:     Math.round((rate * 0.5) +
+            (Math.min(Number(avgHours), 9) / 9 * 100 * 0.5)) + '/100',
+        };
+      })
+      .sort((a, b) => parseInt(b.score) - parseInt(a.score));
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'TaskRoom';
+    const ws = wb.addWorksheet('Team Summary', {
+      pageSetup: { fitToPage: true, orientation: 'landscape' }
+    });
+
+    ws.mergeCells('A1:J1');
+    ws.getCell('A1').value = `${org.name} — Team Productivity Summary`;
+    ws.getCell('A1').font  = { bold: true, size: 14 };
+    ws.mergeCells('A2:J2');
+    ws.getCell('A2').value =
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`;
+    ws.getCell('A2').font = { size: 9, color: { argb: 'FF64748B' } };
+    ws.addRow([]);
+
+    ws.columns = [
+      { key: 'name',      width: 24 },
+      { key: 'empId',     width: 14 },
+      { key: 'dept',      width: 18 },
+      { key: 'days',      width: 12 },
+      { key: 'totalHrs',  width: 14 },
+      { key: 'avgHrs',    width: 14 },
+      { key: 'completed', width: 12 },
+      { key: 'assigned',  width: 14 },
+      { key: 'rate',      width: 14 },
+      { key: 'score',     width: 12 },
+    ];
+
+    excelHeader(ws, [
+      'Employee', 'Emp ID', 'Department', 'Days Present',
+      'Total Hours', 'Avg Hrs/Day', 'Tasks Done',
+      'Tasks Assigned', 'Completion %', 'Score'
+    ]);
+
+    rows.forEach(r => ws.addRow(r));
+
+    ws.eachRow((row, n) => {
+      if (n <= 4) return;
+      const fill = n % 2 === 0 ? 'FFF8FAFC' : 'FFFFFFFF';
+      row.eachCell(c => {
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+      });
+    });
+
+    res.setHeader('Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition',
+      `attachment; filename="team-summary-${Date.now()}.xlsx"`);
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('export/team-summary/excel error:', err);
+    if (!res.headersSent)
+      res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
