@@ -46,9 +46,11 @@ const parseDate = (str, fallbackDays = 0) => {
   return d;
 };
 
-const fmtDate    = d => d ? new Date(d).toLocaleDateString('en-IN') : '—';
-const fmtDateTime= d => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
-const fmtTime    = d => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
+const IST = 'Asia/Kolkata';
+const fmtDate    = d => d ? new Date(d).toLocaleDateString('en-IN', { timeZone: IST }) : '—';
+const fmtDateTime= d => d ? new Date(d).toLocaleString('en-IN', { timeZone: IST, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtTime    = d => d ? new Date(d).toLocaleTimeString('en-IN', { timeZone: IST, hour: '2-digit', minute: '2-digit' }) : '—';
+const nowIST     = () => new Date().toLocaleString('en-IN', { timeZone: IST });
 const fmtMins    = m => { if (!m) return '—'; const h = Math.floor(m / 60); const mn = Math.round(m % 60); return h ? `${h}h ${mn}m` : `${mn}m`; };
 const fmtPercent = (n, d) => d ? `${Math.round((n / d) * 100)}%` : '0%';
 const safeStr     = v => (v == null ? '' : String(v));
@@ -89,7 +91,7 @@ function pdfHeader(doc, orgName, title, subtitle, filters) {
   doc.rect(0, 80, W, 50).fill('#f8fafc');
   doc.fill('#0f172a').fontSize(15).font('Helvetica-Bold').text(subtitle, 40, 90);
 
-  const metaLine = ['Generated: ' + new Date().toLocaleString('en-IN'), ...(filters || [])].join('   •   ');
+  const metaLine = ['Generated: ' + nowIST(), ...(filters || [])].join('   •   ');
   doc.fill('#64748b').fontSize(8).font('Helvetica').text(metaLine, 40, 111, { width: W - 80, lineBreak: false });
 
   doc.moveTo(40, 132).lineTo(W - 40, 132).strokeColor('#e2e8f0').lineWidth(1).stroke();
@@ -409,7 +411,7 @@ router.get('/attendance/excel', async (req, res) => {
     // ── Sheet 1: Employee Summary ──
     const wsSummary = wb.addWorksheet('Employee Summary', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
     excelTitleBlock(wsSummary, 'H', org.name, 'Attendance — Employee Summary',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
     wsSummary.columns = [
       { key: 'name', width: 24 }, { key: 'empId', width: 14 }, { key: 'dept', width: 18 },
       { key: 'days', width: 14 }, { key: 'hours', width: 14 }, { key: 'avg', width: 14 },
@@ -423,7 +425,7 @@ router.get('/attendance/excel', async (req, res) => {
     // ── Sheet 2: Daily Detail ──
     const ws = wb.addWorksheet('Daily Detail', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
     excelTitleBlock(ws, 'J', org.name, 'Attendance — Daily Detail',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
 
     ws.columns = [
       { key: 'date', width: 14 }, { key: 'name', width: 22 }, { key: 'empId', width: 14 },
@@ -591,7 +593,7 @@ router.get('/tasks/excel', async (req, res) => {
     const ws   = wb.addWorksheet('Tasks', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
 
     excelTitleBlock(ws, 'L', org.name, 'Task Report',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
 
     ws.columns = [
       { key: 'title',    width: 30 }, { key: 'room', width: 18 }, { key: 'assigned', width: 22 },
@@ -755,7 +757,7 @@ router.get('/team-summary/excel', async (req, res) => {
     const ws = wb.addWorksheet('Team Summary', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
 
     excelTitleBlock(ws, 'K', org.name, 'Team Productivity Summary',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
 
     ws.columns = [
       { key: 'rank', width: 8 }, { key: 'name', width: 24 }, { key: 'empId', width: 14 },
@@ -885,7 +887,7 @@ router.get('/task-compliance/excel', async (req, res) => {
     const ws = wb.addWorksheet('Compliance Audit', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
 
     excelTitleBlock(ws, 'H', org.name, 'Proof-of-Work Compliance Audit',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
 
     ws.columns = [
       { key: 'task', width: 28 }, { key: 'step', width: 24 }, { key: 'employee', width: 22 },
@@ -998,7 +1000,7 @@ router.get('/rooms/excel', async (req, res) => {
     const ws = wb.addWorksheet('Room Productivity', { pageSetup: { fitToPage: true, orientation: 'landscape' } });
 
     excelTitleBlock(ws, 'H', org.name, 'Room / Category Productivity',
-      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${new Date().toLocaleString('en-IN')}`);
+      `Period: ${fmtDate(from)} to ${fmtDate(to)}  |  Generated: ${nowIST()}`);
 
     ws.columns = [
       { key: 'name', width: 26 }, { key: 'category', width: 16 }, { key: 'members', width: 16 },
