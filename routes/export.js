@@ -100,15 +100,17 @@ function pdfHeader(doc, orgName, title, subtitle, filters) {
 // ─── PDF section title ─────────────────────────────────────────────────────────
 function pdfSectionTitle(doc, text) {
   if (doc.y + 24 > doc.page.height - 60) { doc.addPage(); doc.y = 40; }
-  doc.fill('#0f172a').fontSize(11).font('Helvetica-Bold').text(text, 40, doc.y);
-  doc.y += 18;
+  const y = doc.y; // capture before .text() mutates doc.y
+  doc.fill('#0f172a').fontSize(11).font('Helvetica-Bold').text(text, 40, y, { lineBreak: false });
+  doc.y = y + 18; // set explicitly — never trust doc.y after a .text() call
 }
 
 // ─── PDF table (with optional per-row background callback + totals row) ───────
 function pdfTable(doc, headers, rows, colWidths, opts = {}) {
-  const startX  = 40;
-  const rowH    = 24;
-  const pageW   = doc.page.width - 80;
+  const startX    = 40;
+  const rowH      = 24;
+  const headerRowH = 30; // taller than data rows — headers can be two words (e.g. "TOTAL HOURS")
+  const pageW     = doc.page.width - 80;
 
   if (!colWidths) {
     const w = Math.floor(pageW / headers.length);
@@ -118,14 +120,14 @@ function pdfTable(doc, headers, rows, colWidths, opts = {}) {
   const drawHeaderRow = () => {
     let x = startX;
     const y = doc.y;
-    doc.rect(startX, y, pageW, rowH).fill('#1e293b');
+    doc.rect(startX, y, pageW, headerRowH).fill('#1e293b');
     headers.forEach((h, i) => {
-      doc.fill('#ffffff').fontSize(7.5).font('Helvetica-Bold')
-         .text(String(h).toUpperCase(), x + 5, y + 8,
-               { width: colWidths[i] - 10, lineBreak: false });
+      doc.fill('#ffffff').fontSize(7).font('Helvetica-Bold')
+         .text(String(h).toUpperCase(), x + 5, y + 6,
+               { width: colWidths[i] - 10, align: 'left' });
       x += colWidths[i];
     });
-    doc.y = y + rowH + 1;
+    doc.y = y + headerRowH + 1;
   };
 
   drawHeaderRow();
@@ -174,12 +176,20 @@ function pdfSummaryCards(doc, items) {
   const maxCols = items.length > 5 ? Math.ceil(items.length / 2) : items.length;
   const colW    = Math.floor(W / maxCols);
   const cardH   = 52;
+  const rows    = Math.ceil(items.length / maxCols);
+  const blockH  = rows * (cardH + 6);
+
+  // Keep the whole card grid together — never let it split across a page break
+  if (doc.y + blockH > doc.page.height - 60) { doc.addPage(); doc.y = 40; }
+
+  const startY = doc.y; // capture ONCE — do not read doc.y again inside the loop,
+                         // since .text() mutates it even when x/y are passed explicitly
 
   items.forEach((item, i) => {
     const col = i % maxCols;
     const row = Math.floor(i / maxCols);
     const x   = 40 + col * colW;
-    const y   = doc.y + row * (cardH + 6);
+    const y   = startY + row * (cardH + 6);
 
     doc.rect(x, y, colW - 6, cardH).fill('#eff6ff');
     doc.rect(x, y, colW - 6, 3).fill('#137fec');
@@ -189,8 +199,7 @@ function pdfSummaryCards(doc, items) {
        .text(safeStr(item.label), x + 10, y + 32, { width: colW - 26, lineBreak: false });
   });
 
-  const rows = Math.ceil(items.length / maxCols);
-  doc.y = doc.y + rows * (cardH + 6) + 10;
+  doc.y = startY + blockH + 10; // set explicitly from startY, not from the (now drifted) doc.y
 }
 
 // ─── PDF page footer ───────────────────────────────────────────────────────────
