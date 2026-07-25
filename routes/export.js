@@ -37,6 +37,34 @@ router.use(authMiddleware, isManager, requireFeature('exportReports'));
 
 const STANDARD_WORKDAY_MINUTES = 8 * 60; // used to flag over/under-time days
 
+// An employee is "present" for a day if they have a closed session, an open
+// (still online) session, or any session at all — NOT just totalMinutes > 0,
+// since totalMinutes stays 0 until an open session is closed via goOffline().
+function isPresentRecord(r) {
+  return r.isOnline || r.totalMinutes > 0 || (r.sessions && r.sessions.length > 0);
+}
+
+// Minutes worked so far today, including live elapsed time on an open session
+// (totalMinutes only reflects CLOSED sessions, so an online employee would
+// otherwise show 0h worked even though they're actively clocked in).
+function liveMinutes(r) {
+  let mins = r.totalMinutes || 0;
+  if (r.isOnline && r.sessions?.length) {
+    const open = [...r.sessions].reverse().find(s => !s.endTime);
+    if (open) mins += (Date.now() - new Date(open.startTime).getTime()) / 60000;
+  }
+  return mins;
+}
+
+function attendanceFlag(r) {
+  if (r.isOnline) return 'Active';
+  if (!isPresentRecord(r)) return 'Absent';
+  const mins = liveMinutes(r);
+  if (mins > STANDARD_WORKDAY_MINUTES) return 'Overtime';
+  if (mins < STANDARD_WORKDAY_MINUTES) return 'Short Day';
+  return 'Normal';
+}
+
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 const parseDate = (str, fallbackDays = 0) => {
   if (str) return new Date(str);
@@ -296,12 +324,13 @@ function attendanceEmployeeSummary(records) {
       });
     }
     const e = map.get(key);
-    if (r.totalMinutes > 0) e.daysPresent += 1;
-    e.totalMinutes    += r.totalMinutes || 0;
+    const mins = liveMinutes(r);
+    if (isPresentRecord(r)) e.daysPresent += 1;
+    e.totalMinutes    += mins;
     e.tasksCompleted  += r.tasksCompleted || 0;
     e.sessions        += r.sessions.length;
-    if (r.totalMinutes > STANDARD_WORKDAY_MINUTES) e.overtimeDays += 1;
-    else if (r.totalMinutes > 0 && r.totalMinutes < STANDARD_WORKDAY_MINUTES) e.undertimeDays += 1;
+    if (mins > STANDARD_WORKDAY_MINUTES) e.overtimeDays += 1;
+    else if (mins > 0 && mins < STANDARD_WORKDAY_MINUTES) e.undertimeDays += 1;
   });
 
   return [...map.values()]
@@ -334,10 +363,10 @@ router.get('/attendance/pdf', async (req, res) => {
     pdfHeader(doc, org.name, 'Attendance Report', `Attendance — ${fmtDate(from)} to ${fmtDate(to)}`, filters);
 
     const totalDays    = records.length;
-    const totalHoursN  = records.reduce((s, r) => s + (r.totalMinutes || 0) / 60, 0);
-    const presentDays  = records.filter(r => r.totalMinutes > 0 || r.isOnline).length;
+    const totalHoursN  = records.reduce((s, r) => s + liveMinutes(r) / 60, 0);
+    const presentDays  = records.filter(isPresentRecord).length;
     const avgHours     = presentDays ? (totalHoursN / presentDays).toFixed(1) : '0.0';
-    const overtimeDays = records.filter(r => r.totalMinutes > STANDARD_WORKDAY_MINUTES).length;
+    const overtimeDays = records.filter(r => liveMinutes(r) > STANDARD_WORKDAY_MINUTES).length;
     const uniqueEmps   = new Set(records.map(r => r.employee?._id?.toString())).size;
 
     pdfSummaryCards(doc, [
@@ -357,7 +386,12 @@ router.get('/attendance/pdf', async (req, res) => {
       empSummary.map(e => [e.name, e.empId, e.department, e.daysPresent, `${e.totalHours}h`, `${e.avgHoursPerDay}h`, e.overtimeDays, e.tasksCompleted]),
       [110, 60, 90, 74, 68, 68, 74, 70],
       {
-        totalsRow: ['TOTAL', '', '', presentDays, `${totalHoursN.toFixed(1)}h`, `${avgHours}h`, overtimeDays,
+        // Derive totals from empSummary itself (same source as the rows above) so the TOTAL row can never disagree with the individual rows
+        totalsRow: ['TOTAL', '', '',
+          empSummary.reduce((s, e) => s + e.daysPresent, 0),
+          `${empSummary.reduce((s, e) => s + e.totalHours, 0).toFixed(1)}h`,
+          avgHours + 'h',
+          empSummary.reduce((s, e) => s + e.overtimeDays, 0),
           empSummary.reduce((s, e) => s + e.tasksCompleted, 0)],
       }
     );
@@ -367,17 +401,16 @@ router.get('/attendance/pdf', async (req, res) => {
     const headers   = ['Date', 'Employee', 'Emp ID', 'Department', 'First In', 'Last Out', 'Total Hours', 'Sessions', 'Tasks Done', 'Flag'];
     const colWidths = [58, 100, 58, 82, 68, 68, 62, 50, 62, 66];
     const rows      = records.map(r => {
-      const flag = r.totalMinutes > STANDARD_WORKDAY_MINUTES ? 'Overtime'
-        : r.totalMinutes === 0 ? 'Absent'
-        : r.totalMinutes < STANDARD_WORKDAY_MINUTES ? 'Short Day' : 'Normal';
+      const flag = attendanceFlag(r);
+      const hoursLabel = flag === 'Active' ? `${fmtMins(liveMinutes(r))} (ongoing)` : fmtMins(r.totalMinutes);
       return [
         fmtDate(r.workDate),
         r.employee?.fullName || r.employee?.username || '—',
         r.employee?.employeeId || '—',
         r.employee?.department || '—',
         r.punchInTime ? fmtTime(r.punchInTime) : (r.sessions[0]?.startTime ? fmtTime(r.sessions[0].startTime) : '—'),
-        r.punchOutTime ? fmtTime(r.punchOutTime) : (() => { const last = [...r.sessions].reverse().find(s => s.endTime); return last ? fmtTime(last.endTime) : '—'; })(),
-        fmtMins(r.totalMinutes),
+        r.isOnline ? 'Online' : (r.punchOutTime ? fmtTime(r.punchOutTime) : (() => { const last = [...r.sessions].reverse().find(s => s.endTime); return last ? fmtTime(last.endTime) : '—'; })()),
+        hoursLabel,
         r.sessions.length,
         r.tasksCompleted,
         flag,
@@ -385,7 +418,7 @@ router.get('/attendance/pdf', async (req, res) => {
     });
 
     pdfTable(doc, headers, rows, colWidths, {
-      accentColor: row => row[9] === 'Absent' ? '#ef4444' : row[9] === 'Overtime' ? '#f59e0b' : '#137fec',
+      accentColor: row => row[9] === 'Absent' ? '#ef4444' : row[9] === 'Overtime' ? '#f59e0b' : row[9] === 'Active' ? '#22c55e' : '#137fec',
     });
 
     pdfFooter(doc);
@@ -436,23 +469,22 @@ router.get('/attendance/excel', async (req, res) => {
     const headerRow = excelHeader(ws, ['Date', 'Employee', 'Emp ID', 'Department', 'First Punch-In', 'Last Punch-Out', 'Total Hours', 'Sessions', 'Tasks Done', 'Flag']).number;
 
     records.forEach(r => {
-      const flag = r.totalMinutes > STANDARD_WORKDAY_MINUTES ? 'Overtime'
-        : r.totalMinutes === 0 ? 'Absent'
-        : r.totalMinutes < STANDARD_WORKDAY_MINUTES ? 'Short Day' : 'Normal';
+      const flag = attendanceFlag(r);
       const row = ws.addRow({
         date:     fmtDate(r.workDate),
         name:     r.employee?.fullName || r.employee?.username || '—',
         empId:    r.employee?.employeeId || '—',
         dept:     r.employee?.department || '—',
-        punchIn:  r.punchInTime ? fmtTime(r.punchInTime) : '—',
-        punchOut: r.punchOutTime ? fmtTime(r.punchOutTime) : '—',
-        hours:    parseFloat(((r.totalMinutes || 0) / 60).toFixed(2)),
+        punchIn:  r.punchInTime ? fmtTime(r.punchInTime) : (r.sessions[0]?.startTime ? fmtTime(r.sessions[0].startTime) : '—'),
+        punchOut: r.isOnline ? 'Online' : (r.punchOutTime ? fmtTime(r.punchOutTime) : '—'),
+        hours:    parseFloat((liveMinutes(r) / 60).toFixed(2)),
         sessions: r.sessions.length,
         tasks:    r.tasksCompleted,
         flag,
       });
       if (flag === 'Absent') row.getCell('flag').font = { color: { argb: 'FFEF4444' }, bold: true };
       if (flag === 'Overtime') row.getCell('flag').font = { color: { argb: 'FFF59E0B' }, bold: true };
+      if (flag === 'Active') row.getCell('flag').font = { color: { argb: 'FF22C55E' }, bold: true };
     });
 
     excelStripe(ws, headerRow);
