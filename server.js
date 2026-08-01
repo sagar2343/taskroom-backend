@@ -119,11 +119,47 @@ mongoose
   .then(() => {
     console.log('✅ MongoDB connected');
     verifyCloudinaryConnection();
+    startPlanExpirySweep();
   })
   .catch((err) => {
     console.error('❌ Mongo error:', err.message);
     process.exit(1);
   });
+
+// ── Scheduled plan-expiry sweep ──────────────────────────────────────────
+// Auto-downgrades any org whose paid plan (planExpiresAt) has passed back to
+// 'starter', and expires stale trials. Runs on boot, then every hour.
+async function startPlanExpirySweep() {
+  const Organization = require('./models/Organization');
+
+  async function sweep() {
+    try {
+      const now = new Date();
+
+      const expiredPaid = await Organization.find({
+        plan:          { $ne: 'starter' },
+        planExpiresAt: { $ne: null, $lt: now },
+      });
+      for (const org of expiredPaid) {
+        await org.applyPlanExpiryIfNeeded();
+        console.log(`⏬ Org ${org._id} (${org.name}) auto-downgraded to starter (plan expired).`);
+      }
+
+      const expiredTrials = await Organization.find({
+        isTrialActive: true,
+        trialEndsAt:   { $lt: now },
+      });
+      for (const org of expiredTrials) {
+        await org.expireTrial();
+      }
+    } catch (err) {
+      console.error('Plan expiry sweep failed:', err.message);
+    }
+  }
+
+  await sweep();                          // run once at startup
+  setInterval(sweep, 60 * 60 * 1000);     // then every hour
+}
   
 
 // ── Health check ───────────────────────────────────────────────────────────

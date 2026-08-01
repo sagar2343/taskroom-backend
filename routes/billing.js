@@ -51,6 +51,7 @@ router.get('/plans', async (req, res) => {
 router.get('/status', authMiddleware, isManager, async (req, res) => {
   try {
     const org  = await Organization.findById(req.user.organization);
+    await org.applyPlanExpiryIfNeeded(); // auto-downgrade to starter if plan expired
     const last = await Subscription.latestPaid(org._id);
 
     // ── Always resolve limits from the EFFECTIVE plan (handles trial correctly)

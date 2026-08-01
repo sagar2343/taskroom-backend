@@ -34,12 +34,37 @@ const getTodayRange = () => {
   return { start, end };
 };
 
-const findTaskForManager = async (taskId, managerId, organizationId) => {
-  return Task.findOne({
-    _id: taskId,
+// Room IDs this manager can act on: rooms they own, OR rooms where they joined
+// as an active 'moderator' (i.e. another manager who joined the room).
+const getManagedRoomIds = async (managerId, organizationId) => {
+  const rooms = await Room.find({
     organization: organizationId,
-    createdBy: managerId
+    isArchived: false,
+    $or: [
+      { createdBy: managerId },
+      { members: { $elemMatch: { user: managerId, status: 'active', role: 'moderator' } } }
+    ]
+  }).select('_id');
+  return rooms.map(r => r._id);
+};
+
+// A manager can access a task if they manage the room the task belongs to —
+// not just tasks they personally created. This lets a manager who joins an
+// existing room see and manage tasks other managers created there.
+const findTaskForManager = async (taskId, managerId, organizationId) => {
+  const task = await Task.findOne({ _id: taskId, organization: organizationId });
+  if (!task) return null;
+
+  const hasRoomAccess = await Room.exists({
+    _id: task.room,
+    organization: organizationId,
+    $or: [
+      { createdBy: managerId },
+      { members: { $elemMatch: { user: managerId, status: 'active', role: 'moderator' } } }
+    ]
   });
+
+  return hasRoomAccess ? task : null;
 };
 
 const findTaskForEmployee = async (taskId, employeeId, organizationId) => {
@@ -287,10 +312,25 @@ router.get('/', isManager, async (req, res) => {
 
     const { status, assignedTo, roomId, priority, date } = req.query;
 
+    // Rooms this manager owns or is a moderator-member of — not just tasks
+    // they personally created.
+    const managedRoomIds = await getManagedRoomIds(req.userId, req.user.organization);
+
     let query = {
       organization: req.user.organization,
-      createdBy: req.userId
+      room: { $in: managedRoomIds }
     };
+
+    if (roomId && isValidObjectId(roomId)) {
+      const hasAccess = managedRoomIds.some(id => id.toString() === roomId);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have access to this room'
+        });
+      }
+      query.room = roomId; // narrow to just this room
+    }
 
     if (status === 'missed') {
       query.endDatetime = { $lt: new Date() };
@@ -300,7 +340,7 @@ router.get('/', isManager, async (req, res) => {
     }
 
     if (assignedTo && isValidObjectId(assignedTo)) query.assignedTo = assignedTo;
-    if (roomId && isValidObjectId(roomId)) query.room = roomId;
+    // if (roomId && isValidObjectId(roomId)) query.room = roomId;
     if (priority) query.priority = priority;
 
     if (date) {
@@ -394,20 +434,23 @@ router.get('/dashboard', isManager, async (req, res) => {
     const managerId = req.userId;
     const { start, end } = getTodayRange();
 
+    const managedRoomIds = await getManagedRoomIds(managerId, orgId);
+    const roomFilter = { $in: managedRoomIds };
+
     const [statusBreakdown, missedCount, todayTasks, employeeActivity] = await Promise.all([
       Task.aggregate([
-        { $match: { organization: orgId, createdBy: managerId } },
+        { $match: { organization: orgId, room: roomFilter } },
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
       Task.countDocuments({
         organization: orgId,
-        createdBy: managerId,
+        room: roomFilter,
         endDatetime: { $lt: new Date() },
         status: { $in: ['pending', 'in_progress'] }
       }),
       Task.find({
         organization: orgId,
-        createdBy: managerId,
+        room: roomFilter,
         startDatetime: { $gte: start, $lt: end }
       })
         .populate('assignedTo', 'username fullName profilePicture isOnline')
@@ -418,7 +461,7 @@ router.get('/dashboard', isManager, async (req, res) => {
         {
           $match: {
             organization: orgId,
-            createdBy: managerId,
+            room: roomFilter,
             status: { $in: ['in_progress', 'pending'] },
             startDatetime: { $gte: start, $lt: end }
           }
@@ -484,7 +527,8 @@ router.post('/detail', async (req, res) => {
 
     let query = { _id: taskId, organization: req.user.organization };
     if (req.user.role === 'manager') {
-      query.createdBy = req.userId;
+      const managedRoomIds = await getManagedRoomIds(req.userId, req.user.organization);
+      query.room = { $in: managedRoomIds };
     } else {
       query.assignedTo = req.userId;
     }

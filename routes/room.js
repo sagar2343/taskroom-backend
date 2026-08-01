@@ -10,6 +10,31 @@ const Task = require('../models/Task');
 
 const router = express.Router();
 
+// ── Permission helper ────────────────────────────────────────────────────
+// Owner  = room.createdBy → "super manager", full rights on this room.
+// Moderator = a manager who joined this room later ('moderator' member role)
+//             → full rights EXCEPT removing the owner or other managers/
+//             moderators, and cannot delete/archive the room.
+function getRoomPermission(room, userId, userRole) {
+  const uid = userId.toString();
+  const isOwner = room.createdBy.toString() === uid;
+
+  const member = room.members.find(m => {
+    const mUserId = m.user?._id ? m.user._id.toString() : m.user.toString();
+    return mUserId === uid;
+  });
+
+  const isModerator = !isOwner && userRole === 'manager' &&
+    member?.role === 'moderator' && member?.status === 'active';
+
+  return {
+    isOwner,
+    isModerator,
+    canManage: isOwner || isModerator, // add/remove employees, edit tasks, edit room
+  };
+}
+
+
 // @route   POST /api/rooms
 // @desc    Create new room
 // @access  Private (Manager or above)
@@ -27,9 +52,30 @@ router.post('/', authMiddleware, isManager, enforceRoomLimit, async (req, res) =
 
     const user = await User.findById(req.userId);
     const organization = await Organization.findById(user.organization);
+    await organization.applyPlanExpiryIfNeeded(); // ensure plan is current before reading limits
 
     // Note: enforceRoomLimit middleware already blocked if limit reached.
     // No need to call canAddRoom() again here.
+
+    // ── Plan-based member cap ────────────────────────────────────────────
+    // A room can never hold more people than the org's plan allows in total
+    // (max employees + max managers). -1 on the plan means unlimited.
+    const { maxEmployees = 5, maxManagers = 1 } = organization.planLimits || {};
+    const planMaxMembers = (maxEmployees === -1 || maxManagers === -1)
+      ? 999999
+      : maxEmployees + maxManagers;
+
+    let resolvedMaxMembers = maxMembers ? parseInt(maxMembers, 10) : planMaxMembers;
+    if (!resolvedMaxMembers || resolvedMaxMembers <= 0) resolvedMaxMembers = planMaxMembers;
+
+    if (resolvedMaxMembers > planMaxMembers) {
+      return res.status(403).json({
+        success:    false,
+        message:    `Your ${organization.effectivePlan} plan allows a maximum of ${planMaxMembers} members per room. Upgrade your plan to set a higher limit.`,
+        upgradeUrl: '/billing',
+        limit:      planMaxMembers,
+      });
+    }
 
     // Generate unique room code for this organization
     const roomCode = await Room.generateRoomCode(organization._id);
@@ -44,7 +90,7 @@ router.post('/', authMiddleware, isManager, enforceRoomLimit, async (req, res) =
       category: category || 'other',
       settings: {
         ...settings,
-        maxMembers: maxMembers || 100
+        maxMembers: resolvedMaxMembers
       }
     });
 
@@ -369,11 +415,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check if user has permission to update
-    const isCreator = room.createdBy.toString() === req.userId.toString();
-    const isAdmin = ['super_admin', 'admin'].includes(user.role);
+    // Owner (creator) or a moderator-manager who joined this room can edit it
+    const { canManage } = getRoomPermission(room, req.userId, user.role);
 
-    if (!isCreator && !isAdmin) {
+    if (!canManage) {
       return res.status(403).json({
         success: false,
         message: 'You do not have permission to update this room'
@@ -381,6 +426,36 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 
     const { name, description, category, settings, roomImage } = req.body;
+
+    // ── Plan-based member cap on edit ──────────────────────────────────────
+    if (settings && settings.maxMembers !== undefined) {
+      const organization = await Organization.findById(user.organization);
+      await organization.applyPlanExpiryIfNeeded();
+
+      const { maxEmployees = 5, maxManagers = 1 } = organization.planLimits || {};
+      const planMaxMembers = (maxEmployees === -1 || maxManagers === -1)
+        ? 999999
+        : maxEmployees + maxManagers;
+
+      const requested = parseInt(settings.maxMembers, 10);
+
+      if (requested > planMaxMembers) {
+        return res.status(403).json({
+          success:    false,
+          message:    `Your ${organization.effectivePlan} plan allows a maximum of ${planMaxMembers} members per room. Upgrade your plan to increase this limit.`,
+          upgradeUrl: '/billing',
+          limit:      planMaxMembers,
+        });
+      }
+
+      const activeMemberCount = room.members.filter(m => m.status === 'active').length;
+      if (requested < activeMemberCount) {
+        return res.status(400).json({
+          success: false,
+          message: `This room already has ${activeMemberCount} active members. Max members cannot be set lower than that.`
+        });
+      }
+    }
 
     if (name) room.name = name;
     if (description) room.description = description;
@@ -432,14 +507,13 @@ router.patch('/archive/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check permission
+    // Check permission — only the room owner (super manager) can archive/delete
     const isCreator = room.createdBy.toString() === req.userId.toString();
-    const isAdmin = ['super_admin', 'admin'].includes(user.role);
 
-    if (!isCreator && !isAdmin) {
+    if (!isCreator) {
       return res.status(403).json({
         success: false,
-        message: 'Only room creator or admin can delete this room'
+        message: 'Only the room owner can archive or delete this room'
       });
     }
 
@@ -515,8 +589,9 @@ router.post('/join', authMiddleware, async (req, res) => {
       });
     }
 
-    // Add member
-    await room.addMember(req.userId);
+    // Add member — managers joining get 'moderator' rights, employees get 'member'
+    const joinRole = user.role === 'manager' ? 'moderator' : 'member';
+    await room.addMember(req.userId, joinRole);
 
     res.json({
       success: true,
@@ -581,11 +656,10 @@ router.post('/member/add', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check permission
-    const isCreator = room.createdBy.toString() === req.userId.toString();
-    // const isCoManager = room.coManagers.some(m => m.toString() === req.userId.toString());
+    // Check permission — owner or a moderator-manager of this room can add members
+    const { canManage } = getRoomPermission(room, req.userId, currentUser.role);
 
-    if (!isCreator) {
+    if (!canManage) {
       return res.status(403).json({
         success: false,
         message: 'Only room managers can add members'
@@ -657,16 +731,28 @@ router.delete('/member/remove', authMiddleware, async (req, res) => {
       });
     }
 
-    // Check permission (can remove self or manager can remove others)
     const isSelf = userId === req.userId.toString();
-    const isCreator = room.createdBy.toString() === req.userId.toString();
-    // const isCoManager = room.coManagers.some(m => m.toString() === req.userId.toString());
+    const { isOwner, isModerator } = getRoomPermission(room, req.userId, currentUser.role);
 
-    if (!isSelf && !isCreator) {
+    if (!isSelf && !isOwner && !isModerator) {
       return res.status(403).json({
         success: false,
         message: 'You do not have permission to remove this member'
       });
+    }
+
+    // A moderator (non-owner manager) can remove employees, but NOT the owner
+    // or any other manager/moderator — only the room owner can do that.
+    if (!isSelf && isModerator && !isOwner) {
+      const targetUser = await User.findById(userId).select('role');
+      const isTargetManager = targetUser?.role === 'manager';
+
+      if (isTargetManager) {
+        return res.status(403).json({
+          success: false,
+          message: 'Only the room owner can remove another manager from this room'
+        });
+      }
     }
 
     await room.removeMember(userId);
@@ -819,4 +905,5 @@ router.get('/member/:id', authMiddleware, async (req, res) => {
   }
 });
 
+module.exports.getRoomPermission = getRoomPermission;
 module.exports = router;

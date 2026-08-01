@@ -25,6 +25,7 @@ async function attachOrg(req, res) {
   }
 
   await org.expireTrial();
+  await org.applyPlanExpiryIfNeeded(); // auto-downgrade to starter if paid plan expired
 
   // Always sync planLimits from the DB Plan document so hasFeature() is accurate
   const Plan = require('../models/Plan');

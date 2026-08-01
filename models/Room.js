@@ -152,6 +152,9 @@ roomSchema.statics.generateRoomCode = async function(organizationId) {
 };
 
 // Add member to room
+// Add member to room
+// role: 'member' (employee) or 'moderator' (a second manager who joined — full
+// management rights inside this room, but cannot remove the owner or other managers)
 roomSchema.methods.addMember = async function(userId, role = 'member') {
   // Check if already a member
   const isMember = this.members.some(m => m.user.toString() === userId.toString());
@@ -168,7 +171,9 @@ roomSchema.methods.addMember = async function(userId, role = 'member') {
   this.members.push({
     user: userId,
     role: role,
-    status: this.settings.autoAcceptMembers ? 'active' : 'pending'
+    // Managers joining another manager's room are always auto-accepted —
+    // approval gating only applies to employees.
+    status: (this.settings.autoAcceptMembers || role === 'moderator') ? 'active' : 'pending'
   });
 
   this.stats.totalMembers = this.members.filter(m => m.status === 'active').length;

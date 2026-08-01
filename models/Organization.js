@@ -145,6 +145,9 @@ organizationSchema.index({ plan:     1 });
 organizationSchema.virtual('effectivePlan').get(function () {
   if (this.isTrialActive && this.trialEndsAt && new Date() < this.trialEndsAt)
     return 'growth';
+  // Paid plan has expired but hasn't been persisted-downgraded yet — treat as starter
+  if (this.plan !== 'starter' && this.planExpiresAt && new Date() > this.planExpiresAt)
+    return 'starter';
   return this.plan;
 });
 
@@ -232,6 +235,34 @@ organizationSchema.methods.expireTrial = async function () {
     this.isTrialActive = false;
     await this.save();
   }
+};
+
+/** Call when planExpiresAt has passed — persists downgrade to starter + syncs limits */
+organizationSchema.methods.applyPlanExpiryIfNeeded = async function () {
+  if (this.plan !== 'starter' && this.planExpiresAt && new Date() > this.planExpiresAt) {
+    const PlanModel = mongoose.model('Plan');
+    const starterPlan = await PlanModel.getBySlug('starter');
+
+    this.plan          = 'starter';
+    this.planExpiresAt = null;
+    this.isTrialActive = false;
+
+    if (starterPlan) {
+      this.planLimits = {
+        maxEmployees: starterPlan.maxEmployees,
+        maxManagers:  starterPlan.maxManagers,
+        maxRooms:     starterPlan.maxRooms,
+        historyDays:  starterPlan.historyDays,
+        features:     starterPlan.features,
+      };
+      this.settings.maxEmployees = starterPlan.maxEmployees === -1 ? 999999 : starterPlan.maxEmployees;
+      this.settings.maxRooms     = starterPlan.maxRooms === -1     ? 999999 : starterPlan.maxRooms;
+    }
+
+    await this.save();
+    return true; // was downgraded
+  }
+  return false;
 };
 
 /** Feature gate check — use in planGate middleware */
