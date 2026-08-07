@@ -3,7 +3,6 @@ const express    = require('express');
 const http       = require('http');
 const { Server } = require('socket.io');
 const mongoose   = require('mongoose');
-// const path       = require('path');
 require('dotenv').config();
 
 // ── Routes ─────────────────────────────────────────────────────────────────
@@ -120,6 +119,7 @@ mongoose
     console.log('✅ MongoDB connected');
     verifyCloudinaryConnection();
     startPlanExpirySweep();
+    startTaskAutoCancelSweep();
   })
   .catch((err) => {
     console.error('❌ Mongo error:', err.message);
@@ -157,8 +157,38 @@ async function startPlanExpirySweep() {
     }
   }
 
-  await sweep();                          // run once at startup
+await sweep();                          // run once at startup
   setInterval(sweep, 60 * 60 * 1000);     // then every hour
+}
+
+// ── Scheduled task auto-cancel sweep ──────────────────────────────────────
+// Cancels any task (across ALL organizations — this is a platform-wide job,
+// not scoped to one org) whose end DATE has fully passed without being
+// completed. Runs once daily at 00:05 IST via node-cron, plus once
+// immediately on boot as a safety net for restarts near midnight.
+//
+// This relies on the server staying alive 24/7 (kept awake by an UptimeRobot
+// ping every 5 min on Render's free tier) — no external cron pinger needed.
+function startTaskAutoCancelSweep() {
+  const cron = require('node-cron');
+  const { runTaskAutoCancelSweep } = require('./services/taskAutoCancelService');
+ 
+  runTaskAutoCancelSweep().catch((err) =>
+    console.error('Task auto-cancel sweep (startup run) failed:', err.message)
+  );
+ 
+  // '5 0 * * *' = every day at 00:05, in the timezone specified below.
+  cron.schedule(
+    '5 0 * * *',
+    () => {
+      runTaskAutoCancelSweep().catch((err) =>
+        console.error('Task auto-cancel sweep (scheduled run) failed:', err.message)
+      );
+    },
+    { timezone: 'Asia/Kolkata' }
+  );
+ 
+  console.log('🕛 Task auto-cancel sweep scheduled for 00:05 IST daily.');
 }
   
 
@@ -226,10 +256,6 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
 
 // ── Start ──────────────────────────────────────────────────────────────────
-// const PORT = process.env.PORT || 3000;
-// server.listen(PORT, () => {
-//   console.log(`🚀 Server running on http://localhost:${PORT}`);
-// });
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 TaskRoom API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
