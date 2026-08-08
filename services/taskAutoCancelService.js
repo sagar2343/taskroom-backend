@@ -20,65 +20,70 @@ function getStartOfTodayIST() {
 /**
  * Finds every task across every organization whose end DATE (not just end
  * time) has fully passed — i.e. the task's endDatetime falls on a calendar
- * day before today (IST) — and which was never completed/cancelled, and
- * auto-cancels it.
+ * day before today (IST) — and which was never completed, and marks it
+ * 'expired'.
+ *
+ * 'expired' is a distinct status from 'cancelled':
+ *   - 'cancelled'  → a manager deliberately called the cancel endpoint.
+ *   - 'expired'    → nobody acted; the deadline simply passed. This is
+ *                    what this sweep sets, and it's what counts against an
+ *                    employee's performance stats (see routes/attendance.js).
  *
  * Example: a task ending 7 Aug 6:00 PM stays untouched all through 7 Aug,
- * even after 6 PM passes. It only gets cancelled once the sweep runs on or
- * after 8 Aug 12:00 AM IST.
+ * even after 6 PM passes. It only becomes 'expired' once the sweep runs on
+ * or after 8 Aug 12:00 AM IST.
  *
  * Safe to call repeatedly (idempotent) — only ever touches tasks currently
- * in 'pending' or 'in_progress', so a task already cancelled/completed is
- * never re-processed.
+ * in 'pending' or 'in_progress', so an already-expired/cancelled/completed
+ * task is never re-processed.
  *
  * Returns a small summary object, useful both for server logs and for the
  * JSON response of the cron-triggered API endpoint.
  */
 async function runTaskAutoCancelSweep() {
   const startOfTodayIST = getStartOfTodayIST();
-  const summary = { checked: 0, cancelled: 0, failed: 0, errors: [] };
+  const summary = { checked: 0, expired: 0, failed: 0, errors: [] };
 
   const overdueTasks = await Task.find({
     status: { $in: ['pending', 'in_progress'] },
     endDatetime: { $lt: startOfTodayIST }, // ended on a day before today
-  }).select('_id title room assignedTo status endDatetime');
+  }).select('_id title room assignedTo createdBy status endDatetime');
 
   summary.checked = overdueTasks.length;
 
   for (const task of overdueTasks) {
     try {
-      task.status = 'cancelled';
-      task.cancelledAt = new Date();
-      task.cancelledBy = null; // null = system/auto, not a manager action
-      task.cancellationReason = 'Auto-cancelled: task end date passed without completion';
+      task.status = 'expired';
+      task.cancelledAt = new Date();       // reused field — see models/Task.js comment
+      task.cancelledBy = null;             // null = system, not a manager action
+      task.cancellationReason = 'Auto-expired: task end date passed without completion';
       await task.save();
 
       await Room.findByIdAndUpdate(task.room, {
         $inc: { 'stats.activeTasks': -1 },
       });
 
-      // Notify the employee it was assigned to, if any
-      if (task.assignedTo) {
-        const employee = await User.findById(task.assignedTo).select('fcmToken');
-        if (employee) {
-          sendToUser(employee, 'TASK_CANCELLED', [task.title, 'Task expired'], {
-            type: 'task_cancelled',
-            taskId: task._id.toString(),
-            reason: 'auto_expired',
-          });
-        }
+      // Notify both sides — the employee who missed it, and the manager
+      // who assigned it — so nobody is left wondering what happened.
+      const notifyIds = [task.assignedTo, task.createdBy].filter(Boolean);
+      const recipients = await User.find({ _id: { $in: notifyIds } }).select('fcmToken');
+      for (const recipient of recipients) {
+        sendToUser(recipient, 'TASK_EXPIRED', [task.title], {
+          type: 'task_expired',
+          taskId: task._id.toString(),
+        });
       }
 
-      summary.cancelled += 1;
+      summary.expired += 1;
     } catch (err) {
       summary.failed += 1;
       summary.errors.push({ taskId: task._id.toString(), message: err.message });
-      console.error(`[AutoCancelSweep] Failed to cancel task ${task._id}:`, err.message);
+      console.error(`[AutoCancelSweep] Failed to expire task ${task._id}:`, err.message);
     }
   }
 
-  if (summary.cancelled > 0 || summary.failed > 0) {
-    console.log(`[AutoCancelSweep] checked=${summary.checked} cancelled=${summary.cancelled} failed=${summary.failed}`);
+  if (summary.expired > 0 || summary.failed > 0) {
+    console.log(`[AutoCancelSweep] checked=${summary.checked} expired=${summary.expired} failed=${summary.failed}`);
   }
 
   return summary;

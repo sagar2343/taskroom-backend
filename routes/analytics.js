@@ -211,15 +211,11 @@ router.get('/employee/:id', async (req, res) => {
     const totalMinutes  = attendance.reduce((s, a) => s + (a.totalMinutes || 0), 0);
     const daysPresent   = attendance.filter(a => a.totalMinutes > 0).length;
     const tasksDone     = tasks.filter(t => t.status === 'completed').length;
-    // BUG-FIX: don't lump manager-cancelled and auto-cancelled together.
-    // Manager-cancelled (t.cancelledBy set) shouldn't affect the employee's
-    // score at all — excluded entirely. Auto-cancelled by the nightly sweep
-    // (t.cancelledBy null, see services/taskAutoCancelService.js) means the
-    // employee missed the deadline — it must count in tasksTotal so it
-    // drags completionRate/score down, same as any other undone task.
-    const tasksTotal = tasks.filter(t =>
-      t.status !== 'cancelled' || t.cancelledBy === null
-    ).length;
+    // Now that 'expired' is a distinct status (see taskAutoCancelService.js),
+    // 'cancelled' means only manager-cancelled — excluding it here correctly
+    // leaves expired (missed-deadline) tasks counted in tasksTotal, so they
+    // drag completionRate/score down as they should.
+    const tasksTotal    = tasks.filter(t => t.status !== 'cancelled').length;
     const score         = calcScore(tasksDone, tasksTotal, totalMinutes, daysPresent);
 
     // Daily chart data (last 14 days)

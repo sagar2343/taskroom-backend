@@ -45,6 +45,16 @@ const NOTIFICATIONS = {
     sound: 'default',
   }),
 
+  // Distinct from TASK_CANCELLED: this fires only for the automatic
+  // end-of-day sweep (services/taskAutoCancelService.js) when a task's
+  // deadline passed without being completed — never for a manager's
+  // manual cancellation.
+  TASK_EXPIRED: (taskTitle) => ({
+    title: '⏰ Task Missed Deadline',
+    body:  `"${taskTitle}" was not completed before its end time and has been marked as expired`,
+    sound: 'default',
+  }),
+
   STEP_ADDED: (taskTitle, stepTitle) => ({
     title: '➕ New Step Added',
     body:  `A new step "${stepTitle}" was added to "${taskTitle}"`,

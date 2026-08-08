@@ -23,17 +23,12 @@ const todayStart = () => {
 };
 
 // ── Shared task-performance aggregation stage ───────────────────────────────
-// A task's status/dates tell us its performance category, but "cancelled"
-// needs one extra distinction:
-//   - Manager-cancelled (task.cancelledBy is a real user)  → the manager
-//     changed their mind / plans changed. This must NOT count against the
-//     employee, so it's excluded from `total` entirely (as if it never
-//     existed for performance purposes).
-//   - Auto-cancelled by the nightly sweep (task.cancelledBy is null, see
-//     services/taskAutoCancelService.js) → the employee genuinely missed
-//     the deadline. This DOES count against the employee: it's included in
-//     `total` and never counted as `completed`, so it correctly drags down
-//     completionRate.
+// Now that 'expired' is a distinct status (set by
+// services/taskAutoCancelService.js), this is simpler than checking
+// cancelledBy: 'cancelled' always means a manager deliberately cancelled it
+// (excluded from `total` — doesn't count against the employee), and
+// 'expired' always means the deadline passed unattended (included in
+// `total`, counts against completionRate).
 // We also split `completed` into on-time vs late (completedAt vs
 // endDatetime), so a manager can tell "did the work" apart from "did the
 // work, but after the deadline."
@@ -71,35 +66,21 @@ function taskPerformanceGroupStage(groupId) {
       },
       active:  { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
       pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
-      autoCancelled: {
-        $sum: {
-          $cond: [
-            { $and: [{ $eq: ['$status', 'cancelled'] }, { $eq: ['$cancelledBy', null] }] },
-            1, 0,
-          ],
-        },
-      },
-      managerCancelled: {
-        $sum: {
-          $cond: [
-            { $and: [{ $eq: ['$status', 'cancelled'] }, { $ne: ['$cancelledBy', null] }] },
-            1, 0,
-          ],
-        },
-      },
+      expired: { $sum: { $cond: [{ $eq: ['$status', 'expired'] }, 1, 0] } },
+      managerCancelled: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
     },
   };
 }
 
 // Turns the raw group-stage output into the final taskStats object the app
 // expects. `total` deliberately excludes managerCancelled and includes
-// autoCancelled — see comment above.
+// expired — see comment above.
 function buildTaskStats(raw) {
   const t = raw || {
     completed: 0, completedOnTime: 0, completedLate: 0,
-    active: 0, pending: 0, autoCancelled: 0, managerCancelled: 0,
+    active: 0, pending: 0, expired: 0, managerCancelled: 0,
   };
-  const total = t.completed + t.active + t.pending + t.autoCancelled;
+  const total = t.completed + t.active + t.pending + t.expired;
 
   return {
     total,
@@ -108,7 +89,7 @@ function buildTaskStats(raw) {
     completedLate:    t.completedLate,
     active:           t.active,
     pending:          t.pending,
-    autoCancelled:    t.autoCancelled,   // missed deadline — counts against employee
+    expired:          t.expired,          // missed deadline — counts against employee
     managerCancelled: t.managerCancelled, // excluded from total, shown for context only
     completionRate: total > 0 ? Math.round((t.completed / total) * 100) : 0,
   };

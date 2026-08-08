@@ -265,7 +265,7 @@ const taskSchema = new mongoose.Schema({
     // Task Status
     status: {
         type: String,
-        enum: ['pending', 'in_progress', 'completed', 'overdue', 'cancelled'],
+        enum: ['pending', 'in_progress', 'completed', 'overdue', 'cancelled', 'expired'],
         default: 'pending'
     },
 
@@ -278,6 +278,10 @@ const taskSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    // Also reused for status: 'expired' (auto-cancelled by the nightly
+    // sweep, see services/taskAutoCancelService.js) — in that case
+    // cancelledBy stays null (no human cancelled it) and cancellationReason
+    // explains the auto-expiry.
     cancelledAt: {
         type: Date,
         default: null

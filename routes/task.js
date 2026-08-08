@@ -302,7 +302,10 @@ router.post('/', isManager, async (req, res) => {
 });
 
 // ─── GET /api/tasks ── Manager: List their tasks ──────────────────────
-// Query params: ?status=pending|in_progress|completed|overdue|cancelled|missed
+// Query params: ?status=pending|in_progress|completed|overdue|cancelled|expired|missed
+// Note: 'missed' is a live/dynamic filter (overdue right now, not yet swept);
+// 'expired' is the permanent status set once the nightly sweep runs — see
+// services/taskAutoCancelService.js.
 //               &priority=high|medium|low &roomId=... &assignedTo=... &date=YYYY-MM-DD
 router.get('/', isManager, async (req, res) => {
   try {
@@ -497,7 +500,7 @@ router.get('/dashboard', isManager, async (req, res) => {
       ])
     ]);
 
-    const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0, missed: 0 };
+    const summary = { pending: 0, in_progress: 0, completed: 0, overdue: 0, cancelled: 0, expired: 0, missed: 0 };
     statusBreakdown.forEach(s => { summary[s._id] = s.count; });
     summary.missed = missedCount;
 
@@ -567,10 +570,10 @@ router.put('/edit', isManager, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
 
-    if (['completed', 'cancelled'].includes(task.status)) {
+    if (['completed', 'cancelled', 'expired'].includes(task.status)) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot edit a completed or cancelled task'
+        message: `Cannot edit a task that is ${task.status}`
       });
     }
 
@@ -633,8 +636,8 @@ router.patch('/cancel', isManager, async (req, res) => {
     const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (['completed', 'cancelled'].includes(task.status)) {
-      return res.status(400).json({ success: false, message: 'Task is already completed or cancelled' });
+    if (['completed', 'cancelled', 'expired'].includes(task.status)) {
+      return res.status(400).json({ success: false, message: `Task is already ${task.status}` });
     }
 
     task.status = 'cancelled';
@@ -780,8 +783,8 @@ router.post('/steps/add', isManager, async (req, res) => {
     const task = await findTaskForManager(taskId, req.userId, req.user.organization);
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (['completed', 'cancelled'].includes(task.status)) {
-      return res.status(400).json({ success: false, message: 'Cannot add steps to a completed or cancelled task' });
+    if (['completed', 'cancelled', 'expired'].includes(task.status)) {
+      return res.status(400).json({ success: false, message: `Cannot add steps to a task that is ${task.status}` });
     }
 
     if (!title || !startDatetime || !endDatetime) {
