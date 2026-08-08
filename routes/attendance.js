@@ -22,6 +22,98 @@ const todayStart = () => {
   return d;
 };
 
+// ── Shared task-performance aggregation stage ───────────────────────────────
+// A task's status/dates tell us its performance category, but "cancelled"
+// needs one extra distinction:
+//   - Manager-cancelled (task.cancelledBy is a real user)  → the manager
+//     changed their mind / plans changed. This must NOT count against the
+//     employee, so it's excluded from `total` entirely (as if it never
+//     existed for performance purposes).
+//   - Auto-cancelled by the nightly sweep (task.cancelledBy is null, see
+//     services/taskAutoCancelService.js) → the employee genuinely missed
+//     the deadline. This DOES count against the employee: it's included in
+//     `total` and never counted as `completed`, so it correctly drags down
+//     completionRate.
+// We also split `completed` into on-time vs late (completedAt vs
+// endDatetime), so a manager can tell "did the work" apart from "did the
+// work, but after the deadline."
+function taskPerformanceGroupStage(groupId) {
+  return {
+    $group: {
+      _id: groupId,
+      completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+      completedOnTime: {
+        $sum: {
+          $cond: [
+            {
+              $and: [
+                { $eq: ['$status', 'completed'] },
+                { $or: [{ $eq: ['$endDatetime', null] }, { $lte: ['$completedAt', '$endDatetime'] }] },
+              ],
+            },
+            1, 0,
+          ],
+        },
+      },
+      completedLate: {
+        $sum: {
+          $cond: [
+            {
+              $and: [
+                { $eq: ['$status', 'completed'] },
+                { $ne: ['$endDatetime', null] },
+                { $gt: ['$completedAt', '$endDatetime'] },
+              ],
+            },
+            1, 0,
+          ],
+        },
+      },
+      active:  { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
+      pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+      autoCancelled: {
+        $sum: {
+          $cond: [
+            { $and: [{ $eq: ['$status', 'cancelled'] }, { $eq: ['$cancelledBy', null] }] },
+            1, 0,
+          ],
+        },
+      },
+      managerCancelled: {
+        $sum: {
+          $cond: [
+            { $and: [{ $eq: ['$status', 'cancelled'] }, { $ne: ['$cancelledBy', null] }] },
+            1, 0,
+          ],
+        },
+      },
+    },
+  };
+}
+
+// Turns the raw group-stage output into the final taskStats object the app
+// expects. `total` deliberately excludes managerCancelled and includes
+// autoCancelled — see comment above.
+function buildTaskStats(raw) {
+  const t = raw || {
+    completed: 0, completedOnTime: 0, completedLate: 0,
+    active: 0, pending: 0, autoCancelled: 0, managerCancelled: 0,
+  };
+  const total = t.completed + t.active + t.pending + t.autoCancelled;
+
+  return {
+    total,
+    completed:        t.completed,
+    completedOnTime:  t.completedOnTime,
+    completedLate:    t.completedLate,
+    active:           t.active,
+    pending:          t.pending,
+    autoCancelled:    t.autoCancelled,   // missed deadline — counts against employee
+    managerCancelled: t.managerCancelled, // excluded from total, shown for context only
+    completionRate: total > 0 ? Math.round((t.completed / total) * 100) : 0,
+  };
+}
+
 // const dateRange = (dateStr) => {
 //   const d = new Date(dateStr);
 //   d.setHours(0, 0, 0, 0);
@@ -150,12 +242,13 @@ router.get('/today', async (req, res) => {
       workDate: { $gte: start },
     }).populate('employee', 'username fullName profilePicture');
 
-    // Live task counts (always fresh)
-    const [completed, inProgress, assigned] = await Promise.all([
-      Task.countDocuments({ assignedTo: req.userId, organization: req.user.organization, status: 'completed' }),
-      Task.countDocuments({ assignedTo: req.userId, organization: req.user.organization, status: 'in_progress' }),
-      Task.countDocuments({ assignedTo: req.userId, organization: req.user.organization, status: { $nin: ['cancelled'] } }),
+    // Live task performance (see taskPerformanceGroupStage/buildTaskStats
+    // above — correctly separates manager-cancelled from auto-cancelled).
+    const taskAgg = await Task.aggregate([
+      { $match: { assignedTo: req.userId, organization: req.user.organization } },
+      taskPerformanceGroupStage(null),
     ]);
+    const taskStats = buildTaskStats(taskAgg[0]);
 
     res.json({
       success: true,
@@ -166,11 +259,12 @@ router.get('/today', async (req, res) => {
         totalMinutes:    record?.totalMinutes ?? 0,
         totalFormatted:  record?.totalFormatted ?? '0m',
         sessions:        record?.sessions ?? [],
+        // Kept for backward compatibility with any older app builds still
+        // reading these top-level fields directly (in addition to taskStats).
         taskStats: {
-          completed,
-          inProgress,
-          assigned,
-          completionRate: assigned > 0 ? Math.round((completed / assigned) * 100) : 0,
+          ...taskStats,
+          inProgress: taskStats.active,
+          assigned:   taskStats.total,
         },
       },
     });
@@ -303,7 +397,7 @@ router.get('/org-today', async (req, res) => {
       recordMap[r.employee.toString()] = r;
     }
 
-    // Live task counts per employee
+    // Task performance per employee (see taskPerformanceGroupStage/buildTaskStats).
     const taskCounts = await Task.aggregate([
       {
         $match: {
@@ -311,22 +405,15 @@ router.get('/org-today', async (req, res) => {
           assignedTo:   { $in: employees.map(e => e._id) },
         },
       },
-      {
-        $group: {
-          _id:       '$assignedTo',
-          total:     { $sum: { $cond: [{ $ne: ['$status', 'cancelled'] }, 1, 0] } },
-          completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-          active:    { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
-        },
-      },
+      taskPerformanceGroupStage('$assignedTo'),
     ]);
 
     const taskMap = {};
-    for (const t of taskCounts) taskMap[t._id.toString()] = t;
+    for (const t of taskCounts) taskMap[t._id.toString()] = buildTaskStats(t);
 
     const result = employees.map(emp => {
       const rec   = recordMap[emp._id.toString()];
-      const tasks = taskMap[emp._id.toString()] || { total: 0, completed: 0, active: 0 };
+      const tasks = taskMap[emp._id.toString()] || buildTaskStats(null);
       const isOnlineNow = rec?.isOnline ?? false;
       return {
         employee: {
@@ -347,14 +434,7 @@ router.get('/org-today', async (req, res) => {
               firstOnline:    rec.sessions[0]?.startTime ?? null,
             }
           : { isOnline: false, totalMinutes: 0, sessions: 0 },
-        taskStats: {
-          total:     tasks.total,
-          completed: tasks.completed,
-          active:    tasks.active,
-          completionRate: tasks.total > 0
-            ? Math.round((tasks.completed / tasks.total) * 100)
-            : 0,
-        },
+        taskStats: tasks,
       };
     });
 
@@ -440,15 +520,7 @@ router.get('/employee/:id', async (req, res) => {
             organization: req.user.organization,
           },
         },
-        {
-          $group: {
-            _id:       null,
-            total: { $sum: { $cond: [{ $ne: ['$status', 'cancelled'] }, 1, 0] } },
-            completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-            active:    { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
-            pending:   { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
-          },
-        },
+        taskPerformanceGroupStage(null),
       ]),
     ]);
 
@@ -474,7 +546,6 @@ router.get('/employee/:id', async (req, res) => {
     ]);
 
     const periodSummary = agg[0] || { totalMinutes: 0, presentDays: 0, totalDays: 0 };
-    const tasks         = taskStats[0] || { total: 0, completed: 0, active: 0, pending: 0 };
 
     res.json({
       success: true,
@@ -492,15 +563,7 @@ router.get('/employee/:id', async (req, res) => {
             ? parseFloat((periodSummary.totalMinutes / 60 / periodSummary.presentDays).toFixed(2))
             : 0,
         },
-        taskStats: {
-          total:          tasks.total,
-          completed:      tasks.completed,
-          active:         tasks.active,
-          pending:        tasks.pending,
-          completionRate: tasks.total > 0
-            ? Math.round((tasks.completed / tasks.total) * 100)
-            : 0,
-        },
+        taskStats: buildTaskStats(taskStats[0]),
       },
     });
   } catch (err) {

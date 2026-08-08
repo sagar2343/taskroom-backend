@@ -219,7 +219,14 @@ attendanceSchema.statics.refreshTaskStats = async function(employeeId, organizat
         $gte: start,
         $lt: end
       },
-      status: { $nin: ['cancelled'] }
+      // BUG-FIX: don't exclude ALL cancelled tasks — only manager-cancelled
+      // ones should be excluded (doesn't count against the employee).
+      // Auto-cancelled (cancelledBy: null, missed deadline) must still
+      // count as "assigned" so it correctly drags completionRate down.
+      $or: [
+        { status: { $ne: 'cancelled' } },
+        { status: 'cancelled', cancelledBy: null },
+      ],
     }),
   ]);
 
