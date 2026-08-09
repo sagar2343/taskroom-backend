@@ -487,6 +487,13 @@ router.get('/employee/:id', async (req, res) => {
       dateQuery = { $gte: start, $lt: end };
     }
 
+    // Task Productivity scope: by default it's scoped to the same period as
+    // the attendance filter above (month/range) — matches "screen defaults
+    // to current month" behavior. Passing ?allTimeTasks=true (the "All"
+    // toggle on the app) switches it to true all-time stats since account
+    // creation, ignoring dateQuery entirely.
+    const allTimeTasks = req.query.allTimeTasks === 'true';
+
     const [records, taskStats] = await Promise.all([
       Attendance.find({
         employee:     req.params.id,
@@ -499,6 +506,7 @@ router.get('/employee/:id', async (req, res) => {
           $match: {
             assignedTo:   employee._id,
             organization: req.user.organization,
+            ...(allTimeTasks ? {} : { startDatetime: dateQuery }),
           },
         },
         taskPerformanceGroupStage(null),
@@ -544,7 +552,7 @@ router.get('/employee/:id', async (req, res) => {
             ? parseFloat((periodSummary.totalMinutes / 60 / periodSummary.presentDays).toFixed(2))
             : 0,
         },
-        taskStats: buildTaskStats(taskStats[0]),
+        taskStats: { ...buildTaskStats(taskStats[0]), scope: allTimeTasks ? 'all' : 'period' },
       },
     });
   } catch (err) {
