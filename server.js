@@ -120,6 +120,7 @@ mongoose
     verifyCloudinaryConnection();
     startPlanExpirySweep();
     startTaskAutoCancelSweep();
+    startIdleAttendanceSweep();
   })
   .catch((err) => {
     console.error('❌ Mongo error:', err.message);
@@ -128,8 +129,14 @@ mongoose
 
 // ── Scheduled plan-expiry sweep ──────────────────────────────────────────
 // Auto-downgrades any org whose paid plan (planExpiresAt) has passed back to
-// 'starter', and expires stale trials. Runs on boot, then every hour.
-async function startPlanExpirySweep() {
+// 'starter', and expires stale trials. Runs once daily at 00:15 IST via
+// node-cron (previously ran every hour via setInterval — switched to a
+// midnight-only cron since plan/trial expiry is a once-a-day concern, not
+// something that needs hourly checking). Scheduled after the task
+// auto-cancel sweep (00:05) and idle-attendance sweep (00:10) purely to
+// keep all three midnight jobs spaced apart rather than firing at once.
+function startPlanExpirySweep() {
+  const cron = require('node-cron');
   const Organization = require('./models/Organization');
 
   async function sweep() {
@@ -157,8 +164,15 @@ async function startPlanExpirySweep() {
     }
   }
 
-await sweep();                          // run once at startup
-  setInterval(sweep, 60 * 60 * 1000);     // then every hour
+  // Run once immediately on boot too, so a deploy/restart right around
+  // midnight doesn't cause a missed day. Safe to run any time of day —
+  // this only ever touches orgs whose plan/trial has already genuinely
+  // expired, regardless of when the check happens.
+  sweep();
+
+  cron.schedule('15 0 * * *', sweep, { timezone: 'Asia/Kolkata' });
+
+  console.log('🕐 Plan expiry sweep scheduled for 00:15 IST daily.');
 }
 
 // ── Scheduled task auto-cancel sweep ──────────────────────────────────────
@@ -191,6 +205,38 @@ function startTaskAutoCancelSweep() {
   console.log('🕛 Task auto-cancel sweep scheduled for 00:05 IST daily.');
 }
   
+// ── Scheduled idle-attendance sweep ───────────────────────────────────────
+// Forces employees offline at midnight if they left themselves online
+// (forgot to tap "Go Offline", app got killed, etc.) — but skips anyone
+// with a genuinely in-progress task, who must stay online uninterrupted.
+// Scheduled 5 minutes after the task auto-cancel sweep (00:10 IST vs
+// 00:05 IST) so it sees that day's final task statuses — an employee whose
+// only in-progress task just expired at 00:05 correctly gets forced
+// offline too, since they no longer have anything actually in progress.
+//
+// IMPORTANT: unlike the task sweep, this one does NOT also run immediately
+// on server boot. The task sweep is safe to run at any time of day (it only
+// touches tasks whose deadline has already genuinely passed). This sweep is
+// different — if the server happens to restart mid-afternoon (a deploy,
+// a crash) while employees are legitimately online, running this sweep
+// right then would incorrectly force them offline in the middle of their
+// workday. It should only ever run at the scheduled midnight time.
+function startIdleAttendanceSweep() {
+  const cron = require('node-cron');
+  const { runIdleAttendanceSweep } = require('./services/idleAttendanceSweepService');
+
+  cron.schedule(
+    '10 0 * * *',
+    () => {
+      runIdleAttendanceSweep().catch((err) =>
+        console.error('Idle attendance sweep (scheduled run) failed:', err.message)
+      );
+    },
+    { timezone: 'Asia/Kolkata' }
+  );
+
+  console.log('🕙 Idle attendance sweep scheduled for 00:10 IST daily.');
+}
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
