@@ -186,22 +186,45 @@ function startPlanExpirySweep() {
 function startTaskAutoCancelSweep() {
   const cron = require('node-cron');
   const { runTaskAutoCancelSweep } = require('./services/taskAutoCancelService');
- 
-  runTaskAutoCancelSweep().catch((err) =>
+  const { reconcileAllRoomStats } = require('./services/roomStatsReconcileService');
+
+  // Self-heal: after every sweep run, immediately recompute every room's
+  // stats from the real Task collection and log anything that had to be
+  // corrected. This is a permanent safety net — even if some future bug
+  // (in this sweep, in a manual route, in a race between them, anything)
+  // causes Room.stats to drift again, it gets silently corrected within
+  // seconds every single night instead of sitting wrong until someone
+  // notices and manually reconciles it.
+  async function sweepThenReconcile(label) {
+    await runTaskAutoCancelSweep();
+    try {
+      const result = await reconcileAllRoomStats();
+      if (result.roomsFixed > 0) {
+        console.log(`[AutoCancelSweep:${label}] Self-heal corrected drift in ${result.roomsFixed} room(s):`);
+        for (const r of result.fixed) {
+          console.log(`  - ${r.roomName}: activeTasks ${r.before.activeTasks} → ${r.after.activeTasks}`);
+        }
+      }
+    } catch (err) {
+      console.error(`[AutoCancelSweep:${label}] Self-heal reconcile failed:`, err.message);
+    }
+  }
+
+  sweepThenReconcile('startup').catch((err) =>
     console.error('Task auto-cancel sweep (startup run) failed:', err.message)
   );
- 
+
   // '5 0 * * *' = every day at 00:05, in the timezone specified below.
   cron.schedule(
     '5 0 * * *',
     () => {
-      runTaskAutoCancelSweep().catch((err) =>
+      sweepThenReconcile('scheduled').catch((err) =>
         console.error('Task auto-cancel sweep (scheduled run) failed:', err.message)
       );
     },
     { timezone: 'Asia/Kolkata' }
   );
- 
+
   console.log('🕛 Task auto-cancel sweep scheduled for 00:05 IST daily.');
 }
   

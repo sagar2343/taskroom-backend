@@ -33,16 +33,24 @@ function getStartOfTodayIST() {
  * even after 6 PM passes. It only becomes 'expired' once the sweep runs on
  * or after 8 Aug 12:00 AM IST.
  *
- * Safe to call repeatedly (idempotent) — only ever touches tasks currently
- * in 'pending' or 'in_progress', so an already-expired/cancelled/completed
- * task is never re-processed.
+ * CONCURRENCY SAFETY: this uses an atomic findOneAndUpdate per task, guarded
+ * by `status: { $in: ['pending','in_progress'] }` at write time — not just
+ * at the initial find. If this sweep somehow runs twice at once (e.g. an
+ * old and new server instance briefly overlapping during a Render deploy
+ * that lands near midnight, or a race against a manager manually
+ * cancelling/completing the same task), only the FIRST write to reach Mongo
+ * for a given task succeeds; the second one's guard condition no longer
+ * matches (status is already 'expired'), so it's a no-op — Room.stats is
+ * only ever decremented once per task, never twice. This is what actually
+ * prevents the "activeTasks went negative" bug, regardless of what
+ * triggered a double-run.
  *
  * Returns a small summary object, useful both for server logs and for the
  * JSON response of the cron-triggered API endpoint.
  */
 async function runTaskAutoCancelSweep() {
   const startOfTodayIST = getStartOfTodayIST();
-  const summary = { checked: 0, expired: 0, failed: 0, errors: [] };
+  const summary = { checked: 0, expired: 0, skippedAlreadyHandled: 0, failed: 0, errors: [] };
 
   const overdueTasks = await Task.find({
     status: { $in: ['pending', 'in_progress'] },
@@ -53,11 +61,31 @@ async function runTaskAutoCancelSweep() {
 
   for (const task of overdueTasks) {
     try {
-      task.status = 'expired';
-      task.cancelledAt = new Date();       // reused field — see models/Task.js comment
-      task.cancelledBy = null;             // null = system, not a manager action
-      task.cancellationReason = 'Auto-expired: task end date passed without completion';
-      await task.save();
+      // Atomic compare-and-swap: only actually update if this task is
+      // STILL pending/in_progress at the moment of the write (not just at
+      // the moment of the earlier find above). This is what makes the
+      // whole operation safe against concurrent sweep executions.
+      const updated = await Task.findOneAndUpdate(
+        { _id: task._id, status: { $in: ['pending', 'in_progress'] } },
+        {
+          $set: {
+            status: 'expired',
+            cancelledAt: new Date(), // reused field — see models/Task.js comment
+            cancelledBy: null,       // null = system, not a manager action
+            cancellationReason: 'Auto-expired: task end date passed without completion',
+          },
+        },
+        { new: false } // we want the pre-update doc back, to know it existed
+      );
+
+      if (!updated) {
+        // Another process (a concurrent sweep run, or a manager's manual
+        // cancel/complete action) already changed this task's status
+        // between our find() above and this write. Correctly do nothing —
+        // whichever write got there first already handled Room.stats.
+        summary.skippedAlreadyHandled += 1;
+        continue;
+      }
 
       await Room.findByIdAndUpdate(task.room, {
         $inc: { 'stats.activeTasks': -1 },
@@ -82,8 +110,11 @@ async function runTaskAutoCancelSweep() {
     }
   }
 
-  if (summary.expired > 0 || summary.failed > 0) {
-    console.log(`[AutoCancelSweep] checked=${summary.checked} expired=${summary.expired} failed=${summary.failed}`);
+  if (summary.expired > 0 || summary.failed > 0 || summary.skippedAlreadyHandled > 0) {
+    console.log(
+      `[AutoCancelSweep] checked=${summary.checked} expired=${summary.expired} ` +
+      `skippedAlreadyHandled=${summary.skippedAlreadyHandled} failed=${summary.failed}`
+    );
   }
 
   return summary;
